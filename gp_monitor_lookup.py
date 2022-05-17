@@ -67,8 +67,7 @@ def do_lookup(start, stop, project, cal, calsrc):
                 # Replace with Andrew's magic look-up service
                 print("I would now check whether the data is there and if so, kick off onward processing")
     else:
-        print(f"Failed to find any matching observations within {start} -- {stop}")
-
+        print(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -99,12 +98,12 @@ if __name__ == "__main__":
 
     if args.startdate is None:
         duration = datetime.timedelta(hours = 24)
-        start = Time(datetime.datetime.now() - duration)
+        start = Time(datetime.datetime.utcnow() - duration)
     else:
         start = Time(datetime.datetime.strptime(args.startdate,"%Y-%m-%d %H:%M:%S"))
 
     if args.stopdate is None:
-        stop = Time(datetime.datetime.now())
+        stop = Time(datetime.datetime.utcnow())
     else:
         stop = Time(datetime.datetime.strptime(args.stopdate,"%Y-%m-%d %H:%M:%S"))
 
