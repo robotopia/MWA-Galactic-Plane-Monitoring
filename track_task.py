@@ -243,6 +243,12 @@ if __name__ == "__main__":
         help="observation status, must belong to {0}".format(OBS_STATUS),
         default=None,
     )
+    ps.add_argument(
+        "--ion-path", 
+        default=None, 
+        type=str, 
+        help="Path to the csv file produced from the ion-triage procedure."
+    )
 
     args = ps.parse_args()
 
@@ -299,8 +305,8 @@ if __name__ == "__main__":
         observation_calibrator_id(args.obs_id, args.cal_id)
 
     elif args.directive.lower() == 'ionoupdate':
-        require('ionupdate', ('obs_id','ionpath'))
-    
+        require('ionupdate', ('obs_id','ion_path'))
+        ion_update(args.obs_id, args.ion_path)
     else:
         print(
             "I don't know what you are asking; please include a queue/start/finish/fail directive"
