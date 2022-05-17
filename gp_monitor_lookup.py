@@ -21,8 +21,12 @@ import json
 import sys
 
 import argparse
-
 import logging
+import track_task as tt
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(format="%(module)s:%(lineno)d:%(levelname)s %(message)s")
+logger.setLevel(logging.INFO)
 
 BASEURL = "http://ws.mwatelescope.org/"
 
@@ -49,29 +53,63 @@ def getmeta(servicetype='metadata', service='obs', params=None):
     # Return the result dictionary
     return result
 
-def do_lookup(start, stop, project, cal, calsrc):
+# TODO: Stub function for below
+# def check_db_to_append(obs_id):
+#     in_db = tt.check_imported_obs_id(obs_id)
+#     logger.debug(f"{obs_id=} DB {in_db=}")
+    
+    # return False if in_db else True  
+
+def do_lookup(
+    start, 
+    stop, 
+    project, 
+    cal, 
+    calsrc,
+    check_in_db=True
+):
     rlist = []
     try:
         olist = getmeta(service='find', params={'mintime':int(start.gps), 'maxtime':int(stop.gps), 'projectid': project, 'calibration':cal, 'dict':1, 'nocache':1})
     except:
         olist = None
         pass
+    
     if olist is not None:
         for obs in olist:
             oinfo = getmeta(service='obs', params={'obs_id':obs['mwas.starttime']})
+            # Select calibrator
+            obs_id = obs['mwas.starttime']
             if cal == 1:
-        # Select calibrator
                 if oinfo['metadata']['calibrators'] == calsrc:
                     oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
                     if oready["dataready"] is True:
-                        rlist.append(obs['mwas.starttime'])
+                        append = True
+                        if check_in_db:
+                            in_db = tt.check_imported_obs_id(obs_id)
+                            logger.debug(f"{obs_id=} DB {in_db=}")
+                            
+                            append = False if in_db else True  
+                        if append:
+                            rlist.append(obs['mwas.starttime'])
+            
             # else: No need to do anything -- the calibrator doesn't match the one we want  
             else:
                 # Replace with Andrew's magic look-up service
                 # Maybe this has to be done as a for loop
-                    oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
-                    if oready["dataready"] is True:
-                        rlist.append(obs['mwas.starttime'])
+                oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
+                if oready["dataready"] is True:
+                    append = True 
+                    
+                    if check_in_db:
+                        in_db = tt.check_imported_obs_id(obs_id)
+                        logger.debug(f"{obs_id=} DB {in_db=}")
+                        
+                        append = False if in_db else True
+                    
+                    if append:
+                        rlist.append(obs_id)
+    
     return rlist
 
 if __name__ == "__main__":
@@ -99,7 +137,24 @@ if __name__ == "__main__":
 #                        help="Maximum allowable sky separation between pointing centre and source (default = 50deg)")
     group1.add_argument("--output", dest='output', type=str, default=None,
                         help="Output text file for search args (default = '<project>_<startdate>-<stopdate>_search.txt' (colons will be stripped)")
+    group1.add_argument(
+        '--skip-db-check', 
+        default=False,
+        action='store_true',
+        help='Will ignore the lookup check to see if data have already been inserted into the GP monitoring database'    
+    )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        default=False,
+        action='store_true',
+        help='Enable debug logging'
+    )
+    
     args = parser.parse_args()
+
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
 
     if args.startdate is None:
         duration = datetime.timedelta(hours = 24)
@@ -119,15 +174,24 @@ if __name__ == "__main__":
 
     # Make into astropy objects so that we can convert to GPS time later
     start, stop = Time(start), Time(stop)
-    rlist = do_lookup(start, stop, args.project, cal, args.calsrc)
+    rlist = do_lookup(
+        start, stop, 
+        args.project, 
+        cal, 
+        args.calsrc,
+        check_in_db=not args.skip_db_check
+    )
     if rlist is False:
-        logging.error(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
+        logger.error(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
     else:
         if args.output is not None:
             with open(args.output, "w") as f:
                 for obs_id in rlist:
                     f.write(f"{obs_id}\n")
-# Bash friendly list
+        
+        # Bash friendly list
         print(*rlist, sep=" ")
+
+
 # A potential, if unwieldy, output text file
 #        output = "{0}_{1}_{2}_search.txt".format(args.project, start.strftime("%Y%m%dT%H%M%S"), stop.strftime("%Y%m%dT%H%M%S"))
