@@ -11,8 +11,12 @@
 epoch=$(determine_epoch.py --obsid $CALID)
 epoch="Epoch"$epoch
 # TODO: define with environment variables
-pdir=/astro/mwasci/$USER/epoch
+pdir=/astro/mwasci/$USER/$epoch
 cd $pdir
+
+# TODO: Insert test of calibration quality here. Only if the calibrator is good enough, proceed to the next step
+
+
 
 # This does somewhat rely on the calibrator downloading and processing correctly within 24h
 # TODO: change this code so that you can give it a --pincal option
@@ -32,6 +36,6 @@ then
         depend=${dep[3]}
         dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obsnum))
         depend=${dep[3]}
-        dep=($(obs_transient.sh -d ${depend} -p "${epoch}" $obsnum))
+        dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obsnum))
     done
 fi
