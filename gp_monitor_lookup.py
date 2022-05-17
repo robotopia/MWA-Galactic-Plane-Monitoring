@@ -22,6 +22,8 @@ import sys
 
 import argparse
 
+import logging
+
 BASEURL = "http://ws.mwatelescope.org/"
 
 def getmeta(servicetype='metadata', service='obs', params=None):
@@ -38,39 +40,41 @@ def getmeta(servicetype='metadata', service='obs', params=None):
     try:
         result = json.load(urllib.request.urlopen(BASEURL + servicetype + '/' + service + '?' + data))
     except urllib.error.HTTPError as err:
-        print("HTTP error from server: code=%d, response:\n %s" % (err.code, err.read()))
+        logging.error("HTTP error from server: code=%d, response:\n %s" % (err.code, err.read()))
         return
     except urllib.error.URLError as err:
-        print("URL or network error: %s" % err.reason)
+        logging.error("URL or network error: %s" % err.reason)
         return
 
     # Return the result dictionary
     return result
 
-def do_lookup(start, stop, project, cal, calsrc, output):
+def do_lookup(start, stop, project, cal, calsrc):
+    rlist = None
     try:
         olist = getmeta(service='find', params={'mintime':int(start.gps), 'maxtime':int(stop.gps), 'projectid': project, 'calibration':cal, 'dict':1, 'nocache':1})
     except:
         olist = None
-    #        # I really don't care about these errors, from looking at the obsids in question they appear to be correlator mode changes and other unuseable observations
         pass
     if olist is not None:
         for obs in olist:
             oinfo = getmeta(service='obs', params={'obs_id':obs['mwas.starttime']})
-        # Select calibrator
             if cal == 1:
+        # Select calibrator
                 if oinfo['metadata']['calibrators'] == calsrc:
-                # Replace with Andrew's magic look-up service
                     oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
                     if oready["dataready"] is True:
-                        with open(output, "w") as f:
-                            f.write(f"{obs['mwas.starttime']}\n")
+                        rlist = obs['mwas.starttime']
             # else: No need to do anything -- the calibrator doesn't match the one we want  
             else:
                 # Replace with Andrew's magic look-up service
-                print("I would now check whether the data is there and if so, kick off onward processing")
+                # Maybe this has to be done as a for loop
+                    oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
+                    print(oready)
+#                    if oready["dataready"] is True:
     else:
-        print(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
+        logging.error(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
+    return rlist
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -115,11 +119,13 @@ if __name__ == "__main__":
     else:
         cal = 0
 
-    if args.output is None:
-        output = "{0}_{1}_{2}_search.txt".format(args.project, start.strftime("%Y%m%dT%H%M%S"), stop.strftime("%Y%m%dT%H%M%S"))
-    else:
-        output = args.output
-
     # Make into astropy objects so that we can convert to GPS time later
     start, stop = Time(start), Time(stop)
-    do_lookup(start, stop, args.project, cal, args.calsrc, output)
+    rlist = do_lookup(start, stop, args.project, cal, args.calsrc)
+    if args.output is not None:
+        with open(args.output, "w") as f:
+            f.write(f"{obs['mwas.starttime']}\n")
+    else:
+        print(rlist)
+# A potential, if unwieldy, output text file
+#        output = "{0}_{1}_{2}_search.txt".format(args.project, start.strftime("%Y%m%dT%H%M%S"), stop.strftime("%Y%m%dT%H%M%S"))
