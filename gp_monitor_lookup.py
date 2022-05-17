@@ -50,7 +50,7 @@ def getmeta(servicetype='metadata', service='obs', params=None):
     return result
 
 def do_lookup(start, stop, project, cal, calsrc):
-    rlist = None
+    rlist = []
     try:
         olist = getmeta(service='find', params={'mintime':int(start.gps), 'maxtime':int(stop.gps), 'projectid': project, 'calibration':cal, 'dict':1, 'nocache':1})
     except:
@@ -64,16 +64,14 @@ def do_lookup(start, stop, project, cal, calsrc):
                 if oinfo['metadata']['calibrators'] == calsrc:
                     oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
                     if oready["dataready"] is True:
-                        rlist = obs['mwas.starttime']
+                        rlist.append(obs['mwas.starttime'])
             # else: No need to do anything -- the calibrator doesn't match the one we want  
             else:
                 # Replace with Andrew's magic look-up service
                 # Maybe this has to be done as a for loop
                     oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
-                    print(oready)
-#                    if oready["dataready"] is True:
-    else:
-        logging.error(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
+                    if oready["dataready"] is True:
+                        rlist.append(obs['mwas.starttime'])
     return rlist
 
 if __name__ == "__main__":
@@ -122,10 +120,14 @@ if __name__ == "__main__":
     # Make into astropy objects so that we can convert to GPS time later
     start, stop = Time(start), Time(stop)
     rlist = do_lookup(start, stop, args.project, cal, args.calsrc)
-    if args.output is not None:
-        with open(args.output, "w") as f:
-            f.write(f"{obs['mwas.starttime']}\n")
+    if rlist is False:
+        logging.error(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
     else:
-        print(rlist)
+        if args.output is not None:
+            with open(args.output, "w") as f:
+                for obs_id in rlist:
+                    f.write(f"{obs_id}\n")
+# Bash friendly list
+        print(*rlist, sep=" ")
 # A potential, if unwieldy, output text file
 #        output = "{0}_{1}_{2}_search.txt".format(args.project, start.strftime("%Y%m%dT%H%M%S"), stop.strftime("%Y%m%dT%H%M%S"))
