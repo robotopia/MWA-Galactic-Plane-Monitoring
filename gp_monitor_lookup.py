@@ -51,7 +51,7 @@ def do_lookup(start, stop, project, cal, calsrc):
     try:
         olist = getmeta(service='find', params={'mintime':int(start.gps), 'maxtime':int(stop.gps), 'projectid': project, 'calibration':cal, 'dict':1, 'nocache':1})
     except:
-        print("didn't find anything")
+        olist = None
     #        # I really don't care about these errors, from looking at the obsids in question they appear to be correlator mode changes and other unuseable observations
         pass
     if olist is not None:
@@ -67,7 +67,7 @@ def do_lookup(start, stop, project, cal, calsrc):
                 # Replace with Andrew's magic look-up service
                 print("I would now check whether the data is there and if so, kick off onward processing")
     else:
-        print(f"Failed to find any matching observations within {start} -- {stopdate}")
+        print(f"Failed to find any matching observations within {start} -- {stop}")
 
 
 if __name__ == "__main__":
