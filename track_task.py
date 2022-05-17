@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 
 __author__ = ["Paul Hancock", "Natasha Hurley-Walker", "Tim Galvin"]
 
@@ -77,6 +76,7 @@ def copy_obs_info(obs_id):
     if cur.fetchone()[0] > 0:
         print("\tObsid `{0}` is already imported.".format(obs_id))
         return
+
     meta = getmeta(service='obs', params={'obs_id':obs_id})
     
     if meta is None:
@@ -108,6 +108,22 @@ def copy_obs_info(obs_id):
     cur.close()
 
     return
+
+def check_imported_obs_id(obs_id):
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT count(*) FROM observation WHERE obs_id = %s",(obs_id,))
+    
+    found = False
+    if cur.fetchone()[0] > 0:
+        print("\tObsid `{0}` is already imported.".format(obs_id))
+        found = True
+
+    cur.close()
+
+    return found
 
 
 def queue_job(
@@ -388,6 +404,10 @@ if __name__ == "__main__":
         require(args, ['obs_id'])
         copy_obs_info(args.obs_id)
 
+    elif args.directive.lower() == 'check':
+        require(args, 'obs_id')
+        check_imported_obs_id(args.obs_id)
+    
     else:
         print(
             "I don't know what you are asking; please include a queue/start/finish/fail directive"
