@@ -1,1 +1,1 @@
-* 0-23 * * * /astro/mwasci/$USER/MWA-Galactic-Plane-Monitoring/gp_monitor.sh
+0 0-23 * * * /astro/mwasci/$USER/MWA-Galactic-Plane-Monitoring/gp_monitor.sh
