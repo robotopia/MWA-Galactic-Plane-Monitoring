@@ -47,6 +47,29 @@ def getmeta(servicetype='metadata', service='obs', params=None):
     # Return the result dictionary
     return result
 
+def do_lookup(start, stop, project, cal, calsrc):
+    try:
+        olist = getmeta(service='find', params={'mintime':int(start.gps), 'maxtime':int(stop.gps), 'projectid': project, 'calibration':cal, 'dict':1, 'nocache':1})
+    except:
+        olist = None
+    #        # I really don't care about these errors, from looking at the obsids in question they appear to be correlator mode changes and other unuseable observations
+        pass
+    if olist is not None:
+        for obs in olist:
+            oinfo = getmeta(service='obs', params={'obs_id':obs['mwas.starttime']})
+        # Select calibrator
+            if cal == 1:
+                if oinfo['metadata']['calibrators'] == calsrc:
+                # Replace with Andrew's magic look-up service
+                    print("I would now check whether the data is there and if so, kick off calibration processing")
+                # No need to do anything if else -- the calibrator doesn't match the one we want  
+            else:
+                # Replace with Andrew's magic look-up service
+                print("I would now check whether the data is there and if so, kick off onward processing")
+    else:
+        print(f"Failed to find any matching observations within {start} -- {stop}")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     group1 = parser.add_argument_group("Input/output files")
@@ -74,43 +97,20 @@ if __name__ == "__main__":
                         help="Output text file for search args (default = '<project>_<date>_search.txt'")
     args = parser.parse_args()
 
-if args.startdate is None:
-    duration = datetime.timedelta(hours = 24)
-    start = Time(datetime.datetime.now() - duration)
-else:
-    start = Time(datetime.datetime.strptime(args.startdate,"%Y-%m-%d %H:%M:%S"))
+    if args.startdate is None:
+        duration = datetime.timedelta(hours = 24)
+        start = Time(datetime.datetime.now() - duration)
+    else:
+        start = Time(datetime.datetime.strptime(args.startdate,"%Y-%m-%d %H:%M:%S"))
 
-if args.stopdate is None:
-    stop = Time(datetime.datetime.now())
-else:
-    stop = Time(datetime.datetime.strptime(args.stopdate,"%Y-%m-%d %H:%M:%S"))
+    if args.stopdate is None:
+        stop = Time(datetime.datetime.now())
+    else:
+        stop = Time(datetime.datetime.strptime(args.stopdate,"%Y-%m-%d %H:%M:%S"))
 
-#t0 = Time(args.pulserefgps, format="gps")
-if args.cal is True:
-    cal = 1
-else:
-    cal = 0
+    if args.cal is True:
+        cal = 1
+    else:
+        cal = 0
 
-print(cal)
-
-try:
-    olist = getmeta(service='find', params={'mintime':int(start.gps), 'maxtime':int(stop.gps), 'projectid': args.project, 'calibration':cal, 'dict':1, 'nocache':1})
-except:
-    print("didn't find anything")
-#        # I really don't care about these errors, from looking at the obsids in question they appear to be correlator mode changes and other unuseable observations
-    pass
-if olist is not None:
-    for obs in olist:
-        oinfo = getmeta(service='obs', params={'obs_id':obs['mwas.starttime']})
-    # Select calibrator
-        if args.cal is True:
-            if oinfo['metadata']['calibrators'] == args.calsrc:
-            # Replace with Andrew's magic look-up service
-                print("I would now check whether the data is there and if so, kick off calibration processing")
-            # No need to do anything if else -- the calibrator doesn't match the one we want  
-        else:
-            # Replace with Andrew's magic look-up service
-            print("I would now check whether the data is there and if so, kick off onward processing")
-else:
-    print(f"Failed to find any matching observations within {args.startdate} -- {args.stopdate}")
-
+    do_lookup(start, stop, args.project, cal, args.calsrc)
