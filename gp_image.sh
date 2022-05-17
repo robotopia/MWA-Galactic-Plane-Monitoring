@@ -18,9 +18,8 @@ cd $pdir
 
 
 
-# This does somewhat rely on the calibrator downloading and processing correctly within 24h
-# TODO: change this code so that you can give it a --pincal option
-obsid=$(gp_monitor_lookup.py --pincal $CALID)
+# Find all the observations taken within +/-12h of that calibrator
+obsid=$(gp_monitor_lookup.py --calid $CALID)
 
 if [[ $obsid != ""]]
 then
