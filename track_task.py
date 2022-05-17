@@ -1,13 +1,18 @@
 #!/usr/bin/env python
-from __future__ import print_function
 
 __author__ = ["Paul Hancock", "Natasha Hurley-Walker", "Tim Galvin"]
 
 import os
 import sys
+import time
+import json
 
 import mysql.connector as mysql
 import numpy as np
+import requests
+
+# Append the service name to this base URL, eg 'con', 'obs', etc.
+BASEURL = 'http://ws.mwatelescope.org/metadata'
 
 # This is the list of acceptable observation status' that are 'hard coded' in the
 # gleam-x website data/ui models.
@@ -33,6 +38,93 @@ def gpmdb_connect(switch_db=True):
         print('Warning: You probably do want to switch to the correct database')
 
     return db_con
+
+# Function to call a JSON web service and return a dictionary: This function by Andrew Williams
+# Function to call a JSON web service and return a dictionary: This function by Andrew Williams
+def getmeta(service='obs', params=None, level=0):
+    
+    # Validate the service name
+    if service.strip().lower() in ['obs', 'find', 'con']:
+        service = service.strip().lower()
+    else:
+        print("invalid service name: {0}".format(service))
+        return
+    
+    service_url = "{0}/{1}".format(BASEURL, service)
+    try:
+        response = requests.get(service_url, params=params, timeout=1.)
+        response.raise_for_status()
+
+    except requests.HTTPError as error:
+        if level <= 2:
+            print("HTTP encountered. Retrying...")
+            time.sleep(3)
+            getmeta(service=service, params=params, level=level+1)
+        else:
+            raise error
+    
+    return response.json()
+
+
+def copy_obs_info(obs_id):
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT count(*) FROM observation WHERE obs_id = %s",(obs_id,))
+    
+    if cur.fetchone()[0] > 0:
+        print("\tObsid `{0}` is already imported.".format(obs_id))
+        return
+
+    meta = getmeta(service='obs', params={'obs_id':obs_id})
+    
+    if meta is None:
+        print("\t{0} has no metadata!".format(obs_id))
+        return
+
+    metadata = meta['metadata']
+    
+    cur.execute("""
+    INSERT INTO observation
+    (obs_id, projectid,  lst_deg, starttime, duration_sec, obsname, creator,
+    azimuth_pointing, elevation_pointing, ra_pointing, dec_pointing,
+    cenchan, freq_res, int_time, delays,
+    calibration, cal_obs_id, calibrators,
+    peelsrcs, flags, selfcal, ion_phs_med, ion_phs_peak, ion_phs_std,
+    nfiles, archived, status
+    )
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
+    """, (
+    obs_id, meta['projectid'], metadata['local_sidereal_time_deg'], meta['starttime'], meta['stoptime']-meta['starttime'], meta['obsname'], meta['creator'],
+    metadata['azimuth_pointing'], metadata['elevation_pointing'], metadata['ra_pointing'], metadata['dec_pointing'],
+    meta["rfstreams"]["0"]['frequencies'][12], meta['freq_res'], meta['int_time'], json.dumps(meta["rfstreams"]["0"]["xdelays"]),
+    metadata['calibration'], None, metadata['calibrators'],
+    None, None, None, None, None, None,
+    len(meta['files']), False, 'unprocessed'))
+    #update_observation(obsid, meta['obsname'], cur)
+    
+    cur.commit()
+    cur.close()
+
+    return
+
+def check_imported_obs_id(obs_id):
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT count(*) FROM observation WHERE obs_id = %s",(obs_id,))
+    
+    found = False
+    if cur.fetchone()[0] > 0:
+        print("\tObsid `{0}` is already imported.".format(obs_id))
+        found = True
+
+    cur.close()
+
+    return found
+
 
 def queue_job(
     job_id,
@@ -305,8 +397,17 @@ if __name__ == "__main__":
         observation_calibrator_id(args.obs_id, args.cal_id)
 
     elif args.directive.lower() == 'ionoupdate':
-        require('ionupdate', ('obs_id','ion_path'))
+        require(args, ['obs_id','ion_path'])
         ion_update(args.obs_id, args.ion_path)
+    
+    elif args.directive.lower() == 'addobs':
+        require(args, ['obs_id'])
+        copy_obs_info(args.obs_id)
+
+    elif args.directive.lower() == 'check':
+        require(args, 'obs_id')
+        check_imported_obs_id(args.obs_id)
+    
     else:
         print(
             "I don't know what you are asking; please include a queue/start/finish/fail directive"
