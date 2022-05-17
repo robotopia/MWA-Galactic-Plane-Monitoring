@@ -47,7 +47,7 @@ def getmeta(servicetype='metadata', service='obs', params=None):
     # Return the result dictionary
     return result
 
-def do_lookup(start, stop, project, cal, calsrc):
+def do_lookup(start, stop, project, cal, calsrc, output):
     try:
         olist = getmeta(service='find', params={'mintime':int(start.gps), 'maxtime':int(stop.gps), 'projectid': project, 'calibration':cal, 'dict':1, 'nocache':1})
     except:
@@ -61,8 +61,11 @@ def do_lookup(start, stop, project, cal, calsrc):
             if cal == 1:
                 if oinfo['metadata']['calibrators'] == calsrc:
                 # Replace with Andrew's magic look-up service
-                    print("I would now check whether the data is there and if so, kick off calibration processing")
-                # No need to do anything if else -- the calibrator doesn't match the one we want  
+                    oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
+                    if oready["dataready"] is True:
+                        with open(output, "w") as f:
+                            f.write(f"{obs['mwas.starttime']}\n")
+            # else: No need to do anything -- the calibrator doesn't match the one we want  
             else:
                 # Replace with Andrew's magic look-up service
                 print("I would now check whether the data is there and if so, kick off onward processing")
@@ -93,23 +96,30 @@ if __name__ == "__main__":
 #    group1.add_argument("--separation", dest='separation', type=float, default=50.,
 #                        help="Maximum allowable sky separation between pointing centre and source (default = 50deg)")
     group1.add_argument("--output", dest='output', type=str, default=None,
-                        help="Output text file for search args (default = '<project>_<date>_search.txt'")
+                        help="Output text file for search args (default = '<project>_<startdate>-<stopdate>_search.txt' (colons will be stripped)")
     args = parser.parse_args()
 
     if args.startdate is None:
         duration = datetime.timedelta(hours = 24)
-        start = Time(datetime.datetime.utcnow() - duration)
+        start = datetime.datetime.utcnow() - duration
     else:
-        start = Time(datetime.datetime.strptime(args.startdate,"%Y-%m-%d %H:%M:%S"))
+        start = datetime.datetime.strptime(args.startdate,"%Y-%m-%d %H:%M:%S")
 
     if args.stopdate is None:
-        stop = Time(datetime.datetime.utcnow())
+        stop = datetime.datetime.utcnow()
     else:
-        stop = Time(datetime.datetime.strptime(args.stopdate,"%Y-%m-%d %H:%M:%S"))
+        stop = datetime.datetime.strptime(args.stopdate,"%Y-%m-%d %H:%M:%S")
 
     if args.cal is True:
         cal = 1
     else:
         cal = 0
 
-    do_lookup(start, stop, args.project, cal, args.calsrc)
+    if args.output is None:
+        output = "{0}_{1}_{2}_search.txt".format(args.project, start.strftime("%Y%m%dT%H%M%S"), stop.strftime("%Y%m%dT%H%M%S"))
+    else:
+        output = args.output
+
+    # Make into astropy objects so that we can convert to GPS time later
+    start, stop = Time(start), Time(stop)
+    do_lookup(start, stop, args.project, cal, args.calsrc, output)
