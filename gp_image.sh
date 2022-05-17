@@ -39,3 +39,5 @@ then
         dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obsnum))
     done
 fi
+
+# TODO the else statement for the calibration quality -- email the user to say that their calibration didn't work
