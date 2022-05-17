@@ -1,19 +1,5 @@
-#import matplotlib as mpl
-#mpl.use("Agg")
-#from matplotlib import pyplot as plt
-#import matplotlib.ticker as ticker
-
-import numpy as np
-#import math
-
-import datetime
-
-#from astropy.io import fits
 from astropy.time import Time
 from astropy import units as u
-#from astropy.coordinates import SkyCoord
-
-#from glob import glob
 
 import urllib.request
 import json
@@ -78,9 +64,9 @@ def do_lookup(
     if olist is not None:
         for obs in olist:
             oinfo = getmeta(service='obs', params={'obs_id':obs['mwas.starttime']})
-            # Select calibrator
             obs_id = obs['mwas.starttime']
             if cal == 1:
+                # Select calibrator that matches, default = HerA
                 if oinfo['metadata']['calibrators'] == calsrc:
                     oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
                     if oready["dataready"] is True:
@@ -92,11 +78,8 @@ def do_lookup(
                             append = False if in_db else True  
                         if append:
                             rlist.append(obs['mwas.starttime'])
-            
-            # else: No need to do anything -- the calibrator doesn't match the one we want  
+                # else: No need to do anything -- the calibrator doesn't match the one we want  
             else:
-                # Replace with Andrew's magic look-up service
-                # Maybe this has to be done as a for loop
                 oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
                 if oready["dataready"] is True:
                     append = True 
@@ -114,10 +97,6 @@ def do_lookup(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-#    parser.add_argument("--ra", dest='ra', type=float, default=246.99796,
-#                        help="RA / longitude value (deg)")
-#    parser.add_argument("--dec", dest='dec', type=float, default=-52.58453,
-#                        help="Dec / latitude value (deg)")
     parser.add_argument("--startdate", dest='startdate', type=str, default=None,
                         help="start UTC date-time for search (format: 'YYYY-MM-DD HH:MM:SS' ; default = now-24h)")
     parser.add_argument("--stopdate", dest='stopdate', type=str, default=None,
@@ -126,16 +105,10 @@ if __name__ == "__main__":
                         help="MWA observing project (default = G0080)")
     parser.add_argument("--preferred calibrator", dest='calsrc', type=str, default='HerA',
                         help="Preferred calibrator (default = HerA; options=HerA, J063633-204225, J121834-101851, J153150+240244")
-#    parser.add_argument("--minchan", dest='minchan', type=int, default=60,
-#                        help="minimum coarse channel number (default = 60)")
-#    parser.add_argument("--maxchan", dest='maxchan', type=int, default=180,
-#                        help="maximum coarse channel for search (default = 180)")
     parser.add_argument("--cal", dest='cal', action="store_true", default=False,
                         help="only look for calibrator observations (will only return most recent)")
     parser.add_argument("--calid", dest='calid', type=int, default=None,
                         help="Look for data surrounding a particular calibrator (overrides other search options)"
-#    parser.add_argument("--separation", dest='separation', type=float, default=50.,
-#                        help="Maximum allowable sky separation between pointing centre and source (default = 50deg)")
     parser.add_argument("--output", dest='output', type=str, default=None,
                         help="Output text file for search args (default = '<project>_<startdate>-<stopdate>_search.txt' (colons will be stripped)")
     parser.add_argument(
@@ -157,18 +130,16 @@ if __name__ == "__main__":
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-# TODO: replace all datetime calls with astropy Time calls
     if args.calid is None:
         if args.startdate is None:
-            duration = datetime.timedelta(hours = 24)
-            start = datetime.datetime.utcnow() - duration
+            start = Time.now() - 24*u.hour
         else:
-            start = datetime.datetime.strptime(args.startdate,"%Y-%m-%d %H:%M:%S")
+            start = Time(args.startdate, format="iso", scale="utc")
 
         if args.stopdate is None:
-            stop = datetime.datetime.utcnow()
+            stop = start + 24*u.hour
         else:
-            stop = datetime.datetime.strptime(args.stopdate,"%Y-%m-%d %H:%M:%S")
+            stop = Time(args.stopdate,format="iso", scale="utc")
     else:
         gpstime = Time(args.calid, format="gps")
         start = gpstime - 12*u.hour
@@ -179,8 +150,6 @@ if __name__ == "__main__":
     else:
         cal = 0
 
-    # Make into astropy objects so that we can convert to GPS time later
-    start, stop = Time(start), Time(stop)
     rlist = do_lookup(
         start, stop, 
         args.project, 
