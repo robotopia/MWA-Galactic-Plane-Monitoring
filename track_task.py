@@ -23,19 +23,21 @@ def gpmdb_config():
     port = os.environ["GPMDBPORT"]
     user = os.environ["GPMDBUSER"]
     passwd = os.environ["GPMDBPASS"]
+    database = 'gp_monitor'
 
-    return {"host": host, "port": port, "user": user, "password": passwd}
+    return {
+        "host": host, 
+        "port": port, 
+        "user": user, 
+        "password": passwd, 
+        "database":database
+    }
 
 
 def gpmdb_connect(switch_db=True):
 
     db_config = gpmdb_config()
     db_con = mysql.connect(**db_config)
-
-    if switch_db:
-        db_con.cursor().execute("USE {0}".format('gp_monitor'))
-    else:
-        print('Warning: You probably do want to switch to the correct database')
 
     return db_con
 
