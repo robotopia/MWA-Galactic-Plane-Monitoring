@@ -5,7 +5,9 @@ __author__ = ["Paul Hancock", "Natasha Hurley-Walker", "Tim Galvin"]
 
 import os
 import sys
+
 import mysql.connector as mysql
+import numpy as np
 
 # This is the list of acceptable observation status' that are 'hard coded' in the
 # gleam-x website data/ui models.
@@ -152,94 +154,34 @@ def observation_calibrator_id(obs_id, cal_id):
     conn.close()
 
 
-def queue_mosaic(
-    batch_obs_ids, job_id, task_id, host_cluster, submission_time, user, subband
-):
-    """Creates a new item in the `mosaic` table to signify that a new batch
-    of `obs_ids` are being `swarp`ed together
-    """
+def ion_update(obs_id, ion_path):
+    with open(args.ionocsv, "rb") as in_file:
+        arr = np.loadtxt(in_file, delimiter=",", skiprows=1)
+    
+    obsid, med, peak, std = arr
+    
     conn = gpmdb_connect()
     cur = conn.cursor()
 
-    for obs_id in batch_obs_ids:
-        cur.execute(
-            """ 
-                    INSERT INTO mosaic
-                    (obs_id, job_id, task_id, host_cluster, submission_time, user, subband, status)
-                    VALUES
-                    (%s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
-            (
-                obs_id,
-                job_id,
-                task_id,
-                host_cluster,
-                submission_time,
-                user,
-                subband,
-                "queued",
-            ),
+    cur.execute("SELECT count(*) FROM observation WHERE obs_id =%s", (obsid,))
+    if cur.fetchone()[0] > 0:
+        print(
+            "Updating observation {0} with median = {1}, peak = {2}, std = {3}".format(
+                obsid, med, peak, std
+            )
         )
+        cur.execute(
+            "UPDATE observation SET ion_phs_med = %s, ion_phs_peak = %s, ion_phs_std = %s WHERE obs_id =%s",
+            (med, peak, std, obsid),
+        )
+        cur.commit()
+    else:
+        print("observation not in database: ", obsid)
+    
+    cur.close()
+    
+    return
 
-    conn.commit()
-    conn.close()
-
-
-def start_mosaic(job_id, task_id, host_cluster, start_time):
-    """Update all rows that form a `mos_id` job that their mosaic operation has started
-    """
-    conn = gpmdb_connect()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-                UPDATE mosaic
-                SET status='started', start_time=%s
-                WHERE job_id=%s AND task_id=%s AND host_cluster=%s
-                """,
-        (start_time, job_id, task_id, host_cluster),
-    )
-
-    conn.commit()
-    conn.close()
-
-
-def finish_mosaic(job_id, task_id, host_cluster, end_time):
-    """Update all rows that form a `mos_id` job that their mosaic operation has started
-    """
-    conn = gpmdb_connect()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-                UPDATE mosaic
-                SET status='finished', end_time=%s
-                WHERE job_id=%s AND task_id=%s AND host_cluster=%s
-                """,
-        (end_time, job_id, task_id, host_cluster),
-    )
-
-    conn.commit()
-    conn.close()
-
-
-def fail_mosaic(job_id, task_id, host_cluster, end_time):
-    """Update all rows that form a `mos_id` job that their mosaic operation has failed
-    """
-    conn = gpmdb_connect()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-                UPDATE mosaic
-                SET status='failed', end_time=%s
-                WHERE job_id=%s AND task_id=%s AND host_cluster=%s
-                """,
-        (end_time, job_id, task_id, host_cluster),
-    )
-
-    conn.commit()
-    conn.close()
 
 
 def require(args, reqlist):
@@ -356,6 +298,9 @@ if __name__ == "__main__":
         require(args, ["obs_id", "cal_id"])
         observation_calibrator_id(args.obs_id, args.cal_id)
 
+    elif args.directive.lower() == 'ionoupdate':
+        require('ionupdate', ('obs_id','ionpath'))
+    
     else:
         print(
             "I don't know what you are asking; please include a queue/start/finish/fail directive"
