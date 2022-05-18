@@ -1,13 +1,14 @@
-from astropy.time import Time
-from astropy import units as u
+#!/usr/bin/env python
 
 import urllib.request
 import json
-
-import sys
-
 import argparse
 import logging
+from typing import Iterable, Dict, Any, Optional
+
+from astropy.time import Time
+from astropy import units as u
+
 import track_task as tt
 
 logger = logging.getLogger(__name__)
@@ -16,10 +17,19 @@ logger.setLevel(logging.INFO)
 
 BASEURL = "http://ws.mwatelescope.org/"
 
-def getmeta(servicetype='metadata', service='obs', params=None):
+def getmeta(servicetype: str='metadata', service: str='obs', params: Dict[Any, Any]=None) -> Dict[Any, Any]:
     """Given a JSON web servicetype ('observation' or 'metadata'), a service name (eg 'obs', find, or 'con')
        and a set of parameters as a Python dictionary, return a Python dictionary containing the result.
+
+    Args:
+        servicetype (str, optional): Desired webservice data return. Defaults to 'metadata'.
+        service (str, optional): Desired webservice end point to query. Defaults to 'obs'.
+        params (Dict[Any, Any], optional): Additional parameters to pass to webservice. Defaults to None.
+
+    Returns:
+        Dict[Any, Any]: Returned data structure from the webservice
     """
+    
     if params:
         # Turn the dictionary into a string with encoded 'name=value' pairs
         data = urllib.parse.urlencode(params)
@@ -31,69 +41,103 @@ def getmeta(servicetype='metadata', service='obs', params=None):
         result = json.load(urllib.request.urlopen(BASEURL + servicetype + '/' + service + '?' + data))
     except urllib.error.HTTPError as err:
         logging.error("HTTP error from server: code=%d, response:\n %s" % (err.code, err.read()))
-        return
+        raise err
     except urllib.error.URLError as err:
         logging.error("URL or network error: %s" % err.reason)
-        return
+        raise err
 
     # Return the result dictionary
     return result
 
-# TODO: Stub function for below
-# def check_db_to_append(obs_id):
-#     in_db = tt.check_imported_obs_id(obs_id)
-#     logger.debug(f"{obs_id=} DB {in_db=}")
+def filter_obs_in_db(rlist: Iterable[int], mode: str='notin'):
+    """Stub function to filter obsids based on whether they are in thhe GP monitor database. 
+    The default behaviour is only to return obsids if they are NOT in the database, but this
+    may be expanded as the use case changes
+
+    Args:
+        rlist (Iterable[int]): Collection of obsids to check against the database
+
+    Keyword Args:
+        mode (str): The filter mode to apply to the set of provided obsids
+
+    Returns:
+        Iterable[int]: Set of obsids not in the database
     
-    # return False if in_db else True  
+    Raises:
+        ValueError: If the provided mode is not known
+    """
+    filter_modes = ('notin', )
+
+    if mode == 'notin':
+
+        return [obs for obs in rlist if not tt.check_imported_obs_id(obs)]
+    
+    else:
+        msg = f"Filter mode not known. Received {mode=}, expected modes in {filter_modes}"
+        logger.error(msg)
+        raise ValueError(msg)
 
 def do_lookup(
-    start, 
-    stop, 
-    project, 
-    cal, 
-    calsrc,
-    check_in_db=True
-):
+    start: Time, 
+    stop: Time, 
+    project: str, 
+    cal: int, 
+    calsrc: int,
+    check_in_db: bool=True
+) -> Iterable[int]:
+    """Obtain a list of obsids to process based on criteria required throughout processing
+
+    Args:
+        start (Time): Start time of the observations to search for
+        stop (Time): End time of the observations to search for
+        project (str): Project code associated with the desired observations
+        cal (int): Search only for calibration sources (1 for True, 0 for False, passed to webservice)
+        calsrc (int): Obsid of calibration data to search for obsids around
+        check_in_db (bool, optional): Confirm that these data have not been processed by the GP monitor database. Defaults to True.
+
+    Returns:
+        Iterable[int]: set of obsids to process
+    """
     rlist = []
-    try:
-        olist = getmeta(service='find', params={'mintime':int(start.gps), 'maxtime':int(stop.gps), 'projectid': project, 'calibration':cal, 'dict':1, 'nocache':1})
-    except:
-        olist = None
-        pass
     
+    olist = getmeta(
+        service='find', 
+        params={
+            'mintime':int(start.gps), 
+            'maxtime':int(stop.gps), 
+            'projectid': project, 
+            'calibration': cal, 
+            'dict': 1, 
+            'nocache': 1
+        }
+    )
+
     if olist is not None:
         for obs in olist:
             oinfo = getmeta(service='obs', params={'obs_id':obs['mwas.starttime']})
             obs_id = obs['mwas.starttime']
-            if cal == 1:
-                # Select calibrator that matches, default = HerA
-                if oinfo['metadata']['calibrators'] == calsrc:
-                    oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
-                    if oready["dataready"] is True:
-                        append = True
-                        if check_in_db:
-                            in_db = tt.check_imported_obs_id(obs_id)
-                            logger.debug(f"{obs_id=} DB {in_db=}")
-                            
-                            append = False if in_db else True  
-                        if append:
-                            rlist.append(obs['mwas.starttime'])
-                # else: No need to do anything -- the calibrator doesn't match the one we want  
-            else:
-                oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
-                if oready["dataready"] is True:
-                    append = True 
-                    
-                    if check_in_db:
-                        in_db = tt.check_imported_obs_id(obs_id)
-                        logger.debug(f"{obs_id=} DB {in_db=}")
-                        
-                        append = False if in_db else True
-                    
-                    if append:
-                        rlist.append(obs_id)
+            logger.debug(f"Checking {obs_id=}")
+
+            # Select calibrator that matches, default = HerA
+            if cal == 1 and oinfo['metadata']['calibrators'] != calsrc:
+                logger.debug(f"Checking calibrator {obs_id=} not {calsrc=}")
+                continue
+                
+            # Confirm that ASVO is ready to hand out the data
+            oready = getmeta(service='data_ready', params={'obs_id':obs['mwas.starttime']})
+            
+            if oready["dataready"] is True:
+                logger.debug(f"Data ready {obs_id=} appending")
+                rlist.append(obs_id)
+        
+    # ignore sources not already processed
+    if check_in_db:
+        logger.debug(f"Checking {rlist=}")
+        rlist = filter_obs_in_db(rlist, mode='notin')
     
+    logger.debug(f"Returning {rlist=}")
     return rlist
+    
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -108,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--cal", dest='cal', action="store_true", default=False,
                         help="only look for calibrator observations (will only return most recent)")
     parser.add_argument("--calid", dest='calid', type=int, default=None,
-                        help="Look for data surrounding a particular calibrator (overrides other search options)"
+                        help="Look for data surrounding a particular calibrator (overrides other search options)")                  
     parser.add_argument("--output", dest='output', type=str, default=None,
                         help="Output text file for search args (default = '<project>_<startdate>-<stopdate>_search.txt' (colons will be stripped)")
     parser.add_argument(
