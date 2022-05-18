@@ -1,0 +1,56 @@
+#! /bin/bash -l
+# The gp_imaging script that, if the calibration is successful, runs on the rest of the data
+# It retries every hour to do any observation that hasn't yet been entered into our processing database
+# When every observation has been processed it no longer submits itself to the queue
+set -x
+
+pipeuser=PIPEUSER
+obsnum=OBSNUM
+datadir=DATADIR
+
+# Retrieving unusual variables so that we can easily resubmit the job to check all the data was processed
+script=SCRIPT
+output=OUTPUT
+error=ERROR
+account=ACCOUNT
+queue=QUEUE
+
+epoch=$(determine_epoch.py --obsid $obsnum)
+epoch="Epoch"$epoch
+datadir=$datadir/$epoch
+cd $datadir
+
+# TODO: Insert test of calibration quality here. Only if the calibrator is good enough, proceed to the next step
+cd $obsnum
+
+# result=$(tim_calibration_quality_check.py)
+# if result...
+
+cd ../
+# Find all the observations taken within +/-12h of that calibrator
+# That have not yet been processed, as recorded by our database
+obsid=$(gp_monitor_lookup.py --calid $obsnum)
+
+if [[ $obsid != ""]]
+then
+    for obs in $obsid
+    do
+        dep=($(obs_manta.sh -p $epoch -o $obs))
+        depend=${dep[3]}
+        dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
+        depend=${dep[3]}
+        dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $CALID -z  $obs))
+        depend=${dep[3]}
+        dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
+        depend=${dep[3]}
+        dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obs))
+        depend=${dep[3]}
+        dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
+    done
+    sub="sbatch --begin=now+1h --export=ALL  --time=01:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
+    sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${queue} ${script}.sbatch"
+else
+    echo "No further unprocessed data found; will not resubmit ${script}."
+fi
+
+# TODO the else statement for the calibration quality -- email the user to say that their calibration didn't work
