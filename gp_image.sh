@@ -4,6 +4,9 @@
 #SBATCH --time=00:05:00
 #SBATCH --nodes=1
 
+# TODO: How do I easily make sure every python script runs in the singularity container
+# without prefixing everything with singularity exec ....
+
 # The gp_imaging script that, if the calibration is successful, runs on the rest of the data
 # It retries every hour to do any observation that hasn't yet been entered into our processing database
 # When every observation has been processed it no longer submits itself to the queue
@@ -11,8 +14,8 @@
 epoch=$(determine_epoch.py --obsid $CALID)
 epoch="Epoch"$epoch
 # TODO: define with environment variables
-pdir=/astro/mwasci/$USER/$epoch
-cd $pdir
+datadir=${GPMSCRATCH}/$epoch
+cd $datadir
 
 # TODO: Insert test of calibration quality here. Only if the calibrator is good enough, proceed to the next step
 
