@@ -6,65 +6,87 @@ import os
 import sys
 import time
 import json
+import logging
+import argparse
+
 
 import mysql.connector as mysql
 import numpy as np
 import requests
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(format="%(module)s:%(lineno)d:%(levelname)s %(message)s")
+logger.setLevel(logging.INFO)
+
 # Append the service name to this base URL, eg 'con', 'obs', etc.
-BASEURL = 'http://ws.mwatelescope.org/metadata'
+BASEURL = "http://ws.mwatelescope.org/metadata"
 
 # This is the list of acceptable observation status' that are 'hard coded' in the
 # gleam-x website data/ui models.
-OBS_STATUS = ["unprocessed", "downloaded", "calibrated", "imaged", "archived"]
+OBS_STATUS = ("unprocessed", "downloaded", "calibrated", "imaged", "archived")
+DIRECTIVES = (
+    "queue",
+    "start",
+    "finish",
+    "fail",
+    "obs_status",
+    "obs_calibrator",
+    "iono_update",
+    "import_obs",
+    "check_obs",
+)
+
 
 def gpmdb_config():
     host = os.environ["GPMDBHOST"]
     port = os.environ["GPMDBPORT"]
     user = os.environ["GPMDBUSER"]
     passwd = os.environ["GPMDBPASS"]
-    database = 'gp_monitor'
+    database = "gp_monitor"
 
     return {
-        "host": host, 
-        "port": port, 
-        "user": user, 
-        "password": passwd, 
-        "database":database
+        "host": host,
+        "port": port,
+        "user": user,
+        "password": passwd,
+        "database": database,
     }
 
 
-def gpmdb_connect(switch_db=True):
-
+def gpmdb_connect():
     db_config = gpmdb_config()
+
+    logger.debug(f"Connecting to GP Monitor database - {db_config['host']}:{db_config['port']}")
     db_con = mysql.connect(**db_config)
 
     return db_con
 
+
 # Function to call a JSON web service and return a dictionary: This function by Andrew Williams
 # Function to call a JSON web service and return a dictionary: This function by Andrew Williams
-def getmeta(service='obs', params=None, level=0):
-    
+def getmeta(service="obs", params=None, level=0):
+
     # Validate the service name
-    if service.strip().lower() in ['obs', 'find', 'con']:
+    if service.strip().lower() in ["obs", "find", "con"]:
         service = service.strip().lower()
     else:
-        print("invalid service name: {0}".format(service))
+        logger.error("invalid service name: {0}".format(service))
         return
-    
+
     service_url = "{0}/{1}".format(BASEURL, service)
     try:
-        response = requests.get(service_url, params=params, timeout=1.)
+        logger.debug(f"Connecting to {service_url=}")
+        response = requests.get(service_url, params=params, timeout=1.0)
         response.raise_for_status()
 
     except requests.HTTPError as error:
         if level <= 2:
-            print("HTTP encountered. Retrying...")
+            logger.debug("HTTP encountered. Retrying...")
             time.sleep(3)
-            getmeta(service=service, params=params, level=level+1)
+            getmeta(service=service, params=params, level=level + 1)
         else:
             raise error
-    
+
     return response.json()
 
 
@@ -73,21 +95,27 @@ def copy_obs_info(obs_id):
     conn = gpmdb_connect()
     cur = conn.cursor()
 
-    cur.execute("SELECT count(*) FROM observation WHERE obs_id = %s",(obs_id,))
-    
+    cur.execute("SELECT count(*) FROM observation WHERE obs_id = %s", (obs_id,))
+
     if cur.fetchone()[0] > 0:
-        print("\tObsid `{0}` is already imported.".format(obs_id))
+        logger.info(f"{obs_id=} is already imported.")
+        conn.close()
+
         return
 
-    meta = getmeta(service='obs', params={'obs_id':obs_id})
-    
+    meta = getmeta(service="obs", params={"obs_id": obs_id})
+
     if meta is None:
-        print("\t{0} has no metadata!".format(obs_id))
+        logger.error(f"{obs_id=} has no metadata!")
+        conn.close()
+
         return
 
-    metadata = meta['metadata']
-    
-    cur.execute("""
+    metadata = meta["metadata"]
+    logger.debug(f"Returned {metadata=}")
+
+    cur.execute(
+    """
     INSERT INTO observation
     (obs_id, projectid,  lst_deg, starttime, duration_sec, obsname, creator,
     azimuth_pointing, elevation_pointing, ra_pointing, dec_pointing,
@@ -97,33 +125,58 @@ def copy_obs_info(obs_id):
     nfiles, archived, status
     )
     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);
-    """, (
-    obs_id, meta['projectid'], metadata['local_sidereal_time_deg'], meta['starttime'], meta['stoptime']-meta['starttime'], meta['obsname'], meta['creator'],
-    metadata['azimuth_pointing'], metadata['elevation_pointing'], metadata['ra_pointing'], metadata['dec_pointing'],
-    meta["rfstreams"]["0"]['frequencies'][12], meta['freq_res'], meta['int_time'], json.dumps(meta["rfstreams"]["0"]["xdelays"]),
-    metadata['calibration'], None, metadata['calibrators'],
-    None, None, None, None, None, None,
-    len(meta['files']), False, 'unprocessed'))
-    #update_observation(obsid, meta['obsname'], cur)
-    
-    cur.commit()
-    cur.close()
+    """,
+        (
+            obs_id,
+            meta["projectid"],
+            metadata["local_sidereal_time_deg"],
+            meta["starttime"],
+            meta["stoptime"] - meta["starttime"],
+            meta["obsname"],
+            meta["creator"],
+            metadata["azimuth_pointing"],
+            metadata["elevation_pointing"],
+            metadata["ra_pointing"],
+            metadata["dec_pointing"],
+            meta["rfstreams"]["0"]["frequencies"][12],
+            meta["freq_res"],
+            meta["int_time"],
+            json.dumps(meta["rfstreams"]["0"]["xdelays"]),
+            metadata["calibration"],
+            None,
+            metadata["calibrators"],
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            len(meta["files"]),
+            False,
+            "unprocessed",
+        ),
+    )
+
+    logger.info(f"Inserted {obs_id=} meta-data")
+
+    conn.commit()
+    conn.close()
 
     return
+
 
 def check_imported_obs_id(obs_id):
 
     conn = gpmdb_connect()
     cur = conn.cursor()
 
-    cur.execute("SELECT count(*) FROM observation WHERE obs_id = %s",(obs_id,))
-    
+    cur.execute("SELECT count(*) FROM observation WHERE obs_id = %s", (obs_id,))
+
     found = False
     if cur.fetchone()[0] > 0:
-        print("\tObsid `{0}` is already imported.".format(obs_id))
         found = True
 
-    cur.close()
+    conn.close()
 
     return found
 
@@ -249,33 +302,32 @@ def observation_calibrator_id(obs_id, cal_id):
 
 
 def ion_update(obs_id, ion_path):
-    with open(args.ionocsv, "rb") as in_file:
+    with open(ion_path, "rb") as in_file:
         arr = np.loadtxt(in_file, delimiter=",", skiprows=1)
-    
-    obsid, med, peak, std = arr
-    
+
+    _, med, peak, std = arr
+
     conn = gpmdb_connect()
     cur = conn.cursor()
 
     cur.execute("SELECT count(*) FROM observation WHERE obs_id =%s", (obsid,))
     if cur.fetchone()[0] > 0:
-        print(
+        logger.info(
             "Updating observation {0} with median = {1}, peak = {2}, std = {3}".format(
-                obsid, med, peak, std
+                obs_id, med, peak, std
             )
         )
         cur.execute(
             "UPDATE observation SET ion_phs_med = %s, ion_phs_peak = %s, ion_phs_std = %s WHERE obs_id =%s",
-            (med, peak, std, obsid),
+            (med, peak, std, obs_id),
         )
         cur.commit()
     else:
-        print("observation not in database: ", obsid)
-    
-    cur.close()
-    
-    return
+        logger.error("observation not in database: ", obs_id)
 
+    cur.close()
+
+    return
 
 
 def require(args, reqlist):
@@ -285,11 +337,11 @@ def require(args, reqlist):
     """
     for r in reqlist:
         if r not in args.__dict__.keys():
-            print("Directive {0} requires argument {1}".format(args.directive, r))
+            logger.error("Directive {0} requires argument {1}".format(args.directive, r))
             sys.exit(1)
 
         if getattr(args, r) is None:
-            print("Directive {0} requires argument {1}".format(args.directive, r))
+            logger.error("Directive {0} requires argument {1}".format(args.directive, r))
             sys.exit(1)
 
         # an sqlite to mysql change
@@ -297,7 +349,7 @@ def require(args, reqlist):
             args.__dict__[r] = args.__dict__[r].replace("date +%s", "NOW()")
 
         if r == "status" and args.status.lower() not in OBS_STATUS:
-            print(
+            logger.error(
                 "Observation status `{0}` is not in the allowed list {1}. Exiting without updating. \n".format(
                     args.status, OBS_STATUS
                 )
@@ -308,16 +360,18 @@ def require(args, reqlist):
 
 
 if __name__ == "__main__":
-    if "GPMTRACK" not in os.environ.keys() or os.environ["GPMRACK"] != "track":
-        print("Task process tracking is disabled. ")
+    # if "GPMTRACK" not in os.environ.keys() or os.environ["GPMRACK"] != "track":
+    #     print("Task process tracking is disabled. ")
 
-        sys.exit(0)
-
-
-    import argparse
+    #     sys.exit(0)
 
     ps = argparse.ArgumentParser(description="track tasks")
-    ps.add_argument("directive", type=str, help="Directive", default=None)
+    ps.add_argument(
+        "directive",
+        type=str,
+        help=f"Operation to perform. Available directives are: {DIRECTIVES}",
+        default=None,
+    )
     ps.add_argument("--jobid", type=int, help="Job id from slurm", default=None)
     ps.add_argument("--taskid", type=int, help="Task id from slurm", default=None)
     ps.add_argument("--task", type=str, help="task being run", default=None)
@@ -338,16 +392,26 @@ if __name__ == "__main__":
         default=None,
     )
     ps.add_argument(
-        "--ion-path", 
-        default=None, 
-        type=str, 
-        help="Path to the csv file produced from the ion-triage procedure."
+        "--ion-path",
+        default=None,
+        type=str,
+        help="Path to the csv file produced from the ion-triage procedure.",
+    )
+    ps.add_argument(
+        '-v',
+        '--verbose',
+        default=False,
+        action='store_true',
+        help='Logs in verbose mode'
     )
 
     args = ps.parse_args()
 
     args.user = os.environ["GPMUSER"]
     args.host_cluster = os.environ["GPMCLUSTER"]
+
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
 
     if args.directive.lower() == "queue":
         require(
@@ -398,20 +462,21 @@ if __name__ == "__main__":
         require(args, ["obs_id", "cal_id"])
         observation_calibrator_id(args.obs_id, args.cal_id)
 
-    elif args.directive.lower() == 'ionoupdate':
-        require(args, ['obs_id','ion_path'])
+    elif args.directive.lower() == "iono_update":
+        require(args, ["obs_id", "ion_path"])
         ion_update(args.obs_id, args.ion_path)
-    
-    elif args.directive.lower() == 'addobs':
-        require(args, ['obs_id'])
+
+    elif args.directive.lower() == "import_obs":
+        require(args, ["obs_id"])
         copy_obs_info(args.obs_id)
 
-    elif args.directive.lower() == 'check':
-        require(args, 'obs_id')
-        check_imported_obs_id(args.obs_id)
-    
+    elif args.directive.lower() == "check_obs":
+        require(args, ["obs_id"])
+        found = check_imported_obs_id(args.obs_id)
+        logger.info(f"{args.obs_id=} was {found=}")
+
     else:
         print(
-            "I don't know what you are asking; please include a queue/start/finish/fail directive"
+            f"I don't know what you are asking; please include a directive from {DIRECTIVES}"
         )
 
