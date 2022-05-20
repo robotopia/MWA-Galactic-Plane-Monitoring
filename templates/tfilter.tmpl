@@ -1,0 +1,40 @@
+#! /bin/bash -l
+# Run filtering on the transient HDF5 files
+# Upload the results to the ADACS Nimbus instance
+set -x
+
+pipeuser=PIPEUSER
+obsnum=OBSNUM
+datadir=DATADIR
+
+epoch=$(determine_epoch.py --obsid $obsnum)
+epoch="Epoch"$epoch
+cd $datadir/$epoch/$obsnum/
+
+# TODO: The filtering code is in this github and needs to be installed somewhere:
+# https://github.com/CsanadHorvath/TransientSearch/
+
+# Total placeholder -- we need to decide what filter(s) we want to run
+DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_8_20_filter.fits time_corr_gauss "(8, 1, 1), (20, 1, 1)"
+
+# Almost certainly want to take the max of those results -- but ideally within the script not separately
+# (so we don't have to save a very large and unwieldy intermediate cube)
+# TODO: figure out how to run the time_max command on the data in memory
+DoFilter.py ${obsnum}_8_20_filter.fits ${obsnum}_8_20_max.fits time_max 0
+
+# We may well want to adjust that cut-off
+DoIslanding.py --in ${obsnum}_8_20_max.fits --out ${obsnum}_8_20_max_tab.fits --std --cutoff 3
+
+# Note that this really is a call to the GLEAM-X environment variable, since that's where the sky model is
+GetKnownSources.py ${obsnum}_8_20_max.fits ${obsnum}_8_20_max_knownsrcs.fits ${GXBASE}/models/GGSM.fits
+
+# This puts the cross-match information in the original table
+DoCrossMatching.py --in-fname output_8_20_max_tab.fits --match-fname output_8_20_max_knownsrcs.fits
+
+# Still TODO:
+# Need the filter values at known source positions, regardless of whether they were found in an island
+# (Unbiased estimate of ionospheric activity)
+
+# Make plots
+
+# Upload to Nimbus instance
