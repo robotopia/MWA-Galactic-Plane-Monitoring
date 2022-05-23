@@ -9,7 +9,7 @@ from typing import Iterable, Dict, Any, Optional
 from astropy.time import Time
 from astropy import units as u
 
-import track_task as tt
+import gpm_track as gpmt
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(format="%(module)s:%(lineno)d:%(levelname)s %(message)s")
@@ -70,7 +70,7 @@ def filter_obs_in_db(rlist: Iterable[int], mode: str='notin'):
 
     if mode == 'notin':
 
-        return [obs for obs in rlist if not tt.check_imported_obs_id(obs)]
+        return [obs for obs in rlist if not gpmt.check_imported_obs_id(obs)]
     
     else:
         msg = f"Filter mode not known. Received {mode=}, expected modes in {filter_modes}"
