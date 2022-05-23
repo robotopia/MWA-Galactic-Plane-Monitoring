@@ -29,11 +29,10 @@ DoIslanding.py --in ${obsnum}_8_20_max.fits --out ${obsnum}_8_20_max_tab.fits --
 GetKnownSources.py ${obsnum}_8_20_max.fits ${obsnum}_8_20_max_knownsrcs.fits ${GXBASE}/models/GGSM.fits
 
 # This puts the cross-match information in the original table
-DoCrossMatching.py --in-fname output_8_20_max_tab.fits --match-fname output_8_20_max_knownsrcs.fits
+DoCrossMatching.py --in-fname ${obsnum}_8_20_max_tab.fits --match-fname ${obsnum}_8_20_max_knownsrcs.fits
 
-# Still TODO:
-# Need the filter values at known source positions, regardless of whether they were found in an island
-# (Unbiased estimate of ionospheric activity)
+# This gets the values at locations of known sources
+GetValsAtCoords.py --vals-from ${obsnum}_8_20_max.fits --in_fname ${obsnum}_8_20_max_knownsrcs.fits --out_fname ${obsnum}_8_20_max_knownsrc_vals.fits
 
 # Make plots
 
