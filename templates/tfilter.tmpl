@@ -34,6 +34,11 @@ DoCrossMatching.py --in-fname ${obsnum}_8_20_max_tab.fits --match-fname ${obsnum
 # This gets the values at locations of known sources
 GetValsAtCoords.py --vals-from ${obsnum}_8_20_max.fits --in_fname ${obsnum}_8_20_max_knownsrcs.fits --out_fname ${obsnum}_8_20_max_knownsrc_vals.fits
 
+# TODO: Get all the other invocations that Csanad was planning in order to populate his tables as he expected
+
 # Make plots
+DiagnosticPlots.py --candidates ${obsnum}_8_20_max_tab.fits --observation ${obsnum}_transient.hdf5 --filter ${obsnum}_8_20_max.fits --known ${obsnum}_8_20_max_knownsrcs.fits
 
 # Upload to Nimbus instance
+# TODO: Nick/Paul to provide destination
+# TODO: Tim to incorporate into our environment variables
