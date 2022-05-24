@@ -47,7 +47,7 @@ then
         depend=${dep[3]}
         dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
     done
-    sub="sbatch --begin=now+1h --export=ALL  --time=01:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
+    sub="sbatch --begin=now+24h --export=ALL  --time=01:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
     sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${queue} ${script}.sbatch"
 else
     echo "No further unprocessed data found; will not resubmit ${script}."
