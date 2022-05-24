@@ -36,6 +36,9 @@ then
 
     exit 111
 fi
+
+gpm_track.py obs_status --obs_id ${calid} "calibrated"
+
 # Find all the observations taken within +/-12h of that calibrator
 # That have not yet been processed, as recorded by our database
 obsids=$(gp_monitor_lookup.py --calid $calid)
@@ -44,19 +47,27 @@ if [[ $obsids != "" ]]
 then
     for obs in $obsids
     do
-    # TODO: add the track_gp.py that tells our tracking database that we are now working on this obsid
-        dep=($(obs_manta.sh -p $epoch -o $obs))
-        depend=${dep[3]}
-        dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
-        depend=${dep[3]}
-        dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $calid -z  $obs))
-        depend=${dep[3]}
-        dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
-        depend=${dep[3]}
-        dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obs))
-        depend=${dep[3]}
-        dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
+
+        status=$(gpm_track.py check_obs_status --obs_id "$obs")
+        
+        if [[ "${status}" == "unprocessed" ]]
+        then
+            gpm_track.py obs_status --obs_id "${obs}" "checking"
+
+            dep=($(obs_manta.sh -p $epoch -o $obs))
+            depend=${dep[3]}
+            dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
+            depend=${dep[3]}
+            dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $calid -z  $obs))
+            depend=${dep[3]}
+            dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
+            depend=${dep[3]}
+            dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obs))
+            depend=${dep[3]}
+            dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
+        fi
     done
+    
     sub="sbatch --begin=now+24h --export=ALL  --time=01:00:00 --mem=${GXABSMEMORY}G --output=${output} --error=${error}"
     sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${queue} ${script}.sbatch"
 else
