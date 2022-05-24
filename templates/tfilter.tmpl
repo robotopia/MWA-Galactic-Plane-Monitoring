@@ -15,12 +15,7 @@ cd $datadir/$epoch/$obsnum/
 # https://github.com/CsanadHorvath/TransientSearch/
 
 # Total placeholder -- we need to decide what filter(s) we want to run
-DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_8_20_filter.fits time_corr_gauss "(8, 1, 1), (20, 1, 1)"
-
-# Almost certainly want to take the max of those results -- but ideally within the script not separately
-# (so we don't have to save a very large and unwieldy intermediate cube)
-# TODO: figure out how to run the time_max command on the data in memory
-DoFilter.py ${obsnum}_8_20_filter.fits ${obsnum}_8_20_max.fits time_max 0
+DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_8_20_filter.fits time_corr_gauss "(8, 1, 1), (20, 1, 1)" time_max 0
 
 # We may well want to adjust that cut-off
 DoIslanding.py --in ${obsnum}_8_20_max.fits --out ${obsnum}_8_20_max_tab.fits --std --cutoff 3
