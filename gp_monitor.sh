@@ -27,6 +27,5 @@ then
     depend=${dep[3]}
     dep=($(obs_autocal.sh -d ${depend} -p ${epoch} $obsnum))
     depend=${dep[3]}
-# TODO: template obs_gp_image.sh based on existing skeleton gp_image.sh
-# TODO: run obs_gp_image.sh with the new created dependency, -c $obsid -d $depend
+    obs_gpmonim.sh -d ${depend} -p ${epoch} ${obsnum}
 fi
