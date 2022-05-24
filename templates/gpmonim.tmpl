@@ -19,17 +19,17 @@ epoch=$(determine_epoch.py --obsid $calid)
 epoch="Epoch${epoch}"
 datadir="${datadir}/${epoch}"
 
-cd $datadir || exit 1
+cd "${datadir}" || exit 1
 
 # Test to see if the calibration solution meets minimum quality control. At the moment
 # this is a simple check based on the number of flagged solutions
-SOLUTIONS="${calid}/${calid}solutions_initial_ref.bin"
+solutions="${calid}/${calid}solutions_initial_ref.bin"
 
 # Need to confirm the python script works
-result=$(check_solutions.py -t 0.25 -s 4 "${SOLUTIONS}")
+result=$(check_solutions.py -t 0.25 -s 4 "${solutions}")
 if echo "${result}" | grep -q fail
 then
-    mv "${SOLUTIONS}" "${SOLUTIONS%.bin}_ref_failed.bin"
+    mv "${solutions}" "${solutions%.bin}_ref_failed.bin"
     echo "Calibration solutions file failed checks. Exiting. "
 
     # Email goes here
@@ -49,7 +49,7 @@ then
         depend=${dep[3]}
         dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
         depend=${dep[3]}
-        dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $CALID -z  $obs))
+        dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $calid -z  $obs))
         depend=${dep[3]}
         dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
         depend=${dep[3]}
@@ -62,5 +62,3 @@ then
 else
     echo "No further unprocessed data found; will not resubmit ${script}."
 fi
-
-# TODO the else statement for the calibration quality -- email the user to say that their calibration didn't work
