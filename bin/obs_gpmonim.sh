@@ -113,31 +113,3 @@ fi
 # submit job
 jobid=($(${sub}))
 jobid=${jobid[3]}
-
-echo "Submitted ${script} as ${jobid} . Follow progress here:"
-
-for taskid in $(seq ${numfiles})
-    do
-    # rename the err/output files as we now know the jobid
-    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-
-    if [[ -f ${obsnum} ]]
-    then
-        obs=$(sed -n -e "${taskid}"p "${obsnum}")
-    else
-        obs=$obsnum
-    fi
-
-# Not sure what task we should use considering this spawns a job that submits more tasks
-#    if [ "${GPMTRACK}" = "track" ]
-#    then
-#        # record submission
-#        ${GPMCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='' --submission_time="$(date +%s)" \
-#                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
-#    fi
-
-    echo "$obsoutput"
-    echo "$obserror"
-done
-
