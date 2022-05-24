@@ -35,6 +35,7 @@ if [[ $obsid != ""]]
 then
     for obs in $obsid
     do
+    # TODO: add the track_gp.py that tells our tracking database that we are now working on this obsid
         dep=($(obs_manta.sh -p $epoch -o $obs))
         depend=${dep[3]}
         dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
