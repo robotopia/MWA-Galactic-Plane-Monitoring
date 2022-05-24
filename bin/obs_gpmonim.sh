@@ -11,7 +11,7 @@ echo "obs_gpmonim.sh [-d dep] [-p project] [-a account] [-z] [-t] obsnum
 exit 1;
 }
 
-pipeuser="${GPMUSER}"
+pipeuser="${GXUSER}"
 
 #initial variables
 dep=
@@ -45,9 +45,9 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/$project"
-code="${GPMBASE}"
+queue="-p ${GXSTANDARDQ}"
+base="${GXSCRATCH}/$project"
+code="${GXBASE}"
 
 # if obsid is empty then just print help
 
@@ -66,18 +66,18 @@ then
     fi
 fi
 
-if [[ ! -z ${GPMACCOUNT} ]]
+if [[ ! -z ${GXACCOUNT} ]]
 then
-    account="--account=${GPMACCOUNT}"
+    account="--account=${GXACCOUNT}"
 fi
 
 # start the real program
 
-output="${GPMLOG}/gpmonim_${obsnum}.o%A"
-error="${GPMLOG}/gpmonim_${obsnum}.e%A"
-script="${GPMSCRIPT}/gpmonim_${obsnum}.sh"
+output="${GXLOG}/gpmonim_${obsnum}.o%A"
+error="${GXLOG}/gpmonim_${obsnum}.e%A"
+script="${GXSCRIPT}/gpmonim_${obsnum}.sh"
 
-cat "${GPMBASE}/templates/gpmonim.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
+cat "${GXBASE}/templates/gpmonim.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                  -e "s:BASEDIR:${base}:g" \
                                  -e "s:DEBUG:${debug}:g" \
                                  -e "s:SUBMIT:${script}:g" \
@@ -98,10 +98,10 @@ chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
 echo '#!/bin/bash' > ${script}.sbatch
-echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
+echo "singularity run ${GXCONTAINER} ${script}" >> ${script}.sbatch
 
-sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=${GXABSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
+sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
