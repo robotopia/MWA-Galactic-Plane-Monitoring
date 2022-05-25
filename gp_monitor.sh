@@ -9,20 +9,28 @@
 
 # We might need to source to GLEAM-X and the GPM profiles here if this is
 # a script kicked off from the slurm cron job. Not sure if bash profiles
-# would be executed by the slurm magic
+# would be executed by the slurm magic. These are to ensure the 
+# environment in the slurm cron job is set up correctly. 
+GXPROFILE=
+GPMPROFILE=
 
 
-
-# Manual setup of the python path, meant to be used _within_ the container context
-# as at the moment the GPM python code is not a proper module nor built into the 
-# container
-export PYTHONPATH="$PYTHONPATH:${GPMBASE}"
+for var in GXPROFILE GPMPROFILE 
+do
+    if [[ -f "${!var}" ]]
+    then 
+        source "${!var}"
+    else 
+        echo "Unable to locate the ${var} profile. "
+        echo "${var} currently set to ${!var} "
+        exit 1 
+    fi
+done
 
 # Manual setup
 datadir="${GXSCRATCH}"
 
-# The regular monitoring script that runs every hour to see if a new calibrator has been observed
-
+# Common singularity command to run the python code
 SINGCMD="singularity exec ${GXCONTAINER} "
 
 obsid=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --cal)
