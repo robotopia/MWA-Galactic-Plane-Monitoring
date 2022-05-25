@@ -15,24 +15,61 @@ cd $datadir/$epoch/$obsnum/
 # https://github.com/CsanadHorvath/TransientSearch/
 
 # Total placeholder -- we need to decide what filter(s) we want to run
-DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_8_20_filter.fits time_corr_gauss "(8, 1, 1), (20, 1, 1)" time_max 0
+DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_5_20_filter.fits time_corr_gauss "(5, 1, 1), (20, 1, 1)" time_max 0
 
-# We may well want to adjust that cut-off
-DoIslanding.py --in ${obsnum}_8_20_max.fits --out ${obsnum}_8_20_max_tab.fits --std --cutoff 3
+# This is to get the light curve peak values later
+DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_max.fits time_max 0
 
-# Note that this really is a call to the GLEAM-X environment variable, since that's where the sky model is
-GetKnownSources.py ${obsnum}_8_20_max.fits ${obsnum}_8_20_max_knownsrcs.fits ${GXBASE}/models/GGSM.fits
+# This is to get the known source residuals later
+DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_stdev.fits stdev 0
 
-# This puts the cross-match information in the original table
-DoCrossMatching.py --in-fname ${obsnum}_8_20_max_tab.fits --match-fname ${obsnum}_8_20_max_knownsrcs.fits
+##### Candidate detection #######
 
-# This gets the values at locations of known sources
-GetValsAtCoords.py --vals-from ${obsnum}_8_20_max.fits --in_fname ${obsnum}_8_20_max_knownsrcs.fits --out_fname ${obsnum}_8_20_max_knownsrc_vals.fits
+## We may well want to adjust that cut-off
+DoIslanding.py --in ${obsnum}_5_20_filter.fits --out ${obsnum}_tmp.fits --std --cutoff 10 --peak-name can_det_stat
 
-# TODO: Get all the other invocations that Csanad was planning in order to populate his tables as he expected
+# This gets the value of the primary beam at the locations of the detected candidates
+GetValsAtCoords.py --vals-from beam --vals-name can_beam --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_tmp.fits
+
+# This gets the peaks of the light curves at the locations of the detected candidates
+GetValsAtCoords.py --vals-from ${obsnum}_max.fits --vals-name can_peak_flux --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_tmp.fits
+
+# This gets the standard deviation through the cube at the locations of the detected candidates
+GetValsAtCoords.py --vals-from ${obsnum}_stdev.fits --vals-name can_std --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_5_20_filter_cands.fits
+
+#### Nearest Known Source characterisation ######
+
+## Note that this really is a call to the GLEAM-X environment variable, since that's where the sky model is
+GetKnownSources.py ${obsnum}_5_20_filter.fits ${obsnum}_tmp.fits ${GXBASE}/models/GGSM.fits
+
+# This gets the value of the primary beam at the locations of known sources
+GetValsAtCoords.py --vals-from beam --vals-name beam --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_tmp.fits
+
+# This gets the "residuals" (i.e. stdevs) at locations of known sources (nks_ prepended during xmatch)
+GetValsAtCoords.py --vals-from ${obsnum}_stdev.fits --vals-name res --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_tmp.fits
+
+# This gets the detection statistics at the locations of known sources (nks_ prepended during xmatch)
+GetValsAtCoords.py --vals-from ${obsnum}_5_20_filter.fits --vals-name det_stat --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_5_20_filter_knownsrcs.fits
+
+##### Cross-matching #######
+## This puts the cross-match information in the original table (${obsnum}_5_20_filter_tab.fits)
+DoCrossMatching.py --in-fname ${obsnum}_5_20_filter_cands.fits --match-fname ${obsnum}_5_20_filter_knownsrcs.fits
+
+##### Stats #####
+
+AddStats.py --cands 1202236904_5_20_filter_cands.fits --known 1202236904_5_20_filter_knownsrcs.fits --out 1202236904_5_20_filter_wstats.fits
+
+##### Plotting #####
 
 # Make plots
-DiagnosticPlots.py --candidates ${obsnum}_8_20_max_tab.fits --observation ${obsnum}_transient.hdf5 --filter ${obsnum}_8_20_max.fits --known ${obsnum}_8_20_max_knownsrcs.fits
+# TODO: get this working again
+#DiagnosticPlots.py --candidates ${obsnum}_8_20_max_tab.fits --observation ${obsnum}_transient.hdf5 --filter ${obsnum}_8_20_max.fits --known ${obsnum}_8_20_max_knownsrcs_res.fits
+
+# TODO add my animation code to this
+
+##### CLEAN-UP ######
+
+# TODO remove all the old files used in this process
 
 # Upload to Nimbus instance
 # TODO: Nick/Paul to provide destination
