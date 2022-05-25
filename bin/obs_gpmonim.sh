@@ -47,7 +47,6 @@ obsnum=$1
 
 queue="-p ${GXSTANDARDQ}"
 base="${GXSCRATCH}/$project"
-code="${GXBASE}"
 
 # if obsid is empty then just print help
 
@@ -85,8 +84,8 @@ cat "${GPMBASE}/templates/gpmonim.tmpl" | sed -e "s:CALID:${obsnum}:g" \
 chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
-echo '#!/bin/bash' > ${script}.sbatch
-echo "singularity run ${GXCONTAINER} ${script}" >> ${script}.sbatch
+echo '#!/bin/bash' > "${script}.sbatch"
+echo "singularity run ${GXCONTAINER} ${script}" >> "${script}.sbatch"
 
 sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=${GXABSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
 sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${depend} ${queue} ${script}.sbatch"
@@ -101,3 +100,7 @@ fi
 # submit job
 jobid=($(${sub}))
 jobid=${jobid[3]}
+
+echo "Submitted ${script} as ${jobid}. Follow progress here:"
+echo "${output}"
+echo "${error}"
