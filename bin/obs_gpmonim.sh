@@ -46,12 +46,8 @@ shift  "$(($OPTIND -1))"
 obsnum=$1
 
 queue="-p ${GXSTANDARDQ}"
-<<<<<<< HEAD
 base="${GXSCRATCH}/$project"
 code="${GXBASE}"
-=======
-base="${GPMSCRATCH}/$project"
->>>>>>> 12445eadb09137174ff1c64830f06e2a6144648a
 
 # if obsid is empty then just print help
 
@@ -72,15 +68,11 @@ fi
 
 # start the real program
 
-output="${GXLOG}/gpmonim_${obsnum}.o%A"
-error="${GXLOG}/gpmonim_${obsnum}.e%A"
-script="${GXSCRIPT}/gpmonim_${obsnum}.sh"
+output="${GPMLOG}/gpmonim_${obsnum}.o%A"
+error="${GPMLOG}/gpmonim_${obsnum}.e%A"
+script="${GPMSCRIPT}/gpmonim_${obsnum}.sh"
 
-<<<<<<< HEAD
-cat "${GXBASE}/templates/gpmonim.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-=======
 cat "${GPMBASE}/templates/gpmonim.tmpl" | sed -e "s:CALID:${obsnum}:g" \
->>>>>>> 12445eadb09137174ff1c64830f06e2a6144648a
                                  -e "s:BASEDIR:${base}:g" \
                                  -e "s:DEBUG:${debug}:g" \
                                  -e "s:SUBMIT:${script}:g" \
@@ -93,19 +85,11 @@ cat "${GPMBASE}/templates/gpmonim.tmpl" | sed -e "s:CALID:${obsnum}:g" \
 chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
-<<<<<<< HEAD
 echo '#!/bin/bash' > ${script}.sbatch
 echo "singularity run ${GXCONTAINER} ${script}" >> ${script}.sbatch
 
 sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=${GXABSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
 sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${depend} ${queue} ${script}.sbatch"
-=======
-echo '#!/bin/bash' > "${script}.sbatch"
-echo "singularity run ${GXCONTAINER} ${script}" >> "${script}.sbatch"
-
-sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=${GXBSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GXCPULINE} ${account} ${GXTASKLINE} ${depend} ${queue} ${script}.sbatch"
->>>>>>> 12445eadb09137174ff1c64830f06e2a6144648a
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
