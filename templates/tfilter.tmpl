@@ -1,4 +1,5 @@
 #! /bin/bash -l
+
 # Run filtering on the transient HDF5 files
 # Upload the results to the ADACS Nimbus instance
 set -x
@@ -8,8 +9,9 @@ obsnum=OBSNUM
 datadir=DATADIR
 
 epoch=$(determine_epoch.py --obsid $obsnum)
-epoch="Epoch"$epoch
-cd $datadir/$epoch/$obsnum/
+epoch="Epoch${epoch}"
+
+cd "$datadir/$epoch/$obsnum/" || exit 1
 
 # TODO: The filtering code is in this github and needs to be installed somewhere:
 # https://github.com/CsanadHorvath/TransientSearch/
@@ -40,7 +42,7 @@ GetValsAtCoords.py --vals-from ${obsnum}_stdev.fits --vals-name can_std --in_fna
 #### Nearest Known Source characterisation ######
 
 ## Note that this really is a call to the GLEAM-X environment variable, since that's where the sky model is
-GetKnownSources.py ${obsnum}_5_20_filter.fits ${obsnum}_tmp.fits ${GXBASE}/models/GGSM.fits
+GetKnownSources.py ${obsnum}_5_20_filter.fits ${obsnum}_tmp.fits "${GXBASE}/models/GGSM.fits"
 
 # This gets the value of the primary beam at the locations of known sources
 GetValsAtCoords.py --vals-from beam --vals-name beam --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_tmp.fits
