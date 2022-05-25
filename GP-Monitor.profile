@@ -30,7 +30,7 @@ export SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${GPMBASE}"
 # Manual setup of the python path, meant to be used _within_ the container context
 # as at the moment the GPM python code is not a proper module nor built into the 
 # container
-export PYTHONPATH="$PYTHONPATH:${GPMBASE}"
+export PYTHONPATH="$PYTHONPATH:${GPMBASE}:${GPMBASE}/externals/TransientSearch/"
 
 # Loads a file that contains secrets used throughout the pipeline. These include
 # - GPMDBHOST
