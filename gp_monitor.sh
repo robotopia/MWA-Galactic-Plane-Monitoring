@@ -12,7 +12,10 @@
 # would be executed by the slurm magic
 
 
-# Manual setup:
+
+# Manual setup of the python path, meant to be used _within_ the container context
+# as at the moment the GPM python code is not a proper module nor built into the 
+# container
 export PYTHONPATH="$PYTHONPATH:${GPMBASE}"
 
 # Manual setup
@@ -20,12 +23,13 @@ datadir="${GXSCRATCH}"
 
 # The regular monitoring script that runs every hour to see if a new calibrator has been observed
 
-# TODO: Check that the logging goes to STDERR and doesn't go to STDOUT and get assigned as a variable
-obsid=$(gp_monitor_lookup.py --cal)
+SINGCMD="singularity exec ${GXCONTAINER} "
+
+obsid=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --cal)
 
 if [[ $obsid != "" ]]
 then
-    epoch=$(determine_epoch.py --obsid $obsid)
+    epoch=$(${SINGCMD} "${GPMBASE}/determine_epoch.py" --obsid $obsid)
 
     # Note: output format is: Epoch%03d
     pdir="$datadir/$epoch"
@@ -36,7 +40,7 @@ then
     fi
 
     # TODO: Here we need to add an entry to the database to say that we are looking at this observation
-    STATUS=$(gpm_track.py check_obs_status --obs_id "$obsid")
+    STATUS=$(${SINGCMD} "${GPMBASE}/gpm_track.py" check_obs_status --obs_id "$obsid")
     
     if [[ "${STATUS}" == "unprocessed" ]]
     then
