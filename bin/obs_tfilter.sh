@@ -42,9 +42,8 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/$project"
-code="${GPMBASE}"
+queue="-p ${GXSTANDARDQ}"
+base="${GXSCRATCH}/$project"
 
 # if obsid is empty then just print help
 
@@ -55,27 +54,12 @@ fi
 
 if [[ ! -z ${dep} ]]
 then
-    if [[ -f ${obsnum} ]]
-    then
-        depend="--dependency=aftercorr:${dep}"
-    else
-        depend="--dependency=afterok:${dep}"
-    fi
+    depend="--dependency=afterok:${dep}"
 fi
 
-if [[ ! -z ${GPMACCOUNT} ]]
+if [[ ! -z ${GXACCOUNT} ]]
 then
-    account="--account=${GPMACCOUNT}"
-fi
-
-# Establish job array options
-if [[ -f ${obsnum} ]]
-then
-    numfiles=$(wc -l "${obsnum}" | awk '{print $1}')
-    jobarray="--array=1-${numfiles}"
-else
-    numfiles=1
-    jobarray=''
+    account="--account=${GXACCOUNT}"
 fi
 
 # start the real program
@@ -88,20 +72,14 @@ cat "${GPMBASE}/templates/tfilter.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
 output="${GPMLOG}/tfilter_${obsnum}.o%A"
 error="${GPMLOG}/tfilter_${obsnum}.e%A"
 
-if [[ -f ${obsnum} ]]
-then
-   output="${output}_%a"
-   error="${error}_%a"
-fi
-
 chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
-echo '#!/bin/bash' > ${script}.sbatch
-echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
+echo '#!/bin/bash' > "${script}.sbatch"
+echo "singularity run ${GPMCONTAINER} ${script}" >> "${script}.sbatch"
 
-sub="sbatch --begin=now+5minutes --export=ALL  --time=12:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --begin=now+5minutes --export=ALL  --time=12:00:00 --mem=${GXABSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
+sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
@@ -115,28 +93,5 @@ jobid=($(${sub}))
 jobid=${jobid[3]}
 
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
-
-for taskid in $(seq ${numfiles})
-    do
-    # rename the err/output files as we now know the jobid
-    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-
-    if [[ -f ${obsnum} ]]
-    then
-        obs=$(sed -n -e "${taskid}"p "${obsnum}")
-    else
-        obs=$obsnum
-    fi
-
-    if [ "${GPMTRACK}" = "track" ]
-    then
-        # record submission
-        ${GPMCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='tfilter' --submission_time="$(date +%s)" \
-                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
-    fi
-
-    echo "$obsoutput"
-    echo "$obserror"
-done
-
+echo "${output}"
+echo "${error}"

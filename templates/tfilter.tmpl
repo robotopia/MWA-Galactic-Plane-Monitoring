@@ -1,4 +1,5 @@
 #! /bin/bash -l
+
 # Run filtering on the transient HDF5 files
 # Upload the results to the ADACS Nimbus instance
 set -x
@@ -8,8 +9,9 @@ obsnum=OBSNUM
 datadir=DATADIR
 
 epoch=$(determine_epoch.py --obsid $obsnum)
-epoch="Epoch"$epoch
-cd $datadir/$epoch/$obsnum/
+epoch="Epoch${epoch}"
+
+cd "$datadir/$epoch/$obsnum/" || exit 1
 
 filtercmds=$('time_corr_gauss "(5, 1, 1), (20, 1, 1)" time_max 0' 'time_multi_corr_gauss 0 time_max 0' 'stdev 0')
 filternames=$('tcg_5_20' 'tmcg' 'std') #, 'spike')

@@ -5,7 +5,7 @@
 set -x
 
 pipeuser=PIPEUSER
-obsnum=OBSNUM
+calid=CALID
 datadir=DATADIR
 
 # Retrieving unusual variables so that we can easily resubmit the job to check all the data was processed
@@ -15,43 +15,61 @@ error=ERROR
 account=ACCOUNT
 queue=QUEUE
 
-epoch=$(determine_epoch.py --obsid $obsnum)
-epoch="Epoch"$epoch
-datadir=$datadir/$epoch
-cd $datadir
+epoch=$(determine_epoch.py --obsid $calid)
+epoch="Epoch${epoch}"
+datadir="${datadir}/${epoch}"
 
-# TODO: Insert test of calibration quality here. Only if the calibrator is good enough, proceed to the next step
-cd $obsnum
+cd "${datadir}" || exit 1
 
-# result=$(tim_calibration_quality_check.py)
-# if result...
+# Test to see if the calibration solution meets minimum quality control. At the moment
+# this is a simple check based on the number of flagged solutions
+solutions="${calid}/${calid}solutions_initial_ref.bin"
 
-cd ../
+# Need to confirm the python script works
+result=$(check_solutions.py -t 0.25 -s 4 "${solutions}")
+if echo "${result}" | grep -q fail
+then
+    mv "${solutions}" "${solutions%.bin}_ref_failed.bin"
+    echo "Calibration solutions file failed checks. Exiting. "
+
+    # Email goes here
+
+    exit 111
+fi
+
+gpm_track.py obs_status --obs_id ${calid} "calibrated"
+
 # Find all the observations taken within +/-12h of that calibrator
 # That have not yet been processed, as recorded by our database
-obsid=$(gp_monitor_lookup.py --calid $obsnum)
+obsids=$(gp_monitor_lookup.py --calid $calid)
 
-if [[ $obsid != ""]]
+if [[ $obsids != "" ]]
 then
-    for obs in $obsid
+    for obs in $obsids
     do
-    # TODO: add the track_gp.py that tells our tracking database that we are now working on this obsid
-        dep=($(obs_manta.sh -p $epoch -o $obs))
-        depend=${dep[3]}
-        dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
-        depend=${dep[3]}
-        dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $CALID -z  $obs))
-        depend=${dep[3]}
-        dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
-        depend=${dep[3]}
-        dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obs))
-        depend=${dep[3]}
-        dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
+
+        status=$(gpm_track.py check_obs_status --obs_id "$obs")
+        
+        if [[ "${status}" == "unprocessed" ]]
+        then
+            gpm_track.py obs_status --obs_id "${obs}" "checking"
+
+            dep=($(obs_manta.sh -p $epoch -o $obs))
+            depend=${dep[3]}
+            dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
+            depend=${dep[3]}
+            dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $calid -z  $obs))
+            depend=${dep[3]}
+            dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
+            depend=${dep[3]}
+            dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obs))
+            depend=${dep[3]}
+            dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
+        fi
     done
-    sub="sbatch --begin=now+24h --export=ALL  --time=01:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
-    sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${queue} ${script}.sbatch"
+    
+    sub="sbatch --begin=now+24h --export=ALL  --time=01:00:00 --mem=${GXABSMEMORY}G --output=${output} --error=${error}"
+    sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${queue} ${script}.sbatch"
 else
     echo "No further unprocessed data found; will not resubmit ${script}."
 fi
-
-# TODO the else statement for the calibration quality -- email the user to say that their calibration didn't work

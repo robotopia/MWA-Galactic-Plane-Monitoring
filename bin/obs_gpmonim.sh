@@ -11,7 +11,7 @@ echo "obs_gpmonim.sh [-d dep] [-p project] [-a account] [-z] [-t] obsnum
 exit 1;
 }
 
-pipeuser="${GPMUSER}"
+pipeuser="${GXUSER}"
 
 #initial variables
 dep=
@@ -45,9 +45,8 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/$project"
-code="${GPMBASE}"
+queue="-p ${GXSTANDARDQ}"
+base="${GXSCRATCH}/$project"
 
 # if obsid is empty then just print help
 
@@ -58,17 +57,12 @@ fi
 
 if [[ ! -z ${dep} ]]
 then
-    if [[ -f ${obsnum} ]]
-    then
-        depend="--dependency=aftercorr:${dep}"
-    else
-        depend="--dependency=afterok:${dep}"
-    fi
+    depend="--dependency=afterok:${dep}"
 fi
 
-if [[ ! -z ${GPMACCOUNT} ]]
+if [[ ! -z ${GXACCOUNT} ]]
 then
-    account="--account=${GPMACCOUNT}"
+    account="--account=${GXACCOUNT}"
 fi
 
 # start the real program
@@ -77,7 +71,7 @@ output="${GPMLOG}/gpmonim_${obsnum}.o%A"
 error="${GPMLOG}/gpmonim_${obsnum}.e%A"
 script="${GPMSCRIPT}/gpmonim_${obsnum}.sh"
 
-cat "${GPMBASE}/templates/gpmonim.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
+cat "${GPMBASE}/templates/gpmonim.tmpl" | sed -e "s:CALID:${obsnum}:g" \
                                  -e "s:BASEDIR:${base}:g" \
                                  -e "s:DEBUG:${debug}:g" \
                                  -e "s:SUBMIT:${script}:g" \
@@ -87,21 +81,14 @@ cat "${GPMBASE}/templates/gpmonim.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                  -e "s:ACCOUNT:${account}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
-
-if [[ -f ${obsnum} ]]
-then
-   output="${output}_%a"
-   error="${error}_%a"
-fi
-
 chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
-echo '#!/bin/bash' > ${script}.sbatch
-echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
+echo '#!/bin/bash' > "${script}.sbatch"
+echo "singularity run ${GXCONTAINER} ${script}" >> "${script}.sbatch"
 
-sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=${GXABSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
+sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
@@ -113,3 +100,7 @@ fi
 # submit job
 jobid=($(${sub}))
 jobid=${jobid[3]}
+
+echo "Submitted ${script} as ${jobid}. Follow progress here:"
+echo "${output}"
+echo "${error}"
