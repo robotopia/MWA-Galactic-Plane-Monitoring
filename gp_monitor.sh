@@ -23,7 +23,7 @@ do
     else 
         echo "Unable to locate the ${var} profile. "
         echo "${var} currently set to ${!var} "
-        exit 1 
+        return 1 
     fi
 done
 
