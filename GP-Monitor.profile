@@ -19,7 +19,7 @@ export GPMBASE="/astro/mwasci/${GPMUSER}/MWA-Galactic-Plane-Monitoring/"
 export GPMLOG="${GPMBASE}/logs"
 
 # The locaiton where generated scripts submitted to slurm will be placed for GPM tasks
-export GPMSCRIPT="${GPMSCRIPT}/scripts"
+export GPMSCRIPT="${GPMBASE}/scripts"
 
 # Making sure the path for tasks are available 
 export PATH="${PATH}:${GPMBASE}/bin"
