@@ -5,7 +5,7 @@ echo "Loading the glactic plane monitoring pipeline"
 if [[ -z $GXBASE ]]
 then 
     echo "The GXBASE variable is not available, implying the GLEAM-X pipeline is not available. Exiting. "
-    exit 1
+    return 1
 fi
 
 # Who is running the pipeline, used below for base install
