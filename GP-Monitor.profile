@@ -45,7 +45,7 @@ then
     source "$GPMSECRETS"
 else
     echo "GPMSECRETS is not found or not set correctly. I think it should be. "
-    exit 1
+    return 1
 fi
 
 # Creates directories as needed below for the mandatory paths if they do not exist
