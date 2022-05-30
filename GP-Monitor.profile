@@ -8,6 +8,8 @@ then
     return 1
 fi
 
+export GXTRACK='no'
+
 # Who is running the pipeline, used below for base install
 GPMUSER=$(whoami)
 export GPMUSER  
