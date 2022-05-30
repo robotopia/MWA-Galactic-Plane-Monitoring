@@ -13,7 +13,7 @@ GPMUSER=$(whoami)
 export GPMUSER  
 
 # The location of where the GP-Monitoring pipeline is installed
-export GPMBASE="/astro/mwasci/${GPMUSER}/MWA-Galactic-Plane-Monitoring/"  
+export GPMBASE="/astro/mwasci/${GPMUSER}/MWA-Galactic-Plane-Monitoring"  
 
 # The location where slurm log files will be saved for GPM tasks
 export GPMLOG="${GPMBASE}/logs"
