@@ -15,8 +15,7 @@ error=ERROR
 account=ACCOUNT
 queue=QUEUE
 
-epoch=$(determine_epoch.py --obsid $calid)
-epoch="Epoch${epoch}"
+epoch=Epoch$(determine_epoch.py --obsid $calid)
 datadir="${datadir}/${epoch}"
 
 cd "${datadir}" || exit 1
@@ -25,8 +24,11 @@ cd "${datadir}" || exit 1
 # this is a simple check based on the number of flagged solutions
 solutions="${calid}/${calid}solutions_initial_ref.bin"
 
+# Common singularity command to run the python code
+SINGCMD="singularity exec ${GXCONTAINER} "
+
 # Need to confirm the python script works
-result=$(check_solutions.py -t 0.25 -s 4 "${solutions}")
+result=$(${SINGCMD} "${GPMBASE}/check_solutions.py" -t 0.25 -s 4 "${solutions}")
 if echo "${result}" | grep -q fail
 then
     mv "${solutions}" "${solutions%.bin}_ref_failed.bin"
@@ -37,24 +39,26 @@ then
     exit 111
 fi
 
-gpm_track.py obs_status --obs_id ${calid} "calibrated"
+${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id ${calid} "calibrated"
 
 # Find all the observations taken within +/-12h of that calibrator
 # That have not yet been processed, as recorded by our database
-obsids=$(gp_monitor_lookup.py --calid $calid)
+obsids=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --calid $calid)
 
 if [[ $obsids != "" ]]
 then
     for obs in $obsids
     do
 
-        status=$(gpm_track.py check_obs_status --obs_id "$obs")
+        status=$(${SINGCMD} ${GPMBASE}/gpm_track.py check_obs_status --obs_id "$obs")
         
         if [[ "${status}" == "unprocessed" ]]
         then
-            gpm_track.py obs_status --obs_id "${obs}" "checking"
+            ${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id "${obs}" "checking"
 
-            dep=($(obs_manta.sh -p $epoch -o $obs))
+            echo "${obs}" > "${obs}_obsid.txt"
+
+            dep=($(obs_manta.sh -p $epoch -o "${obs}_obsid.txt"))
             depend=${dep[3]}
             dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
             depend=${dep[3]}
