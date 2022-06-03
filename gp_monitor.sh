@@ -37,7 +37,7 @@ obsid=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --cal)
 
 if [[ $obsid != "" ]]
 then
-    epoch=$(${SINGCMD} "${GPMBASE}/determine_epoch.py" --obsid $obsid)
+    epoch=Epoch$(${SINGCMD} "${GPMBASE}/determine_epoch.py" --obsid $obsid)
 
     # Note: output format is: Epoch%03d
     pdir="$datadir/$epoch"
@@ -47,12 +47,17 @@ then
         mkdir "${pdir}"
     fi
 
-    # TODO: Here we need to add an entry to the database to say that we are looking at this observation
+    ${SINGCMD} "${GPMBASE}/gpm_track.py" import_obs --obs_id "$obsid"
     STATUS=$(${SINGCMD} "${GPMBASE}/gpm_track.py" check_obs_status --obs_id "$obsid")
     
     if [[ "${STATUS}" == "unprocessed" ]]
     then
-        dep=($(obs_manta.sh -p "${epoch}" -o "${obsid}"))
+
+        ${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id "$obsid" --status checking
+
+        echo "${obsid}" > "${pdir}/calid.txt"
+
+        dep=($(obs_manta.sh -p "${epoch}" -o "${pdir}/calid.txt"))
         depend=${dep[3]}
         dep=($(obs_autoflag.sh -d ${depend} -p "${epoch}" "${obsid}"))
         depend=${dep[3]}
