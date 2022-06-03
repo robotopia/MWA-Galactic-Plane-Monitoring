@@ -8,6 +8,12 @@ pipeuser=PIPEUSER
 obsnum=OBSNUM
 datadir=DATADIR
 
+# NOTE: The current GPM Profile script will set up the PYTHONPATH
+# to search the GPMBASE folder and the Csanda's transient filter
+# code which is installed in the externals folder. For this reason
+# so long as the script names are unique they should be found and
+# executed without issue. 
+
 epoch=$(determine_epoch.py --obsid $obsnum)
 epoch="Epoch${epoch}"
 
@@ -28,7 +34,7 @@ DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_stdev.fits stdev 0
 DoFilter.py ${obsnum}_transient.hdf5 ${obsnum}_mean.fits mean 0
 
 # This gives us a way to test what the ionospheric distortions typically look like, later
-GetKnownSources.py ${obsnum}_mean.fits ${obsnum}_tmp.fits ${GXBASE}/models/GGSM.fits
+GetKnownSources.py ${obsnum}_mean.fits ${obsnum}_tmp.fits "${GXBASE}/models/GGSM.fits"
 
 # This gets the value of the primary beam at the locations of known sources
 GetValsAtCoords.py --vals-from beam --vals-name beam --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_known.fits
