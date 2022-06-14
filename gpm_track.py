@@ -298,13 +298,21 @@ def check_observation_status(obs_id):
 
     res = cur.fetchall()
 
+    conn.close()
+
     if len(res) > 1:
         raise ValueError(f"More than a single observation for {obs_id=} found. This should not happen.")
-
+    elif len(res) == 0:
+        logger.debug(f"No records returned for {obs_id=}")
+        return 'notimported'
+    else:
+        return res[0][0]
     # Putting to standard out to ensure the output may be captured 
     print(res[0][0])
 
     conn.close()
+
+    return res[0][0]
 
 def observation_calibrator_id(obs_id, cal_id):
     """A general update function that will modify a spectied key value for a specific observation ID
@@ -487,7 +495,10 @@ if __name__ == "__main__":
 
     elif args.directive.lower() == "check_obs_status":
         require(args, ["obs_id",])
-        check_observation_status(args.obs_id)
+        status = check_observation_status(args.obs_id)
+        
+        # putting to stdout to ensure capture by bash
+        print(status)
 
     elif args.directive.lower() == "obs_calibrator":
         require(args, ["obs_id", "cal_id"])
