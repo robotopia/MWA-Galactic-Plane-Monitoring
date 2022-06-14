@@ -16,6 +16,7 @@ logging.basicConfig(format="%(module)s:%(lineno)d:%(levelname)s %(message)s")
 logger.setLevel(logging.INFO)
 
 BASEURL = "http://ws.mwatelescope.org/"
+OBS_STATUS = gpmt.OBS_STATUS
 
 def getmeta(servicetype: str='metadata', service: str='obs', params: Dict[Any, Any]=None) -> Dict[Any, Any]:
     """Given a JSON web servicetype ('observation' or 'metadata'), a service name (eg 'obs', find, or 'con')
@@ -49,16 +50,15 @@ def getmeta(servicetype: str='metadata', service: str='obs', params: Dict[Any, A
     # Return the result dictionary
     return result
 
-def filter_obs_in_db(rlist: Iterable[int], mode: str='notin'):
+def filter_obs_in_db(rlist: Iterable[int], mode: str='notin', allowed_status: Optional[str]=None):
     """Stub function to filter obsids based on whether they are in thhe GP monitor database. 
     The default behaviour is only to return obsids if they are NOT in the database, but this
     may be expanded as the use case changes
 
     Args:
         rlist (Iterable[int]): Collection of obsids to check against the database
-
-    Keyword Args:
-        mode (str): The filter mode to apply to the set of provided obsids
+        mode (str, optional): The filter mode to apply to the set of provided obsids. Defaults to 'notin'. 
+        allowed_stats (str, optional): Allow an obsid already loaded in the database to be returned if its recorded status matches to this value. If None, this argument is ignored. Defaults to None. 
 
     Returns:
         Iterable[int]: Set of obsids not in the database
@@ -69,9 +69,21 @@ def filter_obs_in_db(rlist: Iterable[int], mode: str='notin'):
     filter_modes = ('notin', )
 
     if mode == 'notin':
+        present_lambda = lambda obs: not gpmt.check_imported_obs_id(obs)
+        
+        if allowed_status is None:
+            check_lambda = present_lambda
+        else:
+            logger.debug(f"Building obsid list where {allowed_status=}")
+            check_lambda = lambda obs: gpmt.check_observation_status(obs) == allowed_status
+            
+            if logger.level == logging.DEBUG:
+                logger.debug("Printing explicit observation status (through many separate calls to database)")
+                for obs in rlist:
+                    logger.debug(f"{gpmt.check_observation_status(obs)=} {obs=}")
 
-        return [obs for obs in rlist if not gpmt.check_imported_obs_id(obs)]
-    
+        return [obs for obs in rlist if check_lambda(obs)]
+        
     else:
         msg = f"Filter mode not known. Received {mode=}, expected modes in {filter_modes}"
         logger.error(msg)
@@ -83,7 +95,8 @@ def do_lookup(
     project: str, 
     cal: int, 
     calsrc: int,
-    check_in_db: bool=True
+    check_in_db: bool=True,
+    allowed_status: Optional[str]=None
 ) -> Iterable[int]:
     """Obtain a list of obsids to process based on criteria required throughout processing
 
@@ -94,7 +107,8 @@ def do_lookup(
         cal (int): Search only for calibration sources (1 for True, 0 for False, passed to webservice)
         calsrc (int): Obsid of calibration data to search for obsids around
         check_in_db (bool, optional): Confirm that these data have not been processed by the GP monitor database. Defaults to True.
-
+        allowed_stats (str, optional): Allow an obsid already loaded in the database to be returned if its recorded status matches to this value. If None, this argument is ignored. Defaults to None. 
+    
     Returns:
         Iterable[int]: set of obsids to process
     """
@@ -133,7 +147,11 @@ def do_lookup(
     # ignore sources not already processed
     if check_in_db:
         logger.debug(f"Checking {rlist=}")
-        rlist = filter_obs_in_db(rlist, mode='notin')
+        rlist = filter_obs_in_db(
+            rlist, 
+            mode='notin', 
+            allowed_status=allowed_status
+        )
     
     logger.debug(f"Returning {rlist=}")
     return rlist
@@ -155,6 +173,12 @@ if __name__ == "__main__":
                         help="Look for data surrounding a particular calibrator (overrides other search options)")                  
     parser.add_argument("--output", dest='output', type=str, default=None,
                         help="Output text file for search args (default = '<project>_<startdate>-<stopdate>_search.txt' (colons will be stripped)")
+    parser.add_argument(
+        '--allowed-status',
+        default=None,
+        choices=OBS_STATUS,
+        help='If an obsid is already imported into the observation table, but its recorded status matches this option, consider it as one that needs to processed and do not filter it out. '
+    )
     parser.add_argument(
         '--skip-db-check', 
         default=False,
@@ -199,7 +223,8 @@ if __name__ == "__main__":
         args.project, 
         cal, 
         args.calsrc,
-        check_in_db=not args.skip_db_check
+        check_in_db=not args.skip_db_check,
+        allowed_status=args.allowed_status
     )
     if rlist is False:
         logger.error(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
