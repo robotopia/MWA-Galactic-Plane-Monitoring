@@ -22,16 +22,16 @@ cd "${datadir}" || exit 1
 
 # Test to see if the calibration solution meets minimum quality control. At the moment
 # this is a simple check based on the number of flagged solutions
-solutions="${calid}/${calid}solutions_initial_ref.bin"
+solutions="${calid}/${calid}_local_gleam_model_solutions_initial_ref.bin"
 
 # Common singularity command to run the python code
 SINGCMD="singularity exec ${GXCONTAINER} "
 
 # Need to confirm the python script works
-result=$(${SINGCMD} "${GPMBASE}/check_solutions.py" -t 0.25 -s 4 "${solutions}")
+result=$(${SINGCMD} "${GPMBASE}/check_solutions.py" -t 0.5 -s 4 "${solutions}")
 if echo "${result}" | grep -q fail
 then
-    mv "${solutions}" "${solutions%.bin}_ref_failed.bin"
+    mv "${solutions}" "${solutions%.bin}_failed.bin"
     echo "Calibration solutions file failed checks. Exiting. "
 
     # Email goes here
@@ -39,7 +39,7 @@ then
     exit 111
 fi
 
-${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id ${calid} "calibrated"
+${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id ${calid} --status "calibrated"
 
 # Find all the observations taken within +/-12h of that calibrator
 # That have not yet been processed, as recorded by our database
