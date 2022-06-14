@@ -74,7 +74,7 @@ script="${GPMSCRIPT}/gpmonim_${obsnum}.sh"
 cat "${GPMBASE}/templates/gpmonim.tmpl" | sed -e "s:CALID:${obsnum}:g" \
                                  -e "s:BASEDIR:${base}:g" \
                                  -e "s:DEBUG:${debug}:g" \
-                                 -e "s:SUBMIT:${script}:g" \
+                                 -e "s:SCRIPT:${script}:g" \
                                  -e "s:ERROR:${error}:g" \
                                  -e "s:OUTPUT:${output}:g" \
                                  -e "s:QUEUE:${queue}:g" \

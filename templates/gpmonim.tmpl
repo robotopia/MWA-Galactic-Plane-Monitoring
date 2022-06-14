@@ -6,17 +6,17 @@ set -x
 
 pipeuser=PIPEUSER
 calid=CALID
-datadir=DATADIR
+datadir=BASEDIR
 
 # Retrieving unusual variables so that we can easily resubmit the job to check all the data was processed
 script=SCRIPT
 output=OUTPUT
 error=ERROR
 account=ACCOUNT
-queue=QUEUE
+queue='QUEUE'
 
-epoch=Epoch$(determine_epoch.py --obsid $calid)
-datadir="${datadir}/${epoch}"
+#epoch=Epoch$(determine_epoch.py --obsid $calid)
+#datadir="${datadir}/${epoch}"
 
 cd "${datadir}" || exit 1
 
