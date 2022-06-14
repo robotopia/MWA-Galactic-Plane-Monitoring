@@ -75,7 +75,7 @@ def filter_obs_in_db(rlist: Iterable[int], mode: str='notin', allowed_status: Op
             check_lambda = present_lambda
         else:
             logger.debug(f"Building obsid list where {allowed_status=}")
-            check_lambda = lambda obs: gpmt.check_observation_status(obs) == allowed_status
+            check_lambda = lambda obs: gpmt.check_observation_status(obs) in (allowed_status, 'notimported')
             
             if logger.level == logging.DEBUG:
                 logger.debug("Printing explicit observation status (through many separate calls to database)")
