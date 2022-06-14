@@ -25,10 +25,10 @@ export GPMSCRIPT="${GPMBASE}/scripts"
 
 # These are to see the mwa-asvo copy queue business in obs_mantra to use garrawarla 
 # as the longer running copy queue
-export GXCOPYA=''             # Account to submit obs_manta.sh job under, if time accounting is being performed by SLURM.
+unset GXCOPYA             # Account to submit obs_manta.sh job under, if time accounting is being performed by SLURM.
                             # Leave this empty if the job is to be submitted as the user and there is no time accounting.
-export GXCOPYQ=''      # A required parameter directing the job to a particular queue on $GXCOPYM. Set as just the queue name, e.g. 'copyq'
-export GXCOPYM=''       # A required parameter directing the job to be submitted to a particular machine. Set as just the machine name, e.g. 'zeus'
+export GXCOPYQ='workq'      # A required parameter directing the job to a particular queue on $GXCOPYM. Set as just the queue name, e.g. 'copyq'
+export GXCOPYM='garrawarla'       # A required parameter directing the job to be submitted to a particular machine. Set as just the machine name, e.g. 'zeus'
 
 # Making sure the path for tasks are available 
 export PATH="${PATH}:${GPMBASE}/bin"
