@@ -44,7 +44,7 @@ ${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id ${calid} --status "cali
 
 # Find all the observations taken within +/-12h of that calibrator
 # That have not yet been processed, as recorded by our database
-obsids=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --calid $calid)
+obsids=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --calid $calid --allowed-status unprocessed)
 
 if [[ $obsids != "" ]]
 then
