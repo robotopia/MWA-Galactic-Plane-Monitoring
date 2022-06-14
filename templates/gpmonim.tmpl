@@ -50,6 +50,8 @@ then
     for obs in $obsids
     do
 
+        ${SINGCMD} "${GPMBASE}/gpm_track.py" import_obs --obs_id "$obs"
+
         status=$(${SINGCMD} ${GPMBASE}/gpm_track.py check_obs_status --obs_id "$obs")
         
         if [[ "${status}" == "unprocessed" ]]
