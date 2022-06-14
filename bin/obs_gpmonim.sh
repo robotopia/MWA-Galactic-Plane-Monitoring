@@ -98,9 +98,12 @@ then
 fi
     
 # submit job
-jobid=($(${sub}))
-jobid=${jobid[3]}
+jobids=($(${sub}))
+jobid=${jobids[3]}
 
-echo "Submitted ${script} as ${jobid}. Follow progress here:"
+output=${output//%A/"${jobid}"}
+error=${error//%A/"${jobid}"}
+
+echo "Submitted ${script} as ${jobid} . Follow progress here:"
 echo "${output}"
 echo "${error}"
