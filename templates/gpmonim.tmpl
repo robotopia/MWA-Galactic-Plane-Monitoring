@@ -15,7 +15,10 @@ error=ERROR
 account=ACCOUNT
 queue='QUEUE'
 
-#epoch=Epoch$(determine_epoch.py --obsid $calid)
+# Common singularity command to run the python code
+SINGCMD="singularity exec ${GXCONTAINER} "
+
+epoch=Epoch$(${SINGCMD} "${GPMBASE}/determine_epoch.py" --obsid $calid)
 #datadir="${datadir}/${epoch}"
 
 cd "${datadir}" || exit 1
@@ -24,8 +27,6 @@ cd "${datadir}" || exit 1
 # this is a simple check based on the number of flagged solutions
 solutions="${calid}/${calid}_local_gleam_model_solutions_initial_ref.bin"
 
-# Common singularity command to run the python code
-SINGCMD="singularity exec ${GXCONTAINER} "
 
 # Need to confirm the python script works
 result=$(${SINGCMD} "${GPMBASE}/check_solutions.py" -t 0.5 -s 4 "${solutions}")
@@ -56,7 +57,7 @@ then
         
         if [[ "${status}" == "unprocessed" ]]
         then
-            ${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id "${obs}" "checking"
+            ${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id "${obs}" --status "checking"
 
             echo "${obs}" > "${obs}_obsid.txt"
 
