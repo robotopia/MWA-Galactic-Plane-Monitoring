@@ -87,8 +87,8 @@ chmod 755 "${script}"
 echo '#!/bin/bash' > "${script}.sbatch"
 echo "singularity run ${GXCONTAINER} ${script}" >> "${script}.sbatch"
 
-sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=${GXABSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --begin=now+1minutes --export=ALL  --time=01:00:00 --mem=3G -M ${GXCOMPUTER} --output=${output} --error=${error}"
+sub="${sub} --cores=1 --ntasks-per-node=1 ${account} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
