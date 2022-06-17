@@ -61,7 +61,7 @@ then
         depend=${dep[3]}
         dep=($(obs_autoflag.sh -d ${depend} -p "${epoch}" "${obsid}"))
         depend=${dep[3]}
-        dep=($(obs_autocal.sh -d ${depend} -p "${epoch}" "${obsid}"))
+        dep=($(obs_autocal.sh -d ${depend} -p "${epoch}" -f 0.5 "${obsid}"))
         depend=${dep[3]}
         obs_gpmonim.sh -d ${depend} -p "${epoch}" "${obsid}"
     
