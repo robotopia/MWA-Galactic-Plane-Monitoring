@@ -144,8 +144,7 @@ def do_lookup(
                 logger.debug(f"Data ready {obs_id=} appending")
                 rlist.append(obs_id)
             else:
-                logger.debug(f"Data for {obs_id=} is not ready for download. Not appending. ")
-
+                logger.debug(f"Data for {obs_id=} is not ready")
         
     # ignore sources not already processed
     if check_in_db:
