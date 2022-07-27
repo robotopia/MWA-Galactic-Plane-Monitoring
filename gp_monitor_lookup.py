@@ -130,7 +130,7 @@ def do_lookup(
     if cent_chan is not None:
         # assert cent_chan in CENTCHAN, f"{cent_chan=} is not in {CENTCHAN=} allowed values"
         
-        logger.debug(f"Adding {cent_chan=} to cenchan metadata params")
+        logger.debug(f"Adding {int(cent_chan)=} to cenchan metadata params")
         meta_params['cenchan'] = int(cent_chan)
 
     olist = getmeta(
