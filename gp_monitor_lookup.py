@@ -17,6 +17,7 @@ logger.setLevel(logging.INFO)
 
 BASEURL = "http://ws.mwatelescope.org/"
 OBS_STATUS = gpmt.OBS_STATUS
+# CENTCHAN = (157, )
 
 def getmeta(servicetype: str='metadata', service: str='obs', params: Dict[Any, Any]=None) -> Dict[Any, Any]:
     """Given a JSON web servicetype ('observation' or 'metadata'), a service name (eg 'obs', find, or 'con')
@@ -96,7 +97,8 @@ def do_lookup(
     cal: int, 
     calsrc: int,
     check_in_db: bool=True,
-    allowed_status: Optional[str]=None
+    allowed_status: Optional[str]=None,
+    cent_chan: Optional[int]=None
 ) -> Iterable[int]:
     """Obtain a list of obsids to process based on criteria required throughout processing
 
@@ -108,22 +110,32 @@ def do_lookup(
         calsrc (int): Obsid of calibration data to search for obsids around
         check_in_db (bool, optional): Confirm that these data have not been processed by the GP monitor database. Defaults to True.
         allowed_stats (str, optional): Allow an obsid already loaded in the database to be returned if its recorded status matches to this value. If None, this argument is ignored. Defaults to None. 
-    
+        cent_chan (int, optional): Only return the calibrator scans at the specified central frequecy. If None no specification is required. Defaults to None.
+
     Returns:
         Iterable[int]: set of obsids to process
     """
     rlist = []
     
-    olist = getmeta(
-        service='find', 
-        params={
+    # Available options are described at
+    # https://wiki.mwatelescope.org/display/MP/Observation+metadata+web+services
+    meta_params = {
             'mintime':int(start.gps), 
             'maxtime':int(stop.gps), 
             'projectid': project, 
             'calibration': cal, 
             'dict': 1, 
             'nocache': 1
-        }
+    }
+    if cent_chan is not None:
+        # assert cent_chan in CENTCHAN, f"{cent_chan=} is not in {CENTCHAN=} allowed values"
+        
+        logger.debug(f"Adding {cent_chan=} to cenchan metadata params")
+        meta_params['cenchan'] = int(cent_chan)
+
+    olist = getmeta(
+        service='find', 
+        params=meta_params
     )
 
     if olist is not None:
@@ -194,6 +206,12 @@ if __name__ == "__main__":
         action='store_true',
         help='Enable debug logging'
     )
+    parser.add_argument(
+        '--cent-chan',
+        default=None,
+        type=int,
+        help=f"Limit search to the specified central channel. "
+    )
     
     args = parser.parse_args()
 
@@ -226,7 +244,8 @@ if __name__ == "__main__":
         cal, 
         args.calsrc,
         check_in_db=not args.skip_db_check,
-        allowed_status=args.allowed_status
+        allowed_status=args.allowed_status,
+        cent_chan=args.cent_chan
     )
     if rlist is False:
         logger.error(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
