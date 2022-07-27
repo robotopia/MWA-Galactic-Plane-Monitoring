@@ -232,6 +232,9 @@ if __name__ == "__main__":
         gpstime = Time(args.calid, format="gps")
         start = gpstime - 12*u.hour
         stop = gpstime + 12*u.hour
+# Tim, here we need to say, if the calibrator has been specified, then set the requested channel
+# To whatever the channel of the calibrator is
+        
 
     if args.cal is True:
         cal = 1
