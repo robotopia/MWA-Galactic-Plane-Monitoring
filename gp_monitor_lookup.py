@@ -95,7 +95,7 @@ def do_lookup(
     stop: Time, 
     project: str, 
     cal: int, 
-    calsrc: int,
+    calsrc: str,
     check_in_db: bool=True,
     allowed_status: Optional[str]=None,
     cent_chan: Optional[int]=None
