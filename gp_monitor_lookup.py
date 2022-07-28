@@ -128,8 +128,6 @@ def do_lookup(
             'nocache': 1
     }
     if cent_chan is not None:
-        # assert cent_chan in CENTCHAN, f"{cent_chan=} is not in {CENTCHAN=} allowed values"
-        
         logger.debug(f"Adding {int(cent_chan)=} to cenchan metadata params")
         meta_params['cenchan'] = int(cent_chan)
 
@@ -232,10 +230,16 @@ if __name__ == "__main__":
         gpstime = Time(args.calid, format="gps")
         start = gpstime - 12*u.hour
         stop = gpstime + 12*u.hour
-# Tim, here we need to say, if the calibrator has been specified, then set the requested channel
-# To whatever the channel of the calibrator is
-        
 
+        # Looking up the cent_chan to force a common centchan
+        oinfo = getmeta(service='obs', params={'obs_id':args.calid})
+        logger.debug(f"Calid frequencies lookup {oinfo['rfstreams']['0']['frequencies']=}")
+        
+        cal_freq  =oinfo['rfstreams']['0']['frequencies'][12]
+        logger.info(f"Setting frequency to {cal_freq}")
+        args.cent_chan = cal_freq
+
+        
     if args.cal is True:
         cal = 1
     else:
@@ -250,6 +254,7 @@ if __name__ == "__main__":
         allowed_status=args.allowed_status,
         cent_chan=args.cent_chan
     )
+
     if rlist is False:
         logger.error(f"Failed to find any matching observations within {start} -- {stop} (UTC)")
     else:
