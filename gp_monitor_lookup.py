@@ -177,7 +177,7 @@ if __name__ == "__main__":
                         help="stop UTC date-time for search (format: 'YYYY-MM-DD HH:MM:SS' ; default = now)")
     parser.add_argument("--project", dest='project', type=str, default='G0080',
                         help="MWA observing project (default = G0080)")
-    parser.add_argument("--preferred calibrator", dest='calsrc', type=str, default='HerA',
+    parser.add_argument("--calsrc", dest='calsrc', type=str, default='HerA',
                         help="Preferred calibrator (default = HerA; options=HerA, J063633-204225, J121834-101851, J153150+240244")
     parser.add_argument("--cal", dest='cal', action="store_true", default=False,
                         help="only look for calibrator observations (will only return most recent)")
