@@ -15,7 +15,7 @@ def epoch(obsid=None):
         now = Time(obsid, format="gps")
         diff = now - epoch0
 # Y2k is 2032
-    return(f"{int(diff.value):03d}")
+    return(f"{int(diff.value):04d}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
