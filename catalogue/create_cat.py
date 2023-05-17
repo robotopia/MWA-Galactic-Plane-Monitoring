@@ -10,7 +10,7 @@ tab = Table(fits.open('all_epochs_comp.fits')[1].data)
 coords = SkyCoord(tab['lon'], tab['lat'], frame='galactic', unit=(u.deg, u.deg))
 ra, dec = coords.fk5.ra.value, coords.fk5.dec.value
 
-strcoords = coords.fk5.to_string('hmsdms', sep=':', precision=0)
+strcoords = coords.fk5.to_string('hmsdms', sep='', precision=0)
 Names = ["GPM J{0}".format(sc.replace(' ', '')) for sc in strcoords]
 
 outtable = Table()
