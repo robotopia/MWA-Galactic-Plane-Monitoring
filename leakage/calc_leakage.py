@@ -27,6 +27,9 @@ def func(xy, a, b, c, d, e, f):
     return a + b*x + c*y + d*x**2 + e*y**2 + f*x*y
 
 def make_plots(Inonpb, Ipb, Vpb, nsigma=20):
+
+    obsid = Inonpb[0:10]
+
     img_I_npb = np.squeeze(fits.open(Inonpb)[0].data)
     img_I = np.squeeze(fits.open(Ipb)[0].data)
     img_V = np.squeeze(fits.open(Vpb)[0].data)
@@ -75,7 +78,7 @@ def make_plots(Inonpb, Ipb, Vpb, nsigma=20):
     ax.set_xlim(0, xmax)
     ax.set_ylim(0, ymax)
     ax.set_aspect('equal')
-    fig.savefig("leakage_map.png", bbox_inches="tight")
+    fig.savefig(f"{obsid}_leakage_map.png", bbox_inches="tight")
 
 # Perform curve fitting
     popt, pcov = curve_fit(func, (x, y), z)
@@ -92,7 +95,7 @@ def make_plots(Inonpb, Ipb, Vpb, nsigma=20):
     ax.set_xlabel('RA')
     ax.set_ylabel('Dec')
     ax.set_zlabel('Fractional leakage / %')
-    fig.savefig("leakage_fit.png", bbox_inches="tight")
+    fig.savefig(f"{obsid}_leakage_fit.png", bbox_inches="tight")
 
 # Make a residuals plot
     fig = plt.figure()
@@ -105,16 +108,27 @@ def make_plots(Inonpb, Ipb, Vpb, nsigma=20):
     ax.set_xlim(0, xmax)
     ax.set_ylim(0, ymax)
     ax.set_aspect('equal')
-    fig.savefig("corrected_map.png", bbox_inches="tight")
+    fig.savefig(f"{obsid}_corrected_map.png", bbox_inches="tight")
 
-# Perform curve fitting
+    return(func)
 
+def correct_image(Vpb, func, Vout):
+    img_V = np.squeeze(fits.open(Vpb)[0].data)
+    xmax, ymax = img_V.shape[0], img_V.shape[1]
+    x_range = np.linspace(0, xmax)
+    y_range = np.linspace(0, ymax)
+    X, Y = np.meshgrid(x_range, y_range)
+    Z = func((X, Y), *popt)
+    hdu[0].data /= Z
+    hdu.writeto(Vout, overwrite=True)
+   
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--Inonpb', type=str, dest="Inonpb", help='Stokes I non-primary-beam-corrected image')
     parser.add_argument('--Ipb', type=str, dest="Ipb", help='Stokes I primary-beam-corrected image')
     parser.add_argument('--Vpb', type=str, dest="Vpb", help='Stokes V primary-beam-corrected image')
+    parser.add_argument('--Vout', type=str, dest="Vout", help='Output leakage-corrected Stokes V image (default _fixed)', default=None)
     parser.add_argument('--nsigma', type=float, default=20, help='Sigma cutoff for source brightness to calculate leakage screen (default=20)')
 #    parser.add_argument('--cutoff', default=None, type=float, help='Cutoff value for island detection')
     #parser.add_argument('--std', default=False, help='Use standard deviation for cutoff', action=argparse.BooleanOptionalAction)
@@ -123,5 +137,10 @@ if __name__=='__main__':
 #    parser.add_argument('--filter-name', default='unknown_filter', type=str, help='Name of filter')
     args = parser.parse_args()
 
-    print(args.Inonpb, args.Ipb, args.Vpb)
-    make_plots(args.Inonpb, args.Ipb, args.Vpb, args.nsigma)
+    func = make_plots(args.Inonpb, args.Ipb, args.Vpb, args.nsigma)
+    if args.Vout is not None:
+        Vout = args.Vout
+    else:
+        Vout = args.Vpb.replace('.fits', '_fixed.fits')
+    correct_image(args.Vpb, func, Vout) 
+    
