@@ -24,5 +24,11 @@ source GP-Monitor-garrawarla.profile
 ### Add an observation's metadata to the database
 
 ```
-singularity exec ${GXCONTAINER} ./gpm_track.py import_obs --obs_id [OBS_ID]
+singularity exec ${GXCONTAINER} gpm_track.py import_obs --obs_id [OBS_ID]
+```
+
+### Assign a calibration obs to an observation
+
+```
+singularity exec ${GXCONTAINER} gpm_track.py obs_calibrator --obs_id [OBS_ID] --cal_id [CAL_ID]
 ```
