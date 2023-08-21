@@ -34,6 +34,7 @@ DIRECTIVES = (
     "iono_update",
     "import_obs",
     "check_obs",
+    "update_apply_cal",
 )
 
 
@@ -314,8 +315,59 @@ def check_observation_status(obs_id):
 
     return res[0][0]
 
+def update_apply_cal(obs_id, cal_id, field, value):
+    """An update function that will signal whether a calibration solution can be transferred to a specific observation ID
+
+    Args:
+        obs_id (int): observation id to update the status of
+        cal_id (int): observation id of the calibrator to insert  
+        field (string): The field to update. Can be "usable" or "notes".
+        value (string): The value to be recorded in the database.
+    """
+
+    # Using a restricted set of allowed values to prevent against SQL injection
+    # (see also https://stackoverflow.com/questions/9394291/python-and-mysqldb-substitution-of-table-resulting-in-syntax-error/9394450#9394450)
+    if field not in ["usable", "notes"]:
+        raise Exception("The field name must be either 'usable' or 'notes'")
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # Find out if a row with this obs_id and cal_id already exists
+    cur.execute("""
+            SELECT * FROM apply_cal
+            WHERE obs_id = %s AND cal_obs_id = %s
+            """,
+            (obs_id, cal_id,),
+            )
+
+    res = cur.fetchall()
+    if (len(res) == 0):
+        # This obs/calobs combo doesn't exist yet, so add it
+        cur.execute("""
+                INSERT INTO apply_cal(obs_id, cal_obs_id, """ + field + """)
+                VALUES (%s, %s, %s)
+                """,
+                (obs_id, cal_id, value),
+                )
+        conn.commit()
+    else:
+        # This obs/calobs combo already exists, so update it
+        cur.execute("""
+                    UPDATE apply_cal 
+                    SET """ + field + """ = %s 
+                    WHERE obs_id = %s AND cal_obs_id = %s
+                    """,
+                    (value, obs_id, cal_id,),
+                    )
+        conn.commit()
+
+    # Close the connection
+    conn.close()
+
+
 def observation_calibrator_id(obs_id, cal_id):
-    """A general update function that will modify a spectied key value for a specific observation ID
+    """An update function that will set the calibration observation for a specific observation ID
 
     Args:
         obs_id (int): observation id to update the status of
@@ -420,6 +472,8 @@ if __name__ == "__main__":
     )
     ps.add_argument("--stderr", type=str, help="standard error log", default=None)
     ps.add_argument("--stdout", type=str, help="standard out log", default=None)
+    ps.add_argument("--field", type=str, help="database field to update (update_apply_cal only)", default=None)
+    ps.add_argument("--value", type=str, help="database value to insert into \"field\" (update_apply_cal only).", default=None)
     ps.add_argument(
         "--status",
         type=str,
@@ -503,6 +557,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "obs_calibrator":
         require(args, ["obs_id", "cal_id"])
         observation_calibrator_id(args.obs_id, args.cal_id)
+
+    elif args.directive.lower() == "update_apply_cal":
+        require(args, ["obs_id", "cal_id", "field", "value"])
+        update_apply_cal(args.obs_id, args.cal_id, args.field, args.value)
 
     elif args.directive.lower() == "iono_update":
         require(args, ["obs_id", "ion_path"])

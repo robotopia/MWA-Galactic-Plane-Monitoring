@@ -32,3 +32,17 @@ singularity exec ${GXCONTAINER} gpm_track.py import_obs --obs_id [OBS_ID]
 ```
 singularity exec ${GXCONTAINER} gpm_track.py obs_calibrator --obs_id [OBS_ID] --cal_id [CAL_ID]
 ```
+
+### Signal that a calibration can/cannot be transferred to a particular observation
+
+```
+singularity exec ${GXCONTAINER} ./gpm_track.py update_apply_cal --obs_id 1343057752 --cal_id 1343041216 --field usable --value 0
+```
+
+(`--value 0` for "cannot be transferred", `--value 1` for "can be transferred")
+
+To add a note about why,
+
+```
+singularity exec ${GXCONTAINER} ./gpm_track.py update_apply_cal --obs_id 1343057752 --cal_id 1343041216 --field notes --value "The cable lengths have changed in the meantime"
+```
