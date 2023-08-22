@@ -1,4 +1,4 @@
-# Calibration errors (log)
+# Calibration errors notes
 
 ## 16 August 2023
 
@@ -208,10 +208,11 @@ Follow the links in the table to see some example images.
 | Epoch | Notes |
 | ----- | ----- |
 | Epoch0032 | Good |
-| [Epoch0039](#epoch0039) | Observations earlier in the observing run show source smearing. |
-| [Epoch0046](#epoch0046) | Source smearing, both early in the run *and* in the middle. Some elongation of sources near the end, too. |
-| [Epoch0053](#epoch0053) | Observations earlier in the observing run show source smearing. |
-| [Epoch0060](#epoch0060) | Observations early and middle in the observing run show source smearing. |
+| [Epoch0039](#epoch0039) | Observations **early** in the observing run show source smearing. |
+| [Epoch0046](#epoch0046) | Source smearing, both **early** in the run and in the **middle**. Some elongation of sources near the **end**, too. |
+| [Epoch0053](#epoch0053) | Observations **early** in the observing run show source smearing. |
+| [Epoch0060](#epoch0060) | Observations **early** and **middle** in the observing run show source smearing. |
+| [Epoch0065](#epoch0065) | Observations **early** and **middle** in the observing run show source smearing. |
 
 #### Epoch0039
 
@@ -240,9 +241,6 @@ Showing examples from "early", "middle", and "late" during the run.
 
 #### Epoch0060
 
-Different kinds of artefacts throughout the observing run.
-Showing examples from "early" and "middle" in the run.
-
 ##### Early
 
 ![Epoch0060_calerrors.png](images/Epoch0060_calerrors.png)
@@ -250,5 +248,15 @@ Showing examples from "early" and "middle" in the run.
 ##### Middle
 
 ![Epoch0060_calerrors.png](images/Epoch0060_calerrors2.png)
+
+#### Epoch0065
+
+##### Early
+
+![Epoch0065_calerrors.png](images/Epoch0065_calerrors.png)
+
+##### Middle
+
+![Epoch0065_calerrors.png](images/Epoch0065_calerrors2.png)
 
 
