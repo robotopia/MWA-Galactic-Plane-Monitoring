@@ -260,3 +260,38 @@ Showing examples from "early", "middle", and "late" during the run.
 ![Epoch0065_calerrors.png](images/Epoch0065_calerrors2.png)
 
 
+## 22 August 2023
+
+### 10:30am
+
+Natasha has pointed out that the different types of smearing are indicative of different causes for the calibration error.
+**Rings**, **kidney beans**, **horseshoes**, and **Star Trek logos** are more likely to come from cable length changes, while **elongations** and **TIE fighters** can come from the ionosphere.
+Another way to discriminate is that ionospheric errors are often (usually)? characterised by distortions in the East-West direction.
+[Here](https://www.overleaf.com/read/fvwmdrkpgvdm) is a monograph on the subject, which also makes plain the meaning of the `ion_phs_med`, `ion_phs_peak`, and `ion_phs_std` columns in the `observation` table.
+The upshot is that ionospheric-type errors are likely unable to be improved all that much, and are probably (at this stage) not worth the effort to improve them further.
+
+Thus, looking again at the images above, it seems that only Epoch0053 is showing evidence of cable-delay-type errors, so it may be worth trying the daytime calibration (if any) for that one.
+Looking again at the final mosaic, I reckon the "kidney beans" are only showing up in the very early observations, but I'll need to look at the individual observations to see which ones are affected.
+
+For Epoch0053, is seems that ObsIDs <= 1340016176 are the affected ones.
+I've marked these in the database as follows:
+
+```
+mysql> select a.* from apply_cal a left join epoch e on a.obs_id = e.obs_id where e.epoch = "Epoch0053";
+```
+
+| `id` | `obs_id` | `cal_obs_id` | `usable` | `notes`   |
+| --- | ---------- | ---------- | ------ | --------------------------------- |
+| 190 | 1340014696 | 1340031312 |      0 | Cable-delay-type smearing present |
+| 191 | 1340014992 | 1340031312 |      0 | Cable-delay-type smearing present |
+| 192 | 1340015288 | 1340031312 |      0 | Cable-delay-type smearing present |
+| 193 | 1340015584 | 1340031312 |      0 | Cable-delay-type smearing present |
+| 194 | 1340015880 | 1340031312 |      0 | Cable-delay-type smearing present |
+| 195 | 1340016176 | 1340031312 |      0 | Cable-delay-type smearing present |
+| 196 | 1340021320 | 1340031312 |      1 | NULL                              |
+| 197 | 1340021616 | 1340031312 |      1 | NULL                              |
+| 198 | 1340021912 | 1340031312 |      1 | NULL                              |
+| 199 | 1340022208 | 1340031312 |      1 | NULL                              |
+| 200 | 1340022504 | 1340031312 |      1 | NULL                              |
+| 201 | 1340022800 | 1340031312 |      1 | NULL                              |
+| ... | | | | |
