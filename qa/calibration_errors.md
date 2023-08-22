@@ -295,3 +295,41 @@ mysql> select a.* from apply_cal a left join epoch e on a.obs_id = e.obs_id wher
 | 200 | 1340022504 | 1340031312 |      1 | NULL                              |
 | 201 | 1340022800 | 1340031312 |      1 | NULL                              |
 | ... | | | | |
+
+To improve these early ones, I'll attempt to calibrate using 1340014400, taken at the start of the Epoch0053 observing run.
+That one's not yet in the database, so, as usual (after loading my GPM profile):
+
+```
+cd /astro/mwasci/smcsweeney/MWA-Galactic-Plane-Monitoring
+singularity exec ${GXCONTAINER} ./gpm_track.py import_obs --obs_id 1340014400
+```
+
+And set it as the calibrator for those six observations:
+```
+singularity exec ${GXCONTAINER} ./gpm_track.py obs_calibrator --cal_id 1340014400 --obs_id 1340014696
+singularity exec ${GXCONTAINER} ./gpm_track.py obs_calibrator --cal_id 1340014400 --obs_id 1340014992
+singularity exec ${GXCONTAINER} ./gpm_track.py obs_calibrator --cal_id 1340014400 --obs_id 1340015288
+singularity exec ${GXCONTAINER} ./gpm_track.py obs_calibrator --cal_id 1340014400 --obs_id 1340015584
+singularity exec ${GXCONTAINER} ./gpm_track.py obs_calibrator --cal_id 1340014400 --obs_id 1340015880
+singularity exec ${GXCONTAINER} ./gpm_track.py obs_calibrator --cal_id 1340014400 --obs_id 1340016176
+```
+
+Check that the above worked:
+
+```
+mysql> select o.obs_id, o.cal_obs_id from observation o left join epoch e on o.obs_id = e.obs_id where e.epoch = "Epoch0053";
+```
+
+| obs_id     | cal_obs_id |
+| ---------- | ---------- |
+| 1340014400 |       NULL |
+| 1340014696 | 1340014400 |
+| 1340014992 | 1340014400 |
+| 1340015288 | 1340014400 |
+| 1340015584 | 1340014400 |
+| 1340015880 | 1340014400 |
+| 1340016176 | 1340014400 |
+| 1340021320 | 1340031312 |
+| 1340021616 | 1340031312 |
+| 1340021912 | 1340031312 |
+| ... | |
