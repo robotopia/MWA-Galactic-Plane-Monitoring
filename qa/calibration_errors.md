@@ -333,3 +333,15 @@ mysql> select o.obs_id, o.cal_obs_id from observation o left join epoch e on o.o
 | 1340021616 |   1340031312 |
 | 1340021912 |   1340031312 |
 | ...        |              |
+
+
+### 4pm
+
+Running calibration with:
+
+```
+echo 1340014400 > /astro/mwasci/smcsweeney/Epoch0053/calid.txt
+obs_manta.sh -p Epoch0053 -o /astro/mwasci/smcsweeney/Epoch0053/calid.txt
+obs_autoflag.sh -d 5455161 -p Epoch0053 1340014400
+obs_autocal.sh -d 5455428 -p Epoch0053 -f 0.5 1340014400
+```

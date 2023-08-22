@@ -10,7 +10,7 @@ SINGCMD="singularity exec ${GPMCONTAINER} "
 
 if [[ $calid != "" ]]
 then
-    epoch=Epoch$(${SINGCMD} "${GPMBASE}/determine_epoch.py" --calid $calid)
+    epoch=Epoch$(${SINGCMD} "${GPMBASE}/determine_epoch.py" --obsid $calid)
 
     pdir="$datadir/$epoch"
     mkdir -p "${pdir}"
