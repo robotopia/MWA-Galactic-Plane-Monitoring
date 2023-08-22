@@ -1,18 +1,14 @@
 #! /bin/bash -l
 
-echo "Loading the glactic plane monitoring pipeline"
-
-if [[ -z $GXBASE ]]
-then 
-    echo "The GXBASE variable is not available, implying the GLEAM-X pipeline is not available. Exiting. "
-    return 1
-fi
-
-export GXTRACK='no'
+echo "Loading the Galactic plane monitoring pipeline"
 
 # Who is running the pipeline, used below for base install
 GPMUSER=$(whoami)
 export GPMUSER  
+
+export GPMCONTAINER=
+export GPMTRACK='no'
+export GPMSCRATCH="/astro/mwasci/${GPMUSER}"     # Path to scratch space used for processing on the HPC environment, e.g. /scratch
 
 # The location of where the GP-Monitoring pipeline is installed
 export GPMBASE="/astro/mwasci/${GPMUSER}/MWA-Galactic-Plane-Monitoring"  
