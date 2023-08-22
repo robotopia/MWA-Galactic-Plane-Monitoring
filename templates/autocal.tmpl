@@ -29,7 +29,7 @@ then
 fi
 }
 
-cores=${GXNCPUS}
+cores=${GPMNCPUS}
 datadir=DATADIR
 if [[ $obsnum -gt 1300000000 ]] && [[ $obsnum -lt 1342950000 ]]
 then
@@ -44,10 +44,10 @@ fraction=FRACTION
 sthresh=STHRESH
 
 # GLEAM-X sky model
-catfile="${GXBASE}/models/GGSM_updated.fits"
+catfile="${GPMBASE}/catalogue/GPSM.fits"
 
 # MWA beam information
-MWAPATH="${GXMWAPB}"
+MWAPATH="${GPMMWAPB}"
 
 # Minimum baseline of 75 lambda (=250m at 88 MHz) for calibration
 minuv=75
@@ -102,7 +102,7 @@ current=$(chgcentre "${obsnum}.ms")
 if [[ $current == *"shift"* ]] 
 then
     echo "Detected that this measurement set has undergone a denormal shift; this must be undone before calibration."
-    coords=$($GXBASE/gleam_x/bin/calc_optimum_pointing.py --metafits "${metafits}")
+    coords=$($GPMBASE/gleam_x/bin/calc_optimum_pointing.py --metafits "${metafits}")
     echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
     chgcentre \
             "${obsnum}.ms" \
@@ -114,7 +114,7 @@ fi
 # uv range for calibration based on GLEAM-based sky model
 # Calibrate takes a maximum uv range in metres
 # Calculate min uvw in metres
-minuvm=$(echo "234 * ${minuv} / ${chan}" | bc -l)
+minuvm=$(echo "568 * ${minuv} / ${chan}" | bc -l)
 # In wavelengths, maximum 128T baseline at 200MHz was 1667 lambda long
 # 300/1.28 * 1667 = 390000
 # Calculate max uvw in metres
@@ -131,10 +131,9 @@ then
     calibrate \
             -t ${ts} \
             -j ${cores} \
-            -absmem ${GXMEMORY} \
+            -absmem ${GPMMEMORY} \
             -m "${calmodel}" \
             -minuv ${minuvm} \
-            -maxuv ${maxuvm} \
             -applybeam -mwa-path "${MWAPATH}" \
             "${obsnum}.ms" \
             "${solutions}"
@@ -153,10 +152,9 @@ solutions="${solutions/${obsnum}_${obsnum}_/${obsnum}_}"
 # calibrate
 calibrate \
         -j ${cores} \
-        -absmem ${GXMEMORY} \
+        -absmem ${GPMMEMORY} \
         -m "${calmodel}" \
         -minuv $minuvm \
-        -maxuv $maxuvm \
         -applybeam -mwa-path "${MWAPATH}" \
         "${obsnum}".ms \
         "${solutions}"

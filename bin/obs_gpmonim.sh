@@ -11,7 +11,7 @@ echo "obs_gpmonim.sh [-d dep] [-p project] [-a account] [-z] [-t] obsnum
 exit 1;
 }
 
-pipeuser="${GXUSER}"
+pipeuser="${GPMUSER}"
 
 #initial variables
 dep=
@@ -45,8 +45,8 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-queue="-p ${GXSTANDARDQ}"
-base="${GXSCRATCH}/$project"
+queue="-p ${GPMSTANDARDQ}"
+base="${GPMSCRATCH}/$project"
 
 # if obsid is empty then just print help
 
@@ -60,9 +60,9 @@ then
     depend="--dependency=afterok:${dep}"
 fi
 
-if [[ ! -z ${GXACCOUNT} ]]
+if [[ ! -z ${GPMACCOUNT} ]]
 then
-    account="--account=${GXACCOUNT}"
+    account="--account=${GPMACCOUNT}"
 fi
 
 # start the real program
@@ -85,9 +85,9 @@ chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
 #echo '#!/bin/bash' > "${script}.sbatch"
-#echo "singularity run ${GXCONTAINER} ${script}" >> "${script}.sbatch"
+#echo "singularity run ${GPMCONTAINER} ${script}" >> "${script}.sbatch"
 
-sub="sbatch --begin=now+1minutes --export=ALL  --time=01:00:00 --mem=3G -M ${GXCOMPUTER} --output=${output} --error=${error}"
+sub="sbatch --begin=now+1minutes --export=ALL  --time=01:00:00 --mem=3G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
 sub="${sub} --cores=1 --ntasks-per-node=1 ${account} ${depend} ${queue} ${script}"
 if [[ ! -z ${tst} ]]
 then

@@ -16,7 +16,7 @@ account=ACCOUNT
 queue='QUEUE'
 
 # Common singularity command to run the python code
-SINGCMD="singularity exec ${GXCONTAINER} "
+SINGCMD="singularity exec ${GPMCONTAINER} "
 
 epoch=Epoch$(${SINGCMD} "${GPMBASE}/determine_epoch.py" --obsid $calid)
 #datadir="${datadir}/${epoch}"
@@ -75,8 +75,8 @@ then
         fi
     done
     
-    sub="sbatch --begin=now+24h --export=ALL  --time=01:00:00 --mem=${GXABSMEMORY}G --output=${output} --error=${error}"
-    sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${queue} ${script}.sbatch"
+    sub="sbatch --begin=now+24h --export=ALL  --time=01:00:00 --mem=${GPMABSMEMORY}G --output=${output} --error=${error}"
+    sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${queue} ${script}.sbatch"
 else
     echo "No further unprocessed data found; will not resubmit ${script}."
 fi

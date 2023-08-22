@@ -17,11 +17,11 @@ exit 1;
 
 # Supercomputer options
 # Hardcode for downloading
-if [ ! -z $GXCOPYA ] 
+if [ ! -z $GPMCOPYA ] 
 then
-    account="--account ${GXCOPYA}"
+    account="--account ${GPMCOPYA}"
 fi
-standardq="${GXCOPYQ}"
+standardq="${GPMCOPYQ}"
 
 pipeuser=$(whoami)
 
@@ -74,7 +74,7 @@ fi
 # Add the metadata to the observations table in the database
 # import_observations_from_db.py --obsid "${obslist}"
 
-base="${GXSCRATCH}/${project}"
+base="${GPMSCRATCH}/${project}"
 cd "${base}" || exit 1
 
 dllist=""
@@ -140,12 +140,12 @@ chmod 755 "${script}"
 echo '#!/bin/bash' > "${script}.sbatch"
 echo 'module load singularity/3.7.4' >> "${script}.sbatch"
 echo "export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}" >> "${script}.sbatch"
-echo "singularity run ${GXCONTAINER} ${script}" >> "${script}.sbatch"
+echo "singularity run ${GPMCONTAINER} ${script}" >> "${script}.sbatch"
 
 # This is the only task that should reasonably be expected to run on another cluster. 
 # Export all GLEAM-X pipeline configurable variables and the MWA_ASVO_API_KEY to ensure 
 # obs_mantra completes as expected
-sub="sbatch --begin=now+1minutes --mem=50G --export=$(echo ${!GX*} ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY  --time=08:00:00 -M ${GXCOPYM} --output=${output} --error=${error}"
+sub="sbatch --begin=now+1minutes --mem=50G --export=$(echo ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY  --time=08:00:00 -M ${GPMCOPYM} --output=${output} --error=${error}"
 sub="${sub} ${depend} ${account} ${queue} ${script}.sbatch"
 
 if [[ ! -z ${tst} ]]
@@ -170,7 +170,7 @@ for obsnum in $dllist
 do
     if [ "${GPMTRACK}" = "track" ]
     then
-        ${GXCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
+        ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
                         --batch_file="${script}" --obs_id="${obsnum}" --stderr="${error}" --stdout="${output}"
     fi
     ((n+=1))

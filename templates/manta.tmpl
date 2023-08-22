@@ -2,7 +2,7 @@
 
 set -x
 
-echo "${GXBASE}"
+echo "${GPMBASE}"
 
 pipeuser=PIPEUSER
 base=BASEDIR
@@ -99,6 +99,12 @@ do
                         $nsubbands \
                         1 \
                         $nfreqchan 
+
+                    metafits=${obsnum}.metafits
+                    if [[ ! -e ${metafits} ]]
+                    then
+                       wget -O ${metafits}  http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}
+                    fi
                 fi
 
             else

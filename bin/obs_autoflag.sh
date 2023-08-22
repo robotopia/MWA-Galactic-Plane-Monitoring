@@ -12,7 +12,7 @@ echo "obs_autoflag.sh [-p project] [-a account] [-d dep] [-t] obsnum
 exit 1;
 }
 
-pipeuser="${GXUSER}"
+pipeuser="${GPMUSER}"
 
 dep=
 tst=
@@ -45,9 +45,9 @@ then
     usage
 fi
 
-if [[ ! -z ${GXACCOUNT} ]]
+if [[ ! -z ${GPMACCOUNT} ]]
 then
-    account="--account=${GXACCOUNT}"
+    account="--account=${GPMACCOUNT}"
 fi
 
 # Establish job array options
@@ -60,8 +60,8 @@ else
     jobarray=''
 fi
 
-queue="-p ${GXSTANDARDQ}"
-datadir="${GXSCRATCH}/${project}"
+queue="-p ${GPMSTANDARDQ}"
+datadir="${GPMSCRATCH}/${project}"
 
 # set dependency
 if [[ ! -z ${dep} ]]
@@ -74,16 +74,16 @@ then
     fi
 fi
 
-script="${GXSCRIPT}/autoflag_${obsnum}.sh"
+script="${GPMSCRIPT}/autoflag_${obsnum}.sh"
 
-cat "${GXBASE}/templates/autoflag.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
+cat "${GPMBASE}/templates/autoflag.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                      -e "s:DATADIR:${datadir}:g" \
-                                     -e "s:HOST:${GXCOMPUTER}:g" \
+                                     -e "s:HOST:${GPMCOMPUTER}:g" \
                                      -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
 
-output="${GXLOG}/autoflag_${obsnum}.o%A"
-error="${GXLOG}/autoflag_${obsnum}.e%A"
+output="${GPMLOG}/autoflag_${obsnum}.o%A"
+error="${GPMLOG}/autoflag_${obsnum}.e%A"
 if [[ -f ${obsnum} ]]
 then
     output="${output}_%a"
@@ -94,16 +94,16 @@ chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
 echo '#!/bin/bash' > ${script}.sbatch
-echo "singularity run ${GXCONTAINER} ${script}" >> ${script}.sbatch
+echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
 
-if [ ! -z ${GXNCPULINE} ]
+if [ ! -z ${GPMNCPULINE} ]
 then
     # autoflag only needs a single CPU core
-    GXNCPULINE="--ntasks-per-node=1"
+    GPMNCPULINE="--ntasks-per-node=1"
 fi
 
-sub="sbatch --begin=now+5minutes --export=ALL --time=01:00:00 --mem=24G -M ${GXCOMPUTER} --output=${output} --error=${error} "
-sub="${sub}  ${GXNCPULINE} ${account} ${GXTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --begin=now+5minutes --export=ALL --time=01:00:00 --mem=24G -M ${GPMCOMPUTER} --output=${output} --error=${error} "
+sub="${sub}  ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 
 if [[ ! -z ${tst} ]]
 then
@@ -132,10 +132,10 @@ do
         obs=$obsnum
     fi
 
-    if [ "${GXTRACK}" = "track" ]
+    if [ "${GPMTRACK}" = "track" ]
     then
         # record submission
-        ${GXCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='flag' --submission_time="$(date +%s)"\
+        ${GPMCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='flag' --submission_time="$(date +%s)"\
                             --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
     fi
 

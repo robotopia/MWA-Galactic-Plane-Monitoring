@@ -46,7 +46,7 @@ fi
 if [[ ! -e ${obsnum}_known.fits ]]
 then
     # This gives us a way to test what the ionospheric distortions typically look like, later ("mean" is just used as a template)
-    GetKnownSources.py ${obsnum}_mean.fits ${obsnum}_tmp.fits ${GXBASE}/models/GGSM.fits
+    GetKnownSources.py ${obsnum}_mean.fits ${obsnum}_tmp.fits ${GPMBASE}/models/GGSM.fits
     # This gets the value of the primary beam at the locations of known sources
     GetValsAtCoords.py --vals-from beam --vals-name beam --in_fname ${obsnum}_tmp.fits --out_fname ${obsnum}_tmp.fits
     # This gets the stdevs at locations of known sources (nks_ prepended during xmatch)
@@ -102,7 +102,7 @@ do
         AddStats.py --cands ${obsnum}_${filtname}_cands.fits --known ${obsnum}_${filtname}_knownsrcs.fits --out_fname ${obsnum}_${filtname}_cands_wstats.fits
 
         ##### Cutting sources based on statistics ####
-        SelectSources.py --in_fname ${obsnum}_${filtname}_cands_wstats.fits --out_fname ${obsnum}_${filtname}_cands_wstats_selected.fits --match_fname ${GXBASE}/models/GGSM.fits
+        SelectSources.py --in_fname ${obsnum}_${filtname}_cands_wstats.fits --out_fname ${obsnum}_${filtname}_cands_wstats_selected.fits --match_fname ${GPMBASE}/models/GGSM.fits
 
         ##### Plotting #####
         #

@@ -21,7 +21,7 @@ echo "obs_autocal.sh [-d dep] [-a account] [-t] obsnum
 exit 1;
 }
 
-pipeuser=${GXUSER}
+pipeuser=${GPMUSER}
 
 dep=
 tst=
@@ -69,9 +69,9 @@ then
     usage
 fi
 
-if [[ ! -z ${GXACCOUNT} ]]
+if [[ ! -z ${GPMACCOUNT} ]]
 then
-    account="--account=${GXACCOUNT}"
+    account="--account=${GPMACCOUNT}"
 fi
 
 # Establish job array options
@@ -84,8 +84,8 @@ else
     jobarray=''
 fi
 
-queue="-p ${GXSTANDARDQ}"
-datadir="${GXSCRATCH}/$project"
+queue="-p ${GPMSTANDARDQ}"
+datadir="${GPMSCRATCH}/$project"
 
 # set dependency
 if [[ ! -z ${dep} ]]
@@ -98,9 +98,9 @@ then
     fi
 fi
 
-script="${GXSCRIPT}/autocal_${obsnum}.sh"
+script="${GPMSCRIPT}/autocal_${obsnum}.sh"
 
-cat "${GXBASE}/templates/autocal.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
+cat "${GPMBASE}/templates/autocal.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                      -e "s:DATADIR:${datadir}:g" \
                                      -e "s:IONOTEST:${ion}:g" \
                                      -e "s:PIPEUSER:${pipeuser}:g" \
@@ -108,8 +108,8 @@ cat "${GXBASE}/templates/autocal.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                      -e "s:STHRESH:${sthresh}:g" > "${script}"
 
 
-output="${GXLOG}/autocal_${obsnum}.o%A"
-error="${GXLOG}/autocal_${obsnum}.e%A"
+output="${GPMLOG}/autocal_${obsnum}.o%A"
+error="${GPMLOG}/autocal_${obsnum}.e%A"
 
 if [[ -f ${obsnum} ]]
 then
@@ -121,10 +121,10 @@ chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
 echo '#!/bin/bash' > ${script}.sbatch
-echo "singularity run ${GXCONTAINER} ${script}" >> ${script}.sbatch
+echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
 
-sub="sbatch --begin=now+5minutes --export=ALL  --time=04:00:00 --mem=${GXABSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --begin=now+5minutes --export=ALL  --time=04:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
+sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
@@ -152,10 +152,10 @@ for taskid in $(seq ${numfiles})
         obs=$obsnum
     fi
 
-    if [ "${GXTRACK}" = "track" ]
+    if [ "${GPMTRACK}" = "track" ]
     then
         # record submission
-        ${GXCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='calibrate' --submission_time="$(date +%s)" --batch_file="${script}" \
+        ${GPMCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='calibrate' --submission_time="$(date +%s)" --batch_file="${script}" \
                             --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
     fi
 
