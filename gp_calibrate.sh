@@ -1,4 +1,3 @@
-# This script is to be run inside the GPM container (which can be the GLEAM-X container)
 # usage: ./gp_calibrate.sh <cal_id>
 
 calid="$1"
@@ -13,13 +12,8 @@ if [[ $calid != "" ]]
 then
     epoch=Epoch$(${SINGCMD} "${GPMBASE}/determine_epoch.py" --calid $calid)
 
-    # Note: output format is: Epoch%03d
     pdir="$datadir/$epoch"
-
-    if [[ ! -d "${pdir}" ]]
-    then
-        mkdir "${pdir}"
-    fi
+    mkdir -p "${pdir}"
 
     ${SINGCMD} "${GPMBASE}/gpm_track.py" import_obs --obs_id "$calid"
     

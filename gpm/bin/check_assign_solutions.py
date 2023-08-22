@@ -29,10 +29,10 @@ logging.basicConfig(format="%(module)s:%(levelname)s:%(lineno)d %(message)s")
 logger.setLevel(logging.INFO)
 
 try:
-    from gpm.db import mysql_db as gxdb
+    from gpm.db import mysql_db as gpmdb
 except:
     print("Warning: unable to import the database connection")
-    gxdb = None
+    gpmdb = None
 
 THRESHOLD = (
     0.25  # acceptable level of flagged solutions before the file is considered ratty
@@ -54,14 +54,14 @@ def obtain_cen_chan(obsids, disable_db_check=False):
     """
     cen_chan = np.array([1 for i in obsids])
 
-    if gxdb is None:
+    if gpmdb is None:
         if disable_db_check:
             return cen_chan
         else:
             raise ValueError("GPM Database configuration is not configured. ")
 
     try:
-        con = gxdb.connect()
+        con = gpmdb.connect()
 
         obsids = [int(o) for o in obsids]
 

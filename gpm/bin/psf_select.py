@@ -19,8 +19,8 @@ def main():
     """
     """
     try:
-        gxbase = os.environ["GPMBASE"]
-        default_path = "{0}/models/NVSS_SUMSS_psfcal.fits".format(gxbase)
+        gpmbase = os.environ["GPMBASE"]
+        default_path = "{0}/models/NVSS_SUMSS_psfcal.fits".format(gpmbase)
     except:
         default_path = None
 

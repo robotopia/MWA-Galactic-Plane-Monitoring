@@ -65,9 +65,9 @@ export GPMSCRIPT="${GPMBASE}/script_${GPMCLUSTER}" # Path to place generated tem
 export GPMTRACK='no-track'                       # Directive to inform task tracking for meta-database. 'track' will track task progression. Anything else will disable tracking. 
 
 
-export GPMSSH="${GPMBASE}/ssh_keys/gx_${GPMUSER}"                      # Path to SSH private key to be used for archiving. If you direct it to a new generated key-pair 
+export GPMSSH="${GPMBASE}/ssh_keys/gpm_${GPMUSER}"                      # Path to SSH private key to be used for archiving. If you direct it to a new generated key-pair 
 if [ ! -z "${GPMSSH}" ] && [ ! -f "${GPMSSH}" ]                       # ensure restricted folder/file permissions, e.g. cmod -R 700 "${GPMBASE}/ssh_keys"
-then                                                                # Keys can be generated with: ssh-keygen -t rsa -f "${GPMBASE}/ssh_keys/gx_${GPMUSER}"
+then                                                                # Keys can be generated with: ssh-keygen -t rsa -f "${GPMBASE}/ssh_keys/gpm_${GPMUSER}"
     echo "GPMSSH set to ${GPMSSH}, but not found. Setting to empty."  # This is used only in the archiving script, as on Magnus it appears singularity can not bind to $HOME correctly.
     export GPMSSH=""                                                 # The normal ssh key in a users home directory can be used as well, e.g. ${HOME}/.ssh/id_rsa
 fi

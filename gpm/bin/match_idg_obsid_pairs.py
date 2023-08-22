@@ -70,7 +70,7 @@ def process_df(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def load_gx_observations(gpm_db: str, filter_obsids: Collection[int]=None) -> pd.DataFrame:
+def load_gpm_observations(gpm_db: str, filter_obsids: Collection[int]=None) -> pd.DataFrame:
     """Load in the GPM observation table
 
     Args:
@@ -152,7 +152,7 @@ def read_obsids(gpm_obsids: str) -> Collection[int]:
     return obsids 
 
 
-def associate_metafits_to_gx(
+def associate_metafits_to_gpm(
     out: str= None, 
     gpm_db: str='146.118.68.233', 
     gpm_obsids: str=None, 
@@ -173,29 +173,29 @@ def associate_metafits_to_gx(
         filter_obsids=read_obsids(gpm_obsids) if gpm_obsids is not None else None  
     )
 
-    gx_df = load_gx_observations(
+    gpm_df = load_gpm_observations(
         gpm_db=gpm_db, 
         filter_obsids=read_obsids(gpm_obsids) if gpm_obsids is not None else None
     )
 
     results = []
-    for (cenchan, delays), gx_sub_df in gx_df.groupby(['cenchan', 'delays']):
+    for (cenchan, delays), gpm_sub_df in gpm_df.groupby(['cenchan', 'delays']):
         logger.info(f"GPM subset: {cenchan=} {delays=}")
         g_sub_df = g_df[
             (g_df['cenchan'] == cenchan) & 
             (g_df['delays'] == delays)
         ]
 
-        logger.info(f"Sub GPM df: {len(gx_sub_df)} rows")
+        logger.info(f"Sub GPM df: {len(gpm_sub_df)} rows")
         logger.info(f"Sub GPM df: {len(g_sub_df)} rows")
 
-        if len(gx_sub_df) == 0 or len(g_sub_df) == 0:
+        if len(gpm_sub_df) == 0 or len(g_sub_df) == 0:
             logger.info("Empty catalogue. Next set. ")
             continue 
 
-        gx_sub_sky = SkyCoord(
-            gx_sub_df['ra_pointing']*u.deg,
-            gx_sub_df['dec_pointing']*u.deg,
+        gpm_sub_sky = SkyCoord(
+            gpm_sub_df['ra_pointing']*u.deg,
+            gpm_sub_df['dec_pointing']*u.deg,
         )
 
         g_sub_sky = SkyCoord(
@@ -205,17 +205,17 @@ def associate_metafits_to_gx(
 
         # Do the match
         match_res = match_coordinates_sky(
-            gx_sub_sky,
+            gpm_sub_sky,
             g_sub_sky,
             nthneighbor=1
         )
 
-        gx_sub_df.columns = [f"{c}_gpm" for c in gx_sub_df]
+        gpm_sub_df.columns = [f"{c}_gpm" for c in gpm_sub_df]
         g_sub_df.columns = [f"{c}_gpm" for c in g_sub_df]
 
         join_df = pd.concat(
             [
-                gx_sub_df.reset_index(drop=True),
+                gpm_sub_df.reset_index(drop=True),
                 g_sub_df.iloc[match_res[0]].reset_index(drop=True)
             ],
             axis=1
@@ -272,7 +272,7 @@ if __name__ == '__main__':
 
     logger.debug(args)
 
-    associate_metafits_to_gx(
+    associate_metafits_to_gpm(
         # args.metafits,
         out=args.out,
         gpm_db=args.gpm_db,

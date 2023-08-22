@@ -13,9 +13,9 @@ from astropy.coordinates import SkyCoord
 from astropy.stats.circstats import circmean
 
 try:
-    from gpm.db import mysql_db as gxdb
+    from gpm.db import mysql_db as gpmdb
 except:
-    gxdb = None
+    gpmdb = None
 
 CHECK_MODES = ["gpu", "vis", "folder"]
 GALACTIC_PLANE_LIMITS = [-10, 10, 90, 270]
@@ -77,10 +77,10 @@ def obsids_from_db(obsids):
     Returns:
         pandas.DataFrame: Constructed properties based on GPM observations table
     """
-    if gxdb is None:
+    if gpmdb is None:
         raise ValueError("GPM database module not available")
 
-    dbconn = gxdb.connect()
+    dbconn = gpmdb.connect()
 
     cursor = dbconn.cursor()
     cursor.execute(
