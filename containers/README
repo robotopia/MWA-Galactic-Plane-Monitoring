@@ -1,0 +1,11 @@
+Singularity build recipes for tooling related to Galactic Plane Monitoring
+
+Built with:
+
+sudo singularity build gpm_tools.img gpm_build.txt
+
+Once built the container has all software packages required to process GPM data. 
+
+External data dependencies related to the MWA primary beam are not packed within the container. Doing so would increase the container filesize considerably. 
+
+The container include the 'mwa-reduce' software package, which is only available to the MWA collaboration. 
