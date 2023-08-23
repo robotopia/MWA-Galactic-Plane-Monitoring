@@ -352,5 +352,6 @@ obs_autocal.sh -d 5455428 -p Epoch0053 -f 0.5 1340014400
 
 Still waiting on the results 1340014400 -- had to re-run (for boring reasons).
 
-Looking at Epoch0060, it looks like the first dozen obs_ids might be affected somewhat by cable delay-type errors, but looking at the available observations ([ASVO](https://asvo.mwatelescope.org/observations?time-obsid-min=1340518504&time-obsid-max=1340635688&time-starttimeutc-max=2023-08-22T10:22:48.505Z&time-zone=AWST&time-includefuture=no&info-dataquality=1&data-hasdatafiles=yes&maxrec=500)), we might be out of luck on this one.
+Looking at Epoch0060, it looks like the first dozen ObsIDs might be affected somewhat by cable delay-type errors, but looking at the available observations ([ASVO](https://asvo.mwatelescope.org/observations?time-obsid-min=1340518504&time-obsid-max=1340635688&time-starttimeutc-max=2023-08-22T10:22:48.505Z&time-zone=AWST&time-includefuture=no&info-dataquality=1&data-hasdatafiles=yes&maxrec=500)), we might be out of luck on this one.
+[1340634464](https://ws.mwatelescope.org/observation/obs/?obs_id=1340634464) is the calibration that was originally applied.
 The only other nearby calibration observation ([https://ws.mwatelescope.org/observation/obs/?obs_id=1340629384](https://ws.mwatelescope.org/observation/obs/?obs_id=1340629384)) is also pointed right at the Galactic Plane.
