@@ -389,24 +389,35 @@ def update_apply_cal(obs_id, cal_id, field, value):
 
 
 def observation_calibrator_id(obs_id, cal_id):
-    """An update function that will set the calibration observation for a specific observation ID
+    """A select/update function that will get/set the calibration observation for a specific observation ID
 
     Args:
         obs_id (int): observation id to update the status of
-        cali_id (int): observation id of the calibrator to insert  
+        cal_id (int): observation id of the calibrator to insert. If given, will update. If not given (None), will select.
         value (str):  
     """
     conn = gpmdb_connect()
     cur = conn.cursor()
-    cur.execute(
-        """
-                UPDATE observation 
-                SET cal_obs_id=%s 
+
+    if cal_id is not None:
+        cur.execute(
+            """
+                    UPDATE observation 
+                    SET cal_obs_id=%s 
+                    WHERE obs_id=%s
+                    """,
+            (cal_id, obs_id,),
+        )
+        conn.commit()
+    else:
+        cur.execute("""
+                SELECT cal_obs_id FROM observation
                 WHERE obs_id=%s
                 """,
-        (cal_id, obs_id,),
-    )
-    conn.commit()
+            (obs_id,),
+        )
+        res = cur.fetchall()
+        print(res[0][0])
     conn.close()
 
 
@@ -577,7 +588,7 @@ if __name__ == "__main__":
         print(status)
 
     elif args.directive.lower() == "obs_calibrator":
-        require(args, ["obs_id", "cal_id"])
+        require(args, ["obs_id"])
         observation_calibrator_id(args.obs_id, args.cal_id)
 
     elif args.directive.lower() == "update_apply_cal":

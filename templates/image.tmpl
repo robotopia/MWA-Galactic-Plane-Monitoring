@@ -182,13 +182,15 @@ wsclean \
         -size ${imsize} ${imsize} \
         -scale ${scale:0:8} \
         -weight briggs ${robust} \
-        -pol I \
+        -pol I,Q,U,V \
         -join-channels \
         -channels-out 4 \
         -save-source-list \
         -fit-spectral-pol 2 \
         -data-column ${datacolumn} \
         "${obsnum}.ms" | tee wsclean.log
+# Outputs have the generic format:
+#    {name}-t{ts:04d}-{chan:04d}-{pol}-image.fits
 
 test_fail $?
 ${GPMBASE}/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
