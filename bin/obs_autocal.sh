@@ -136,7 +136,6 @@ fi
 # submit job
 jobid=($(${sub}))
 jobid=${jobid[3]}
-
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
 for taskid in $(seq ${numfiles})
@@ -155,7 +154,7 @@ for taskid in $(seq ${numfiles})
     if [ "${GPMTRACK}" = "track" ]
     then
         # record submission
-        ${GPMCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='calibrate' --submission_time="$(date +%s)" --batch_file="${script}" \
+        ${GPMCONTAINER} ${GPMBASE}/gpm/bin/track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='calibrate' --submission_time="$(date +%s)" --batch_file="${script}" \
                             --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
     fi
 
