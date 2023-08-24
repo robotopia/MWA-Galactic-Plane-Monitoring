@@ -2,7 +2,7 @@
 
 usage()
 {
-echo "obs_gpmonim.sh [-t] calid
+echo "gpm_obsbycal.sh [-t] calid
   calid     : the obsid of the calibrator, the assigned observations for which will be processed." 1>&2;
 exit 1;
 }
