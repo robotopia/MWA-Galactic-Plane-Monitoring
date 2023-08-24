@@ -236,8 +236,9 @@ pip3 install --no-cache-dir \
             git+https://github.com/tjgalvin/fits_warp.git \
             git+https://github.com/MWATelescope/mwa-calplots.git \
             git+https://github.com/ICRAR/manta-ray-client.git \
-            git+https://github.com/tjgalvin/mwa_pb_lookup.git \
-            git+https://github.com/tjgalvin/MWA-Galactic-Plane-Monitoring.git
+            git+https://github.com/tjgalvin/mwa_pb_lookup.git
+
+#            git+https://github.com/tjgalvin/MWA-Galactic-Plane-Monitoring.git
 
 # ------------------------------------------------
 
