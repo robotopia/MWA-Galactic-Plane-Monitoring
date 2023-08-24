@@ -17,7 +17,7 @@ list=$(awk '{print substr($1,8,10)}' < "${obslist}_manta.tmp")
 n=1
 for obsnum in $list
 do
-    track_task.py start --jobid="${SLURM_JOBID}" --taskid=$n --start_time="$(date +%s)"
+    ${GPMBASE}/gpm/bin/track_task.py start --jobid="${SLURM_JOBID}" --taskid=$n --start_time="$(date +%s)"
     ((n+=1))
 done
 
@@ -41,7 +41,7 @@ do
     if [[ ! -e "${obsfile}" ]]
     then 
         echo "No file corresponding to obsid ${obsnum} found."
-        track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"    
+        ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"    
     
     # now process the specific modes
     elif [[ "${stem}" == "ms" ]]
@@ -56,7 +56,7 @@ do
         if [[ -d "${obsnum}.ms" ]]
         then
             echo "${obsnum}.ms already exists; please remove directory before running untar job."
-            track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+            ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
         else
             mv "../${obsfile}" ./ 
             tar xf "${obsfile}"
@@ -65,7 +65,7 @@ do
             if [[ $? ]]
             then
                 rm "${obsfile}"
-                track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+                ${GPMBASE}/gpm/bin/track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
             
                 # At the moment birli does not do edge channel flagging. Use flagmwa to do this
                 # for us now. The time and freq resolution parameters are used only for this operation and
@@ -109,22 +109,22 @@ do
 
             else
                 echo "Failed to untar ${obsfile}"
-                track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+                ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
             fi
             cd ../
         fi    
     elif [[ "$stem" == 'vis' ]]
     then
         echo "${obsfile} downloaded successfully; now run cotter."
-        track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
-        track_task.py obs_status --obs_id="${obsnum}" --status='downloaded'
+        ${GPMBASE}/gpm/bin/track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+        ${GPMBASE}/gpm/bin/track_task.py obs_status --obs_id="${obsnum}" --status='downloaded'
     elif [[ "$stem" == 'astro' ]]
     then 
         echo "astro delivery mode not yet supported by obs_mantra. "
-        track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+        ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
     else
         echo "No operation available for ${stem} mode for obsid ${obsnum}."
-        track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+        ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
     fi
     ((n+=1))
 done

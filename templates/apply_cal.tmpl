@@ -1,0 +1,82 @@
+#! /bin/bash -l
+
+pipeuser=PIPEUSER
+obsnum=OBSNUM
+calid=CALID
+
+# If obsnum is a file, then we are in an array job
+if [[ -f ${obsnum} ]]
+then
+    taskid=${SLURM_ARRAY_TASK_ID}
+    jobid=${SLURM_ARRAY_JOB_ID}
+
+    echo "obsfile ${obsnum}"
+    obsnum=$(sed -n -e "${SLURM_ARRAY_TASK_ID}"p "${obsnum}")
+    echo "apply_cal obsid ${obsnum}"
+else
+    taskid=1
+    jobid=${SLURM_JOB_ID}
+fi
+
+# If obsnum is a file, then we are in an array job
+if [[ -f ${calid} ]]
+then
+    echo "calid file is ${calid}"
+    calid=$(sed -n -e "${taskid}"p "${calid}")
+    echo "apply_cal calid ${calid}"
+fi
+
+echo "jobid: ${jobid}"
+echo "taskid: ${taskid}"
+
+function test_fail {
+if [[ $1 != 0 ]]
+then
+    ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    exit "$1"
+fi
+}
+
+base=BASEDIR
+debug=DEBUG
+
+# apply calibration
+${GPMBASE}/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+
+cd "${base}/${obsnum}" || exit
+
+calfile="${base}/${calid}/${calid}_local_gleam_model_solutions_initial_ref.bin"
+
+if [[ ! -e "${calfile}" ]]
+then
+    echo "Could not find calibrator file ${calfile}, trying"
+    calfile="${base}/${calid}/${calid}_self_solutions.bin"
+    echo "${calfile}"
+    if [[ ! -e "${calfile}" ]]
+    then
+        echo "Could not find calibrator file ${calid}"
+        ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+        exit 1
+    fi
+fi
+
+echo "Calibration file is ${calfile}"
+
+# If in debugging mode, apply to the CORRECTED_DATA column
+if [[ ! -z $debug ]]
+then
+    applysolutions \
+                ${obsnum}.ms \
+                "${calfile}"
+# If in production mode, apply to the DATA column
+else
+    applysolutions \
+                -nocopy \
+                ${obsnum}.ms \
+                "${calfile}"
+fi
+
+test_fail $?
+
+${GPMBASE}/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+${GPMBASE}/gpm/bin/track_task.py obs_calibrator --obs_id "${obsnum}" --cal_id "${calid}"

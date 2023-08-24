@@ -35,6 +35,7 @@ DIRECTIVES = (
     "import_obs",
     "check_obs",
     "update_apply_cal",
+    "obs_flagantennae",
 )
 
 
@@ -315,6 +316,27 @@ def check_observation_status(obs_id):
 
     return res[0][0]
 
+def obs_flagantennae(obs_id):
+    """Retrieves a list of antennas to be flagged
+
+    Args:
+        obs_id (int): observation id whose antenna flags are to be retrieved
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # Find out if a row with this obs_id and cal_id already exists
+    cur.execute("""
+            SELECT antenna FROM antennaflag
+            WHERE start_obs_id <= %s AND end_obs_id >= %s
+            """,
+            (obs_id, obs_id,),
+            )
+
+    res = list(dict.fromkeys(cur.fetchall()))
+    print(' '.join([str(row[0]) for row in res])) # Print antenna numbers in a space-delimited list
+    conn.close()
+
 def update_apply_cal(obs_id, cal_id, field, value):
     """An update function that will signal whether a calibration solution can be transferred to a specific observation ID
 
@@ -561,6 +583,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "update_apply_cal":
         require(args, ["obs_id", "cal_id", "field", "value"])
         update_apply_cal(args.obs_id, args.cal_id, args.field, args.value)
+
+    elif args.directive.lower() == "obs_flagantennae":
+        require(args, ["obs_id"])
+        obs_flagantennae(args.obs_id)
 
     elif args.directive.lower() == "iono_update":
         require(args, ["obs_id", "ion_path"])
