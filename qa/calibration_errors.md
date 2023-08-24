@@ -362,5 +362,5 @@ The only other nearby calibration observation ([https://ws.mwatelescope.org/obse
 
 1340014400 (for Epoch0053) solutions looking good:
 
-![1340014400_local_gleam_model_solutions_initial_ref_phase.png](1340014400_local_gleam_model_solutions_initial_ref_phase.png)
+![1340014400_local_gleam_model_solutions_initial_ref_phase.png](images/1340014400_local_gleam_model_solutions_initial_ref_phase.png)
 
