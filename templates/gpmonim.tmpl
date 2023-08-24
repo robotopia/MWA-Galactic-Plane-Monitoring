@@ -72,6 +72,9 @@ then
             dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obs))
             depend=${dep[3]}
             dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
+            depend=${dep[3]}
+            depp=($(obs_postimage.sh -d ${depend} -p "${epoch}" $obs))
+            dep=($(obs_tfilter.sh -d ${depend} -p "${epoch}" $obs))
         fi
     done
     
