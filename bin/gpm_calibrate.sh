@@ -25,6 +25,5 @@ then
     depend=${dep[3]}
     dep=($(obs_autocal.sh -d ${depend} -p "${epoch}" -f 0.5 "${calid}"))
     depend=${dep[3]}
-    #obs_gpmonim.sh -d ${depend} -p "${epoch}" "${obsid}"
 
 fi

@@ -2,15 +2,10 @@
 
 usage()
 {
-echo "obs_apply_cal.sh [-p project] [-d dep] [-a account] [-c calid] [-z] [-t] obsnum
+echo "obs_apply_cal.sh [-p project] [-d dep] [-a account] [-c calfile] [-z] [-t] obsnum
   -p project  : project, no default
   -d dep      : job number for dependency (afterok)
-  -c calid    : obsid for calibrator.
-                project/calid/calid_*_solutions.bin will be used
-                to calibrate if it exists. A file can be supplied with the 
-                obsids for the calibration fields that correspond to the 
-                obsids specified in the obsid file, if it is provided. 
-                Otherwise job will fail.
+  -c calfile  : path to (.bin) calibration solutions file
   -z          : Debugging mode: create a new CORRECTED_DATA column
                 instead of applying to the DATA column
   -t          : test. Don't submit job, just make the batch file
@@ -23,7 +18,7 @@ pipeuser="${GXUSER}"
 
 #initial variables
 dep=
-calid=
+calfile=
 tst=
 account=
 debug=
@@ -36,7 +31,7 @@ do
         dep=${OPTARG}
         ;;
 	c)
-	    calid=${OPTARG}
+	    calfile=${OPTARG}
 	    ;;
     p)
         project=${OPTARG}
@@ -57,8 +52,8 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-# if obsid or calid is empty then just print help
-if [[ -z ${obsnum} ]] || [[ -z ${calid} ]]
+# if obsid or calfile is empty then just print help
+if [[ -z ${obsnum} ]] || [[ -z ${calfile} ]]
 then
     usage
 fi
@@ -92,10 +87,10 @@ fi
 queue="-p ${GXSTANDARDQ}"
 base="${GXSCRATCH}/${project}"
 
-if [[ $? != 0 ]]
+if [[ ! -f "$calfile" ]]
 then
     echo "Could not find calibrator file"
-    echo "looked for latest of: ${base}/${calid}/${calid}*solutions*.bin"
+    echo "looked for $calfile"
     exit 1
 fi
 
@@ -105,7 +100,7 @@ script="${GXSCRIPT}/apply_cal_${obsnum}.sh"
 cat "${GXBASE}/templates/apply_cal.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                        -e "s:BASEDIR:${base}:g" \
                                        -e "s:DEBUG:${debug}:g" \
-                                       -e "s:CALID:${calid}:g" \
+                                       -e "s:CALFILE:${calfile}:g" \
                                        -e "s:PIPEUSER:${pipeuser}:g"  > ${script}
 
 chmod 755 "${script}"

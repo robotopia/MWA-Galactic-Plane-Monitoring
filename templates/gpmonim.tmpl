@@ -8,13 +8,6 @@ pipeuser=PIPEUSER
 calid=CALID
 datadir=BASEDIR
 
-# Retrieving unusual variables so that we can easily resubmit the job to check all the data was processed
-script=SCRIPT
-output=OUTPUT
-error=ERROR
-account=ACCOUNT
-queue='QUEUE'
-
 # Common singularity command to run the python code
 SINGCMD="singularity exec ${GPMCONTAINER} "
 
@@ -42,9 +35,10 @@ fi
 
 ${SINGCMD} "${GPMBASE}/gpm_track.py" obs_status --obs_id ${calid} --status "calibrated"
 
-# Find all the observations taken within +/-12h of that calibrator
+# Find all the observations who have been assigned the given calibrator
 # That have not yet been processed, as recorded by our database
-obsids=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --calid $calid --allowed-status unprocessed)
+#obsids=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --calid $calid --allowed-status unprocessed)
+obsids=$(${SINGCMD} ${GPMBASE}/gpm_track.py ls_obs_for_cal --calid $calid)
 
 if [[ $obsids != "" ]]
 then
@@ -65,7 +59,7 @@ then
             depend=${dep[3]}
             dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
             depend=${dep[3]}
-            dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $calid -z  $obs))
+            dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $calfile -z  $obs))
             depend=${dep[3]}
             dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
             depend=${dep[3]}
@@ -78,8 +72,6 @@ then
         fi
     done
     
-    sub="sbatch --begin=now+24h --export=ALL  --time=01:00:00 --mem=${GPMABSMEMORY}G --output=${output} --error=${error}"
-    sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${queue} ${script}.sbatch"
 else
-    echo "No further unprocessed data found; will not resubmit ${script}."
+    echo "No obsids have been assigned to calibration $calid in the database"
 fi

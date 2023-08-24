@@ -36,6 +36,9 @@ DIRECTIVES = (
     "check_obs",
     "update_apply_cal",
     "obs_flagantennae",
+    "acacia_path",
+    "ls_obs_for_cal",
+    "obs_epoch",
 )
 
 
@@ -316,6 +319,28 @@ def check_observation_status(obs_id):
 
     return res[0][0]
 
+def observation_epoch(obs_id):
+    """Retrieves the epoch for a given observation
+
+    Args:
+        obs_id (int): observation id whose epoch is to be retrieved
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # Find out if a row with this obs_id and cal_id already exists
+    cur.execute("""
+            SELECT epoch FROM epoch
+            WHERE obs_id = %s
+            """,
+            (obs_id,),
+            )
+
+    res = cur.fetchall()
+    if len(res) > 0:
+        print(res[0][0])
+    conn.close()
+
 def obs_flagantennae(obs_id):
     """Retrieves a list of antennas to be flagged
 
@@ -417,7 +442,50 @@ def observation_calibrator_id(obs_id, cal_id):
             (obs_id,),
         )
         res = cur.fetchall()
+        if len(res) > 0:
+            print(res[0][0])
+    conn.close()
+
+
+def acacia_path(obs_id, file_type):
+    """A select function that will get the acacia path for a specific observation ID and a given "file type"
+
+    Args:
+        obs_id (int): observation id to get the acacia path for
+        file_type (str): The type of file as listed in the database
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+                SELECT path FROM acacia_file
+                WHERE obs_id=%s AND type=%s
+                """,
+        (obs_id, file_type),
+    )
+    res = cur.fetchall()
+    if len(res) > 0:
         print(res[0][0])
+    conn.close()
+
+
+def ls_obs_for_cal(cal_id):
+    """A select function that will get the list of observation to which the given calibration is to be applied.
+
+    Args:
+        cal_id (int): calibration observation id
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+                SELECT obs_id FROM observation
+                WHERE cal_obs_id=%s
+                """,
+        (cal_id,),
+    )
+    res = cur.fetchall()
+    print('\n'.join([str(row[0]) for row in res]))
     conn.close()
 
 
@@ -506,7 +574,7 @@ if __name__ == "__main__":
     ps.add_argument("--stderr", type=str, help="standard error log", default=None)
     ps.add_argument("--stdout", type=str, help="standard out log", default=None)
     ps.add_argument("--field", type=str, help="database field to update (update_apply_cal only)", default=None)
-    ps.add_argument("--value", type=str, help="database value to insert into \"field\" (update_apply_cal only).", default=None)
+    ps.add_argument("--value", type=str, help="database value to insert into \"field\" (update_apply_cal and acacia_path).", default=None)
     ps.add_argument(
         "--status",
         type=str,
@@ -580,6 +648,10 @@ if __name__ == "__main__":
         require(args, ["obs_id", "status"])
         observation_status(args.obs_id, args.status)
 
+    elif args.directive.lower() == "obs_epoch":
+        require(args, ["obs_id"])
+        observation_epoch(args.obs_id)
+
     elif args.directive.lower() == "check_obs_status":
         require(args, ["obs_id",])
         status = check_observation_status(args.obs_id)
@@ -611,6 +683,14 @@ if __name__ == "__main__":
         require(args, ["obs_id"])
         found = check_imported_obs_id(args.obs_id)
         logger.info(f"{args.obs_id=} was {found=}")
+
+    elif args.directive.lower() == "acacia_path":
+        require(args, ["obs_id", "value"])
+        acacia_path(args.obs_id, args.value)
+
+    elif args.directive.lower() == "ls_obs_for_cal":
+        require(args, ["cal_id"])
+        ls_obs_for_cal(args.cal_id)
 
     else:
         print(

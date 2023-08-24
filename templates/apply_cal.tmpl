@@ -2,7 +2,7 @@
 
 pipeuser=PIPEUSER
 obsnum=OBSNUM
-calid=CALID
+calfile=CALFILE
 
 # If obsnum is a file, then we are in an array job
 if [[ -f ${obsnum} ]]
@@ -16,14 +16,6 @@ then
 else
     taskid=1
     jobid=${SLURM_JOB_ID}
-fi
-
-# If obsnum is a file, then we are in an array job
-if [[ -f ${calid} ]]
-then
-    echo "calid file is ${calid}"
-    calid=$(sed -n -e "${taskid}"p "${calid}")
-    echo "apply_cal calid ${calid}"
 fi
 
 echo "jobid: ${jobid}"
@@ -45,21 +37,6 @@ ${GPMBASE}/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" -
 
 cd "${base}/${obsnum}" || exit
 
-calfile="${base}/${calid}/${calid}_local_gleam_model_solutions_initial_ref.bin"
-
-if [[ ! -e "${calfile}" ]]
-then
-    echo "Could not find calibrator file ${calfile}, trying"
-    calfile="${base}/${calid}/${calid}_self_solutions.bin"
-    echo "${calfile}"
-    if [[ ! -e "${calfile}" ]]
-    then
-        echo "Could not find calibrator file ${calid}"
-        ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-        exit 1
-    fi
-fi
-
 echo "Calibration file is ${calfile}"
 
 # If in debugging mode, apply to the CORRECTED_DATA column
@@ -79,4 +56,3 @@ fi
 test_fail $?
 
 ${GPMBASE}/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-${GPMBASE}/gpm/bin/track_task.py obs_calibrator --obs_id "${obsnum}" --cal_id "${calid}"
