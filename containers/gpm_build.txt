@@ -212,7 +212,7 @@ pip3 install --no-cache-dir \
             tifffile==2021.8.30 \
             jedi==0.17.2 \
             pandas==1.2.1 \
-            numpy==1.19
+            numpy==1.20
 
 pip3 install --no-cache-dir \
             ipython \
