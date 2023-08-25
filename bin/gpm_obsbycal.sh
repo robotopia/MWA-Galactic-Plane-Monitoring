@@ -91,16 +91,17 @@ then
     for obs in $obsids
     do
 
+        # Start with no dependency
+        depend=
         epoch=$(${SINGCMD} "${GPMBASE}/gpm_track.py" obs_epoch --obs_id $obs)
         datadir="${GPMSCRATCH}/${epoch}"
         mkdir -p $datadir
         cd $datadir
 
         echo "Running manta:"
-
         echo "${obs}" > "${obs}_obsid.txt"
 
-        dep=($(obs_manta.sh -p $epoch -o "${obs}_obsid.txt"))
+        dep=($(obs_manta.sh ${depend} -p $epoch -o "${obs}_obsid.txt"))
         case "$?" in
             0)
                 depend="-d ${dep[3]}"
@@ -115,30 +116,29 @@ then
         esac
         echo "ObsID $obs (manta): ${dep[*]}"
 
-
         cmd="obs_autoflag.sh ${depend} -p ${epoch} $obs"
         echo "Running autoflag: $cmd"
 
         dep=($(${cmd}))
         echo "ObsID $obs (autoflag): ${dep[*]}"
-        depend=${dep[3]}
-        dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c "$caldir/$calfile" -z  $obs))
+        depend="-d ${dep[3]}"
+        dep=($(obs_apply_cal.sh ${depend} -p "${epoch}" -c "$caldir/$calfile" -z  $obs))
         echo "ObsID $obs (apply_cal): ${dep[*]}"
-        depend=${dep[3]}
-        dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
+        depend="-d ${dep[3]}"
+        dep=($(obs_uvflag.sh ${depend} -p "${epoch}" -z $obs))
         echo "ObsID $obs (uvflag): ${dep[*]}"
-        depend=${dep[3]}
-        dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obs))
+        depend="-d ${dep[3]}"
+        dep=($(obs_image.sh ${depend} -p "${epoch}" -z $obs))
         echo "ObsID $obs (image): ${dep[*]}"
-        depend=${dep[3]}
-        dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
+        depend="-d ${dep[3]}"
+        dep=($(obs_transient.sh ${depend} -p "${epoch}" -z $obs))
         echo "ObsID $obs (transient): ${dep[*]}"
-        depend=${dep[3]}
-        depp=($(obs_postimage.sh -d ${depend} -p "${epoch}" -P I $obs))
+        depend="-d ${dep[3]}"
+        depp=($(obs_postimage.sh ${depend} -p "${epoch}" -P I $obs))
         echo "ObsID $obs (postimage-I): ${depp[*]}"
-        deppp=($(obs_postimage.sh -d ${depend} -p "${epoch}" -P V $obs))
+        deppp=($(obs_postimage.sh ${depend} -p "${epoch}" -P V $obs))
         echo "ObsID $obs (postimage-V): ${deppp[*]}"
-        dep=($(obs_tfilter.sh -d ${depend} -p "${epoch}" $obs))
+        dep=($(obs_tfilter.sh ${depend} -p "${epoch}" $obs))
         echo "ObsID $obs (tfilter): ${dep[*]}"
     done
 
