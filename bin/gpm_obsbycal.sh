@@ -12,7 +12,7 @@ pipeuser="${GPMUSER}"
 #initial variables
 tst=
 # parse args and set options
-while getopts ':tzd:a:p:' OPTION
+while getopts ':t' OPTION
 do
     case "$OPTION" in
 	? | : | h)
@@ -37,7 +37,7 @@ fi
 SINGCMD="singularity exec ${GPMCONTAINER} "
 
 # Move to the data directory of the calibrator
-epoch=$(${SINGCMD} "${GPMBASE}/gpm_track.py" obs_epoch --obsid $calid)
+epoch=$(${SINGCMD} "${GPMBASE}/gpm_track.py" obs_epoch --obs_id $calid)
 caldir="${GPMSCRATCH}/${epoch}/${calid}"
 mkdir -p "$caldir"
 cd "${caldir}"
@@ -84,35 +84,62 @@ fi
 #obsids=$(${SINGCMD} "${GPMBASE}/gp_monitor_lookup.py" --calid $calid --allowed-status unprocessed)
 
 # Find all the observations who have been assigned the given calibrator
-obsids=$(${SINGCMD} ${GPMBASE}/gpm_track.py ls_obs_for_cal --calid $calid)
+obsids=$(${SINGCMD} ${GPMBASE}/gpm_track.py ls_obs_for_cal --cal_id $calid)
 
 if [[ $obsids != "" ]]
 then
     for obs in $obsids
     do
 
-        epoch=$(${SINGCMD} "${GPMBASE}/gpm_track.py" obs_epoch --obsid $obs)
-        datadir="${GPMSCRATCH}/${epoch}/${obs}"
+        epoch=$(${SINGCMD} "${GPMBASE}/gpm_track.py" obs_epoch --obs_id $obs)
+        datadir="${GPMSCRATCH}/${epoch}"
         mkdir -p $datadir
         cd $datadir
+
+        echo "Running manta:"
 
         echo "${obs}" > "${obs}_obsid.txt"
 
         dep=($(obs_manta.sh -p $epoch -o "${obs}_obsid.txt"))
+        case "$?" in
+            0)
+                depend="-d ${dep[3]}"
+                ;;
+            1)
+                echo "obs_manta.sh failed. Stopping gpm_obsbycal.sh for ${obs}"
+                continue
+                ;;
+            2)
+                depend=""
+                ;;
+        esac
+        echo "ObsID $obs (manta): ${dep[*]}"
+
+
+        cmd="obs_autoflag.sh ${depend} -p ${epoch} $obs"
+        echo "Running autoflag: $cmd"
+
+        dep=($(${cmd}))
+        echo "ObsID $obs (autoflag): ${dep[*]}"
         depend=${dep[3]}
-        dep=($(obs_autoflag.sh -d ${depend} -p ${epoch} $obs))
-        depend=${dep[3]}
-        dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c $calfile -z  $obs))
+        dep=($(obs_apply_cal.sh -d ${depend} -p "${epoch}" -c "$caldir/$calfile" -z  $obs))
+        echo "ObsID $obs (apply_cal): ${dep[*]}"
         depend=${dep[3]}
         dep=($(obs_uvflag.sh -d ${depend} -p "${epoch}" -z $obs))
+        echo "ObsID $obs (uvflag): ${dep[*]}"
         depend=${dep[3]}
         dep=($(obs_image.sh -d ${depend} -p "${epoch}" -z $obs))
+        echo "ObsID $obs (image): ${dep[*]}"
         depend=${dep[3]}
         dep=($(obs_transient.sh -d ${depend} -p "${epoch}" -z $obs))
+        echo "ObsID $obs (transient): ${dep[*]}"
         depend=${dep[3]}
         depp=($(obs_postimage.sh -d ${depend} -p "${epoch}" -P I $obs))
+        echo "ObsID $obs (postimage-I): ${depp[*]}"
         deppp=($(obs_postimage.sh -d ${depend} -p "${epoch}" -P V $obs))
+        echo "ObsID $obs (postimage-V): ${deppp[*]}"
         dep=($(obs_tfilter.sh -d ${depend} -p "${epoch}" $obs))
+        echo "ObsID $obs (tfilter): ${dep[*]}"
     done
 
 else

@@ -15,6 +15,11 @@ echo "obs_manta.sh [-p project] [-d dep] [-s timeave] [-k freqav] [-t] -o list_o
 exit 1;
 }
 
+# EXIT CODES
+# 0 = successfully submitted job (or successful test with -t)
+# 1 = unsuccessful
+# 2 = already downloaded
+
 # Supercomputer options
 # Hardcode for downloading
 if [ ! -z $GPMCOPYA ] 
@@ -106,6 +111,7 @@ do
     if [[ -d "${obsnum}/${obsnum}.ms" ]]
     then
         echo "${obsnum}/${obsnum}.ms already exists. I will not download it again."
+        exit 2
     else
         if [[ -z ${gpubox} ]]
         then

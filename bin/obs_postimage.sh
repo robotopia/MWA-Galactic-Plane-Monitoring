@@ -20,7 +20,7 @@ dep=
 tst=
 pol=I
 # parse args and set options
-while getopts ':td:a:p:' OPTION
+while getopts ':td:a:p:P:' OPTION
 do
     case "$OPTION" in
 	d)
