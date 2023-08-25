@@ -22,6 +22,7 @@ scripts = [
     "gpm/bin/aocal_phaseref.py",
     "gpm/bin/aocal_ratio.py",
     "gpm/bin/beam_value_at_radec.py",
+    "gpm/bin/calc_leakage.py",
     "gpm/bin/calc_pointing.py",
     "gpm/bin/calc_optimum_pointing.py",
     "gpm/bin/calc_mean_pos.py",
