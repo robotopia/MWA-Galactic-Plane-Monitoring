@@ -128,7 +128,7 @@ fi
 if [[ ! -e "${obsnum}_template.fits" ]]
 then
     wsclean \
-            -abs-mem ${GXMEMORY} \
+            -abs-mem ${GPMMEMORY} \
             -mgain 1.0 \
             -nmiter 1 \
             -niter 0 \
@@ -139,7 +139,7 @@ then
             -data-column ${datacolumn} \
             -channel-range 4 5 \
             -interval 4 5 \
-            -nwlayers ${GXNCPUS} \
+            -nwlayers ${GPMNCPUS} \
             "${obsnum}.ms"
 
     rm "${obsnum}_template-dirty.fits"
@@ -170,7 +170,7 @@ done
 set -o pipefail
 # Deep clean (for pipeline)
 wsclean \
-        -abs-mem ${GXMEMORY} \
+        -abs-mem ${GPMMEMORY} \
         $multiscale \
         -nmiter 5 \
         -niter 10000000 \
@@ -193,11 +193,15 @@ wsclean \
 #    {name}-t{ts:04d}-{chan:04d}-{pol}-image.fits
 
 # Calculate the Stokes V leakage, and fix
-calc_leakage.py \
-    --Inonpb ${obsnum}_deep-${subchan}-I-image.fits \
-    --Ipb ${obsnum}_deep-${subchan}-I-image-pb.fits \
-    --Vpb ${obsnum}_deep-${subchan}-V-image-pb.fits \
-    --plots
+subchans="0000 0001 0002 0003 MFS"
+for subchan in subchans
+do
+    calc_leakage.py \
+        --Inonpb ${obsnum}_deep-${subchan}-I-image.fits \
+        --Ipb ${obsnum}_deep-${subchan}-I-image-pb.fits \
+        --Vpb ${obsnum}_deep-${subchan}-V-image-pb.fits \
+        --plots
+done
 
 test_fail $?
 track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"

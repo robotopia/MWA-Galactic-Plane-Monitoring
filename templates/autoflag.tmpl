@@ -45,7 +45,7 @@ cd "${datadir}/${obsnum}" || exit 1
 
 # Set up telescope-configuration-dependent options
 
-flags=$(gpm_track.py --obs_id ${obsnum} obs_flagantennae)
+flags=$(${GPMBASE}/gpm_track.py --obs_id ${obsnum} obs_flagantennae)
 
 if [[ ! -z ${flags} ]]
 then

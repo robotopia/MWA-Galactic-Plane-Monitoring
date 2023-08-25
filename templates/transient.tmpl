@@ -111,7 +111,7 @@ then
     echo "Detected that this measurement set has already had its phase centre changed. Not shifting."
 else
     # Determine whether to shift the pointing centre to be more optimally-centred on the peak of the primary beam sensitivity
-    coords=$($GXBASE/gleam_x/bin/calc_optimum_pointing.py --metafits "${metafits}")
+    coords=$($GPMBASE/gleam_x/bin/calc_optimum_pointing.py --metafits "${metafits}")
     echo "Optimally shifting co-ordinates of measurement set to $coords, with zenith shiftback."
     chgcentre \
     "${obsnum}.ms" \
@@ -128,8 +128,8 @@ if [[ ! -e "${obsnum}_transient-t0020-image.fits" ]]
 then
     wsclean -name "${obsnum}_transient" \
     -subtract-model \
-    -abs-mem ${GXMEMORY} \
-    -nwlayers ${GXNCPUS} \
+    -abs-mem ${GPMMEMORY} \
+    -nwlayers ${GPMNCPUS} \
     -data-column ${datacolumn} \
     -pol I \
     -size $size $size \
@@ -149,13 +149,13 @@ then
 fi
 # Then you need to source-find the data... BANE would be expensive to run more than once, so just do it... once
 # This keeps failing for some reason, and it's no longer part of the default processing, so skip it
-#BANE --noclobber --cores ${GXNCPUS} --compress "${obsnum}_transient-t0020-image.fits"
+#BANE --noclobber --cores ${GPMNCPUS} --compress "${obsnum}_transient-t0020-image.fits"
 #test_fail $?
 #
 #for file in "${obsnum}"_transient-t????-image.fits
 #do
 #    aegean \
-#    --cores ${GXNCPUS}\
+#    --cores ${GPMNCPUS}\
 #    --maxsummits=2 \
 #    --background="${obsnum}"_transient-t0020-image_bkg.fits \
 #    --noise="${obsnum}"_transient-t0020-image_rms.fits \

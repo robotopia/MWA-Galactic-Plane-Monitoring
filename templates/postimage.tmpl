@@ -43,8 +43,8 @@ subchans="0000 0001 0002 0003 MFS"
 method=scaled
 
 # Sky model
-POS_MODEL_CATALOGUE="${GXBASE}/models/NVSS_SUMSS_psfcal.fits"
-FLUX_MODEL_CATALOGUE="${GXBASE}/models/GGSM_sparse_unresolved.fits"
+POS_MODEL_CATALOGUE="${GPMBASE}/models/NVSS_SUMSS_psfcal.fits"
+FLUX_MODEL_CATALOGUE="${GPMBASE}/models/GGSM_sparse_unresolved.fits"
 # Set max separation for flux_warp crossmatch as ~ 1' -- unlikely that the ionosphere would be that brutal
 separation=$(echo "60/3600" | bc -l)
 
@@ -133,7 +133,7 @@ do
         # move into place the new masked image
         rm "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" && mv "${obsnum}_deep-${subchan}-${pol}-image-pb_mask.fits" "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
 
-        BANE --cores ${GXNCPUS} --compress --noclobber "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
+        BANE --cores ${GPMNCPUS} --compress --noclobber "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
         # TODO: Replace the redirection
         aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" > >(tee -a "${obsnum}_deep-${subchan}_aegean.log") 2> >(tee -a "${obsnum}_deep-${subchan}_aegean.log" >&2)
     fi
@@ -181,7 +181,7 @@ do
             --nsrcs 750 \
             --vm 10 \
             --progress \
-            --cores ${GXNPCPUS} \
+            --cores ${GPMNPCPUS} \
             --signal peak_flux_1 \
             --enforce-min-srcs 100
             # --signal peak_flux --noise local_rms --SNR 10
@@ -247,8 +247,8 @@ do
         # Compress the scaling image so I can apply it to the RMS and BKG images
         factor=$(pyhead.py -p BN_CFAC "${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits" | awk '{print $3}')
         SR6 -f $factor -o ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf.fits
-        python3 $GXBASE/gleam_x/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits
-        python3 $GXBASE/gleam_x/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_bkg.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits
+        python3 $GPMBASE/gleam_x/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits
+        python3 $GPMBASE/gleam_x/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_bkg.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits
 
         #factor=$(pyhead.py -p BSCALE "${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" | awk '{print $3}')
         
