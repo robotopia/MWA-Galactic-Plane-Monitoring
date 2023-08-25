@@ -2,11 +2,12 @@
 
 usage()
 {
-echo "obs_postimage.sh [-d dep] [-p project] [-a account] [-t] obsnum
+echo "obs_postimage.sh [-d dep] [-p project] [-a account] [-t] [-P pol] obsnum
   -d dep     : job number for dependency (afterok)
   -p project : project, (must be specified, no default)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
+  -P pol     : which polarisation to process (default: I)
   obsnum     : the obsid to process, or a text file of obsids (newline separated). 
                A job-array task will be submitted to process the collection of obsids. " 1>&2;
 exit 1;
@@ -17,6 +18,7 @@ pipeuser="${GPMUSER}"
 #initial variables
 dep=
 tst=
+pol=I
 # parse args and set options
 while getopts ':td:a:p:' OPTION
 do
@@ -33,6 +35,9 @@ do
 	t)
 	    tst=1
 	    ;;
+    P)
+        pol=${OPTARG}
+        ;;
 	? | : | h)
 	    usage
 	    ;;
@@ -81,6 +86,7 @@ fi
 script="${GPMSCRIPT}/postimage_${obsnum}.sh"
 cat "${GPMBASE}/templates/postimage.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                  -e "s:BASEDIR:${base}:g" \
+                                 -e "s:POL:${pol}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
 output="${GPMLOG}/postimage_${obsnum}.o%A"

@@ -23,13 +23,13 @@ echo "taskid: ${taskid}"
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    ${GPMBASE}/gpm/bin/track_task.py fail --jobid=${jobid} --taskid=${taskid} --finish_time=`date +%s`
+    track_task.py fail --jobid=${jobid} --taskid=${taskid} --finish_time=`date +%s`
     exit $1
 fi
 }
 
 # start
-${GPMBASE}/gpm/bin/track_task.py start --jobid=${jobid} --taskid=${taskid} --start_time=`date +%s`
+track_task.py start --jobid=${jobid} --taskid=${taskid} --start_time=`date +%s`
 
 #cores=`grep -P '^core id\t' /proc/cpuinfo  | wc -l`
 datadir=DATADIR
@@ -53,5 +53,5 @@ then
     flagantennae ${obsnum}.ms $flags
 fi
 
-${GPMBASE}/gpm/bin/track_task.py finish --jobid=${jobid} --taskid=${taskid} --finish_time=`date +%s`
+track_task.py finish --jobid=${jobid} --taskid=${taskid} --finish_time=`date +%s`
 

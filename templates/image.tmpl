@@ -25,7 +25,7 @@ echo "taskid: ${taskid}"
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    ${GPMBASE}/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
@@ -52,7 +52,7 @@ tsigma=3
 
 # Update database
 cd "${base}" || exit
-${GPMBASE}/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 datadir="${base}/${obsnum}"
 cd "${datadir}" || exit
@@ -192,9 +192,16 @@ wsclean \
 # Outputs have the generic format:
 #    {name}-t{ts:04d}-{chan:04d}-{pol}-image.fits
 
+# Calculate the Stokes V leakage, and fix
+calc_leakage.py \
+    --Inonpb ${obsnum}_deep-${subchan}-I-image.fits \
+    --Ipb ${obsnum}_deep-${subchan}-I-image-pb.fits \
+    --Vpb ${obsnum}_deep-${subchan}-V-image-pb.fits \
+    --plots
+
 test_fail $?
-${GPMBASE}/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-${GPMBASE}/gpm/bin/track_task.py obs_status --obs_id="${obsnum}" --status='imaged'
+track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+track_task.py obs_status --obs_id="${obsnum}" --status='imaged'
 
 ### TODO fix wsclean2gleam.py so it more cleverly handles lack of polarisation
 # Rename files
