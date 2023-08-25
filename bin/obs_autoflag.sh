@@ -134,7 +134,7 @@ do
     if [ "${GPMTRACK}" = "track" ]
     then
         # record submission
-        ${GPMCONTAINER} ${GPMBASE}/gpm/bin/track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='flag' --submission_time="$(date +%s)"\
+        ${GPMCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='flag' --submission_time="$(date +%s)"\
                             --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
     fi
 

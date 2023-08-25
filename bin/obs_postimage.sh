@@ -12,7 +12,7 @@ echo "obs_postimage.sh [-d dep] [-p project] [-a account] [-t] obsnum
 exit 1;
 }
 
-pipeuser="${GXUSER}"
+pipeuser="${GPMUSER}"
 
 #initial variables
 dep=
@@ -42,8 +42,8 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-queue="-p ${GXSTANDARDQ}"
-base="${GXSCRATCH}/$project"
+queue="-p ${GPMSTANDARDQ}"
+base="${GPMSCRATCH}/$project"
 
 # if obsid is empty then just print help
 if [[ -z ${obsnum} ]] || [[ -z $project ]] || [[ ! -d ${base} ]]
@@ -61,9 +61,9 @@ then
     fi
 fi
 
-if [[ ! -z ${GXACCOUNT} ]]
+if [[ ! -z ${GPMACCOUNT} ]]
 then
-    account="--account=${GXACCOUNT}"
+    account="--account=${GPMACCOUNT}"
 fi
 
 # Establish job array options
@@ -78,13 +78,13 @@ fi
 
 # start the real program
 
-script="${GXSCRIPT}/postimage_${obsnum}.sh"
-cat "${GXBASE}/templates/postimage.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
+script="${GPMSCRIPT}/postimage_${obsnum}.sh"
+cat "${GPMBASE}/templates/postimage.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                  -e "s:BASEDIR:${base}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
-output="${GXLOG}/postimage_${obsnum}.o%A"
-error="${GXLOG}/postimage_${obsnum}.e%A"
+output="${GPMLOG}/postimage_${obsnum}.o%A"
+error="${GPMLOG}/postimage_${obsnum}.e%A"
 
 if [[ -f ${obsnum} ]]
 then
@@ -96,12 +96,12 @@ chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
 echo '#!/bin/bash' > ${script}.sbatch
-#echo "singularity run ${GXCONTAINER} ${script}" >> ${script}.sbatch
+#echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
 # HACK to fix broken BANE
 echo "singularity run /astro/mwasci/tgalvin/gleamx_testing_small.img ${script}" >> ${script}.sbatch
 
-sub="sbatch --begin=now+1minutes --export=ALL --time=8:00:00 --mem=${GXABSMEMORY}G -M ${GXCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GXNCPULINE} ${account} ${GXTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --begin=now+1minutes --export=ALL --time=8:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
+sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
@@ -130,10 +130,10 @@ for taskid in $(seq ${numfiles})
     fi
 
 
-    if [ "${GXTRACK}" = "track" ]
+    if [ "${GPMTRACK}" = "track" ]
     then
         # record submission
-        ${GXCONTAINER} ${GPMBASE}/gpm/bin/track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='postimage' --submission_time="$(date +%s)" \
+        ${GPMCONTAINER} track_task.py queue --jobid="${jobid}" --taskid="${taskid}" --task='postimage' --submission_time="$(date +%s)" \
                             --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
     fi
 

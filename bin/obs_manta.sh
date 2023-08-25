@@ -170,7 +170,7 @@ for obsnum in $dllist
 do
     if [ "${GPMTRACK}" = "track" ]
     then
-        ${GPMCONTAINER} ${GPMBASE}/gpm/bin/track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
+        ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
                         --batch_file="${script}" --obs_id="${obsnum}" --stderr="${error}" --stdout="${output}"
     fi
     ((n+=1))
