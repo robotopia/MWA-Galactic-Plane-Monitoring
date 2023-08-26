@@ -16,7 +16,6 @@ echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
                            | -k freqres   | freq resolution in KHz. default = 40 kHz
                            | -e edgeflag  | number of edge band channels flagged. default = 80
                            | -g           | download gpubox fits files instead of measurement sets
-                apply_cal  | -c calfile   | path to (.bin) calibration solutions file
                 autocal    | -i           | Disable the ionospheric tests (default = False)
                            | -F frac      | the acceptable fraction of spectrum that may be flagged
                            |              | in a calibration solution file before it is marked as
@@ -43,7 +42,6 @@ soption=
 koption=
 eoption=
 goption=
-coption=
 zoption=
 ioption=
 Foption=
@@ -64,8 +62,6 @@ do
             eoption="-e ${OPTARG}";;
         g)
             goption="-g";;
-        c)
-            coption="-c ${OPTARG}";;
         z)
             zoption="-z";;
         i)
@@ -139,7 +135,7 @@ do
             autocal)
                 options="$ioption $toption $Foption $Soption" ;;
             apply_cal)
-                options="$coption $zoption $toption" ;;
+                options="$zoption $toption" ;;
             calcleakage)
                 options="$toption" ;;
             image)

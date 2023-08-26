@@ -2,10 +2,9 @@
 
 usage()
 {
-echo "obs_apply_cal.sh [-p project] [-d dep] [-a account] [-c calfile] [-z] [-t] obsnum
+echo "obs_apply_cal.sh [-p project] [-d dep] [-a account] [-z] [-t] obsnum
   -p project  : project, no default
   -d dep      : job number for dependency (afterok)
-  -c calfile  : path to (.bin) calibration solutions file
   -z          : Debugging mode: create a new CORRECTED_DATA column
                 instead of applying to the DATA column
   -t          : test. Don't submit job, just make the batch file
@@ -52,11 +51,19 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-# if obsid or calfile is empty then just print help
-if [[ -z ${obsnum} ]] || [[ -z ${calfile} ]]
+# if obsid is empty then just print help
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
+
+# Get the associated calfile
+calfile="$(aux_getcal.sh $obsid)"
+if [[ $? != 0 ]]
+then
+    exit 1
+fi
+
 
 if [[ ! -z ${dep} ]]
 then

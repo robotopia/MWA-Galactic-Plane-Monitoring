@@ -23,7 +23,7 @@ then
     depend=${dep[3]}
     dep=($(obs_autoflag.sh -d ${depend} -p "${epoch}" "${calid}"))
     depend=${dep[3]}
-    dep=($(obs_autocal.sh -d ${depend} -p "${epoch}" -f 0.5 "${calid}"))
+    dep=($(obs_autocal.sh -d ${depend} -p "${epoch}" -F 0.5 "${calid}"))
     depend=${dep[3]}
 
 fi
