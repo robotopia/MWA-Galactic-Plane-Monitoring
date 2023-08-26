@@ -24,19 +24,19 @@ source GP-Monitor-garrawarla.profile
 ### Add an observation's metadata to the database
 
 ```
-singularity exec ${GXCONTAINER} gpm_track.py import_obs --obs_id [OBS_ID]
+gpm_track.py import_obs --obs_id [OBS_ID]
 ```
 
 ### Assign a calibration obs to an observation
 
 ```
-singularity exec ${GXCONTAINER} gpm_track.py obs_calibrator --obs_id [OBS_ID] --cal_id [CAL_ID]
+gpm_track.py obs_calibrator --obs_id [OBS_ID] --cal_id [CAL_ID]
 ```
 
 ### Signal that a calibration can/cannot be transferred to a particular observation
 
 ```
-singularity exec ${GXCONTAINER} ./gpm_track.py update_apply_cal --obs_id 1343057752 --cal_id 1343041216 --field usable --value 0
+gpm_track.py update_apply_cal --obs_id [OBS_ID] --cal_id [CAL_ID] --field usable --value [0 or 1]
 ```
 
 (`--value 0` for "cannot be transferred", `--value 1` for "can be transferred")
@@ -44,5 +44,21 @@ singularity exec ${GXCONTAINER} ./gpm_track.py update_apply_cal --obs_id 1343057
 To add a note about why,
 
 ```
-singularity exec ${GXCONTAINER} ./gpm_track.py update_apply_cal --obs_id 1343057752 --cal_id 1343041216 --field notes --value "The cable lengths have changed in the meantime"
+gpm_track.py update_apply_cal --obs_id [OBS_ID] --cal_id [CAL_ID] --field notes --value "[Some notes here]"
 ```
+
+### Check the processing history of a particular observation
+
+This only reports processing steps that have been run by you (i.e. `$GPMUSER`):
+```
+gpm_track.py obs_processing --obs_id [OBS_ID]
+```
+
+### Get a summary of the processing of a particular Epoch
+
+This only reports processing steps that have been run by you (i.e. `$GPMUSER`):
+```
+gpm_track.py epoch_processing --epoch [EPOCH]
+```
+
+An example of a valid epoch name is `Epoch0123`.
