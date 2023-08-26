@@ -2,7 +2,7 @@
 
 usage()
 {
-echo "gpm_onecal_manyobs.sh [options] [-h] commands obsid [obsid ...]
+echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
   options     : Options passed to the listed commands. The command-specific options are:
 
                 Command    | Option       | Description
