@@ -139,6 +139,8 @@ do
                 options="$ioption $toption $Foption $Soption" ;;
             apply_cal)
                 options="$coption $zoption $toption" ;;
+            calcleakage)
+                options="$toption" ;;
             image)
                 options="$zoption $toption" ;;
             postimage)
