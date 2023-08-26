@@ -504,16 +504,16 @@ def observation_processing(obs_id):
     user = os.environ["GPMUSER"]
 
     cur.execute("""
-                SELECT submission_time, task, status FROM processing
+                SELECT submission_time, task, status, job_id FROM processing
                 WHERE obs_id=%s AND user=%s
                 ORDER BY submission_time
                 """,
         (obs_id, user,),
     )
     res = cur.fetchall()
-    print("Submitted             Task              Status")
-    print("----------------------------------------------------------")
-    print('\n'.join([f"{datetime.datetime.fromtimestamp(row[0])}   {row[1]:15}   {row[2]:12}" for row in res]))
+    print("Submitted             Task              Status         JobID")
+    print("----------------------------------------------------------------")
+    print('\n'.join([f"{datetime.datetime.fromtimestamp(row[0])}   {row[1]:15}   {row[2]:9} {row[3]:12}" for row in res]))
     conn.close()
 
 
@@ -532,21 +532,21 @@ def epoch_processing(epoch):
 
     cur.execute("""
                 WITH s1 AS (
-                    SELECT e.epoch, p.obs_id, p.submission_time, p.task, p.status,
+                    SELECT e.epoch, p.obs_id, p.submission_time, p.task, p.status, p.job_id,
                         RANK() OVER (PARTITION BY p.obs_id ORDER BY p.submission_time DESC) AS runningorder
                     FROM processing p
                     LEFT JOIN epoch e ON e.obs_id = p.obs_id
                     WHERE p.status != 'queued' AND e.epoch = %s COLLATE utf8mb4_bin AND p.user = %s)
-                SELECT epoch, obs_id, submission_time, task, status
+                SELECT epoch, obs_id, submission_time, task, status, job_id
                 FROM s1
                 WHERE runningorder = 1
                 """,
         (epoch, user,),
     )
     res = cur.fetchall()
-    print("Epoch       ObsID        Submitted             Task              Status")
-    print("-----------------------------------------------------------------------------------")
-    print('\n'.join([f"{row[0]}   {row[1]}   {datetime.datetime.fromtimestamp(row[2])}   {row[3]:15}   {row[4]:12}" for row in res]))
+    print("Epoch       ObsID        Submitted             Task              Status       Job ID")
+    print("-------------------------------------------------------------------------------------------")
+    print('\n'.join([f"{row[0]}   {row[1]}   {datetime.datetime.fromtimestamp(row[2])}   {row[3]:15}   {row[4]:9} {row[5]:10}" for row in res]))
     conn.close()
 
 

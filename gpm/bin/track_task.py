@@ -14,7 +14,7 @@ import gpm.db.mysql_db as mdb
 
 # This is the list of acceptable observation status' that are 'hard coded' in the
 # gpm website data/ui models.
-OBS_STATUS = ["unprocessed", "downloaded", "calibrated", "imaged", "archived"]
+OBS_STATUS = ["unprocessed", "downloaded", "calibrated", "imaged", "archived", "leakage fixed"]
 
 # Bit of record keeping for potential future use / sanity
 BATCH_OBS_IDS_TASKS = ["queue_mosaic", "start_mosaic", "finish_mosaic"]
