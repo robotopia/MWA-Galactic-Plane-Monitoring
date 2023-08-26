@@ -121,48 +121,45 @@ do
     mkdir -p $datadir
     cd $datadir
 
+    echo "============================="
+    echo " OBSID: $obsid"
+
     # Loope through commands
     for cmd in $commands
     do
-        echo "Running $cmd: "
         # Construct options
         case "$cmd" in
             manta)
                 options="$soption $koption $eoption $goption $toption $foption" ;;
+            autoflag)
+                options="$toption" ;;
+            autocal)
+                options="$ioption $toption $Foption $Soption" ;;
+            apply_cal)
+                options="$coption $zoption $toption" ;;
+            image)
+                options="$zoption $toption" ;;
+            postimage)
+                options="$toption $Poption" ;;
+            tfilter)
+                options="$toption" ;;
+            transient)
+                options="$zoption $toption"
+            uvflag)
+                options="$zoption $toption"
         esac
 
+        # Construct the whole command
+        obs_cmd="$(obs_{$cmd}.sh ${depend} ${options} -p $epoch $obsid)"
+        echo "-----------------------------"
+        echo "Running $cmd: $obs_cmd"
 
-        dep=($(obs_{$cmd}.sh ${depend} ${options} -p $epoch $obsid))
+        # Run it, and parse the output for the job number (to use as a dependency for the next job)
+        dep=($(${obs_cmd} | tee /dev/tty))
         if [[ "$?" != 0 ]]
-            echo "obs_${cmd}.sh failed. Stopping for ${obsid}"
-            continue # FIX ME!!
+            echo "Command \"${cmd}\" failed for ${obsid}. Moving to next obsid..."
+            break
         fi
         depend="-d ${dep[3]}"
-        echo "ObsID $obsid (manta): ${dep[*]}"
-
-        cmd="obs_autoflag.sh ${depend} -p ${epoch} $obsid"
-        echo "Running autoflag: $cmd"
-
-        dep=($(${cmd}))
-        echo "ObsID $obsid (autoflag): ${dep[*]}"
-        depend="-d ${dep[3]}"
-        dep=($(obs_apply_cal.sh ${depend} -p "${epoch}" -c "$caldir/$calfile" -z  $obsid))
-        echo "ObsID $obsid (apply_cal): ${dep[*]}"
-        depend="-d ${dep[3]}"
-        dep=($(obs_uvflag.sh ${depend} -p "${epoch}" -z $obsid))
-        echo "ObsID $obsid (uvflag): ${dep[*]}"
-        depend="-d ${dep[3]}"
-        dep=($(obs_image.sh ${depend} -p "${epoch}" -z $obsid))
-        echo "ObsID $obsid (image): ${dep[*]}"
-        depend="-d ${dep[3]}"
-        dep=($(obs_transient.sh ${depend} -p "${epoch}" -z $obsid))
-        echo "ObsID $obsid (transient): ${dep[*]}"
-        depend="-d ${dep[3]}"
-        depp=($(obs_postimage.sh ${depend} -p "${epoch}" -P I $obsid))
-        echo "ObsID $obsid (postimage-I): ${depp[*]}"
-        deppp=($(obs_postimage.sh ${depend} -p "${epoch}" -P V $obsid))
-        echo "ObsID $obsid (postimage-V): ${deppp[*]}"
-        dep=($(obs_tfilter.sh ${depend} -p "${epoch}" $obsid))
-        echo "ObsID $obsid (tfilter): ${dep[*]}"
     done
 done
