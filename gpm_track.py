@@ -41,6 +41,7 @@ DIRECTIVES = (
     "ls_obs_for_cal",
     "obs_epoch",
     "obs_processing",
+    "epoch_processing",
 )
 
 
@@ -510,9 +511,42 @@ def observation_processing(obs_id):
         (obs_id, user,),
     )
     res = cur.fetchall()
-    print("Submitted           | task            | status")
-    print("--------------------+-----------------+-------------------")
-    print('\n'.join([f"{datetime.datetime.fromtimestamp(row[0])} | {row[1]:15} | {row[2]:12}" for row in res]))
+    print("Submitted             Task              Status")
+    print("----------------------------------------------------------")
+    print('\n'.join([f"{datetime.datetime.fromtimestamp(row[0])}   {row[1]:15}   {row[2]:12}" for row in res]))
+    conn.close()
+
+
+def epoch_processing(epoch):
+    """A select function that will get the processing status summary of the given epoch.
+    In particular, it retrieves the most recent job (excluding status "queued") for each
+    obsid in the given epoch.
+
+    Args:
+        epoch (str): epoch name (e.g. Epoch0123)
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    user = os.environ["GPMUSER"]
+
+    cur.execute("""
+                WITH s1 AS (
+                    SELECT e.epoch, p.obs_id, p.submission_time, p.task, p.status,
+                        RANK() OVER (PARTITION BY p.obs_id ORDER BY p.submission_time DESC) AS runningorder
+                    FROM processing p
+                    LEFT JOIN epoch e ON e.obs_id = p.obs_id
+                    WHERE p.status != 'queued' AND e.epoch = %s COLLATE utf8mb4_bin AND p.user = %s)
+                SELECT epoch, obs_id, submission_time, task, status
+                FROM s1
+                WHERE runningorder = 1
+                """,
+        (epoch, user,),
+    )
+    res = cur.fetchall()
+    print("Epoch       ObsID        Submitted             Task              Status")
+    print("-----------------------------------------------------------------------------------")
+    print('\n'.join([f"{row[0]}   {row[1]}   {datetime.datetime.fromtimestamp(row[2])}   {row[3]:15}   {row[4]:12}" for row in res]))
     conn.close()
 
 
@@ -602,6 +636,7 @@ if __name__ == "__main__":
     ps.add_argument("--stdout", type=str, help="standard out log", default=None)
     ps.add_argument("--field", type=str, help="database field to update (update_apply_cal only)", default=None)
     ps.add_argument("--value", type=str, help="database value to insert into \"field\" (update_apply_cal and acacia_path).", default=None)
+    ps.add_argument("--epoch", type=str, help="epoch name (e.g. Epoch0123), used for directive epoch_processing", default=None)
     ps.add_argument(
         "--status",
         type=str,
@@ -722,6 +757,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "obs_processing":
         require(args, ["obs_id"])
         observation_processing(args.obs_id)
+
+    elif args.directive.lower() == "epoch_processing":
+        require(args, ["epoch"])
+        epoch_processing(args.epoch)
 
     else:
         print(
