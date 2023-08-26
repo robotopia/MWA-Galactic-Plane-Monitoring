@@ -6,14 +6,14 @@ echo "${GPMBASE}"
 
 pipeuser=PIPEUSER
 base=BASEDIR
-obslist=OBSLIST
+csv=CSV
 stem=STEM
 tres=TRES
 fres=FRES
 
 # start download
 cd "${base}" || exit 1
-list=$(awk '{print substr($1,8,10)}' < "${obslist}_manta.tmp")
+list=$(awk '{print substr($1,8,10)}' < "$csv")
 n=1
 for obsnum in $list
 do
@@ -22,7 +22,7 @@ do
 done
 
 export SSL_VERIFY=0
-mwa_client --csv="${obslist}_manta.tmp" --dir="${base}"
+mwa_client --csv="$csv" --dir="${base}"
 
 n=1
 for obsnum in $list

@@ -4,15 +4,15 @@
 
 usage()
 {
-echo "obs_autocal.sh [-d dep] [-a account] [-t] obsnum
+echo "obs_autocal.sh [-d dep] [-F frac] [-S sfrac] [-t] obsnum
   -p project : project, no default
   -d dep     : job number for dependency (afterok)
   -i         : disable the ionospheric metric tests (default = False)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
-  -f FRAC    : the acceptable fraction of spectrum that may be flagged in a calibration
+  -F frac    : the acceptable fraction of spectrum that may be flagged in a calibration
                solution file before it is marked as bad. Value between 0 - 1. (default = 0.25)
-  -s SFRAC   : the acceptable fraction of a segmented spectrum that may be flagged in a 
+  -S sfrac   : the acceptable fraction of a segmented spectrum that may be flagged in a 
                calibration solution file before it is flagged as bad. Typical GLEAM-X
                processing has four sub-bands, so there are four segments. If a single 
                segment has more then SFRAC flagged it is marked as bad. (default = 0.4) 
@@ -48,10 +48,10 @@ do
 	t)
 	    tst=1
 	    ;;
-    f)
+    F)
         frac=${OPTARG}
         ;;
-    s) 
+    S) 
         sthresh=${OPTARG}
         ;;
 	? | : | h)
