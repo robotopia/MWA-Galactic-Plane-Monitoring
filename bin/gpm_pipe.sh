@@ -31,7 +31,7 @@ echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
 
   commands    : A string of space-delimited commands to run, as a dependency chain, in the order in which they are listed.
                 e.g. \"image postimage\" will run \"obs_image.sh\" followed by \"obs_postimage.sh\". Available commands:
-                    apply_cal, autocal, autoflag, image, manta, postimage,
+                    apply_cal, autocal, autoflag, calcleakage, image, manta, postimage,
                     postimageI, postimageV, tfilter, transient, uvflag
 
   obsid       : The obsid(s) of the observation(s) to be processed" 1>&2;
@@ -94,6 +94,7 @@ done
 shift  "$(($OPTIND -1))"
 commands="$1"
 if [[ -z $commands ]]
+then
     usage
     echo "No commands supplied. Nothing to be done."
     exit 1
@@ -152,19 +153,23 @@ do
             tfilter)
                 options="$toption" ;;
             transient)
-                options="$zoption $toption"
+                options="$zoption $toption" ;;
             uvflag)
-                options="$zoption $toption"
+                options="$zoption $toption" ;;
+            *)
+                echo "unrecognised command: $cmd. Exiting"
+                exit 1 ;;
         esac
 
         # Construct the whole command
-        obs_cmd="$(obs_{$cmd}.sh ${depend} ${options} -p $epoch $obsid)"
+        obs_cmd="obs_${cmd}.sh ${depend} ${options} -p $epoch $obsid"
         echo "-----------------------------"
         echo "Running $cmd: $obs_cmd"
 
         # Run it, and parse the output for the job number (to use as a dependency for the next job)
         dep=($(${obs_cmd} | tee /dev/tty))
         if [[ "$?" != 0 ]]
+        then
             echo "Command \"${cmd}\" failed for ${obsid}. Moving to next obsid..."
             break
         fi

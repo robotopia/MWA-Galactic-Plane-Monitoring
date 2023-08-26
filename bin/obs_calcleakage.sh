@@ -81,7 +81,7 @@ fi
 # start the real program
 
 script="${GPMSCRIPT}/calcleakage_${obsnum}.sh"
-cat "${GPMBASE}/templates/calcleakage" | sed -e "s:OBSNUM:${obsnum}:g" \
+cat "${GPMBASE}/templates/calcleakage.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                  -e "s:BASEDIR:${base}:g" > "${script}"
 
 output="${GPMLOG}/calcleakage_${obsnum}.o%A"

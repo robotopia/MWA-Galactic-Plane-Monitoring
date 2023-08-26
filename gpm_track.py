@@ -8,6 +8,7 @@ import time
 import json
 import logging
 import argparse
+import datetime
 
 
 import mysql.connector as mysql
@@ -39,6 +40,7 @@ DIRECTIVES = (
     "acacia_path",
     "ls_obs_for_cal",
     "obs_epoch",
+    "obs_processing",
 )
 
 
@@ -489,6 +491,31 @@ def ls_obs_for_cal(cal_id):
     conn.close()
 
 
+def observation_processing(obs_id):
+    """A select function that will get the processing status summary of the given obs id.
+
+    Args:
+        obs_id (int): observation id
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    user = os.environ["GPMUSER"]
+
+    cur.execute("""
+                SELECT submission_time, task, status FROM processing
+                WHERE obs_id=%s AND user=%s
+                ORDER BY submission_time
+                """,
+        (obs_id, user,),
+    )
+    res = cur.fetchall()
+    print("Submitted           | task            | status")
+    print("--------------------+-----------------+-------------------")
+    print('\n'.join([f"{datetime.datetime.fromtimestamp(row[0])} | {row[1]:15} | {row[2]:12}" for row in res]))
+    conn.close()
+
+
 def ion_update(obs_id, ion_path):
     with open(ion_path, "rb") as in_file:
         arr = np.loadtxt(in_file, delimiter=",", skiprows=1)
@@ -691,6 +718,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "ls_obs_for_cal":
         require(args, ["cal_id"])
         ls_obs_for_cal(args.cal_id)
+
+    elif args.directive.lower() == "obs_processing":
+        require(args, ["obs_id"])
+        observation_processing(args.obs_id)
 
     else:
         print(
