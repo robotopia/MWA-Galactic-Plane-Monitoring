@@ -161,6 +161,11 @@ do
         if [[ ! -e "${obsnum}_000${n}-${pol}-beam.fits" ]]
         then
             lookup_jones.py ${obsnum} _template.fits ${obsnum}_000${n}- -c $cstart-$cend --wsclean_names
+            if [[ $? != 0 ]]
+            then
+                echo "The script lookup_jones.py failed. Stopping now."
+                exit 1
+            fi
         fi
         ln -s "${obsnum}_000${n}-${pol}-beam.fits" "${obsnum}_deep-000${n}-beam-${pol}.fits"
     done
