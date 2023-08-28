@@ -34,7 +34,11 @@ echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
                     apply_cal, autocal, autoflag, calcleakage, image, manta, postimage,
                     postimageI, postimageV, tfilter, transient, uvflag
 
-  obsid       : The obsid(s) of the observation(s) to be processed" 1>&2;
+  obsid       : The obsid(s) of the observation(s) to be processed
+
+  EXAMPLE:
+
+      gpm_pipe.sh \"manta autoflag apply_cal uvflag image transient postimage-I postimage-V tfilter\" OBSID1 OBSID2 ..." 1>&2;
 }
 
 commands=
