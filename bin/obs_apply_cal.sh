@@ -2,14 +2,15 @@
 
 usage()
 {
-echo "obs_apply_cal.sh [-p project] [-d dep] [-a account] [-z] [-t] obsnum
+echo "obs_apply_cal.sh [-p project] [-d dep] [-a account] [-z] [-t] obsid
   -p project  : project, no default
   -d dep      : job number for dependency (afterok)
   -z          : Debugging mode: create a new CORRECTED_DATA column
                 instead of applying to the DATA column
   -t          : test. Don't submit job, just make the batch file
                 and then return the submission command
-  obsnum      : the obsid to process, or a text file of obsids (newline separated)" 1>&2;
+  -v          : verbose mode (set -ex)
+  obsid      : the obsid to process, or a text file of obsids (newline separated)" 1>&2;
 exit 1;
 }
 
@@ -23,7 +24,7 @@ account=
 debug=
 
 # parse args and set options
-while getopts ':tzd:a:c:p:' OPTION
+while getopts ':tzd:a:c:p:v' OPTION
 do
     case "$OPTION" in
     d)
@@ -41,6 +42,9 @@ do
     t)
         tst=1
         ;;
+    v)
+        set -ex
+        ;;
     ? | : | h)
         usage
         ;;
@@ -49,10 +53,10 @@ done
 
 # set the obsid to be the first non option
 shift  "$(($OPTIND -1))"
-obsnum=$1
+obsid=$1
 
 # if obsid is empty then just print help
-if [[ -z ${obsnum} ]]
+if [[ -z ${obsid} ]]
 then
     usage
 fi
@@ -67,7 +71,7 @@ fi
 
 if [[ ! -z ${dep} ]]
 then
-    if [[ -f ${obsnum} ]]
+    if [[ -f ${obsid} ]]
     then
         depend="--dependency=aftercorr:${dep}"
     else
@@ -81,9 +85,9 @@ then
 fi
 
 # Establish job array options
-if [[ -f ${obsnum} ]]
+if [[ -f ${obsid} ]]
 then
-    numfiles=$(wc -l ${obsnum} | awk '{print $1}')
+    numfiles=$(wc -l ${obsid} | awk '{print $1}')
     jobarray="--array=1-${numfiles}"
 else
     numfiles=1
@@ -102,9 +106,9 @@ then
 fi
 
 
-script="${GPMSCRIPT}/apply_cal_${obsnum}.sh"
+script="${GPMSCRIPT}/apply_cal_${obsid}.sh"
 
-cat "${GPMBASE}/templates/apply_cal.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
+cat "${GPMBASE}/templates/apply_cal.tmpl" | sed -e "s:OBSNUM:${obsid}:g" \
                                        -e "s:BASEDIR:${base}:g" \
                                        -e "s:DEBUG:${debug}:g" \
                                        -e "s:CALFILE:${calfile}:g" \
@@ -112,10 +116,10 @@ cat "${GPMBASE}/templates/apply_cal.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
 
 chmod 755 "${script}"
 
-output="${GPMLOG}/apply_cal_${obsnum}.o%A"
-error="${GPMLOG}/apply_cal_${obsnum}.e%A"
+output="${GPMLOG}/apply_cal_${obsid}.o%A"
+error="${GPMLOG}/apply_cal_${obsid}.e%A"
 
-if [[ -f ${obsnum} ]]
+if [[ -f ${obsid} ]]
 then
     output="${output}_%a"
     error="${error}_%a"
@@ -125,7 +129,7 @@ fi
 echo '#!/bin/bash' > ${script}.sbatch
 echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
 
-if [ ! -z ${GPMNCPULINE} ]
+if [[ ! -z ${GPMNCPULINE} ]]
 then
     # autoflag only needs a single CPU core
     GPMNCPULINE="--ntasks-per-node=1"
@@ -154,11 +158,11 @@ for taskid in $(seq ${numfiles})
     obserror=`echo ${error} | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/"`
     obsoutput=`echo ${output} | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/"`
 
-    if [[ -f ${obsnum} ]]
+    if [[ -f ${obsid} ]]
     then
-        obs=$(sed -n -e ${taskid}p ${obsnum})
+        obs=$(sed -n -e ${taskid}p ${obsid})
     else
-        obs=$obsnum
+        obs=$obsid
     fi
 
     if [ "${GPMTRACK}" = "track" ]

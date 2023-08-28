@@ -12,6 +12,7 @@ echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
                            | -t           | Test. Whatever that means for each command, do it.
                            | -z           | Debugging mode. Whatever that means for each command,
                            |              | do it.
+                           | -v           | Verbose mode
                 manta      | -s timeres   | time resolution in sec. default = 2 s
                            | -k freqres   | freq resolution in KHz. default = 40 kHz
                            | -e edgeflag  | number of edge band channels flagged. default = 80
@@ -49,9 +50,10 @@ Soption=
 Poption=
 foption=
 toption=
+voption=
 
 # parse args and set options
-while getopts 'hs:k:e:gc:ziF:S:P:ft' OPTION
+while getopts 'hs:k:e:gc:ziF:S:P:ftv' OPTION
 do
     case "$OPTION" in
         s)
@@ -76,6 +78,9 @@ do
             foption="-f";;
         t)
             toption="-t";;
+        v)
+            set -ex
+            voption="-v";;
         h)
             usage
             exit 1;;
@@ -135,7 +140,7 @@ do
             autocal)
                 options="$ioption $toption $Foption $Soption" ;;
             apply_cal)
-                options="$zoption $toption" ;;
+                options="$zoption $toption $voption" ;;
             calcleakage)
                 options="$toption" ;;
             image)
