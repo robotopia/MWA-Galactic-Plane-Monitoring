@@ -1,5 +1,7 @@
 # Schema for the GPM processing database
 
+## Overview diagram
+
 ```mermaid
 ---
 title: Schema
@@ -7,8 +9,8 @@ title: Schema
 erDiagram
     OBSERVATION }o--o{ OBSERVATION : "cal_obs_id: The calibration observation which has been assigned to this observation"
     ACACIA_FILE }|--|{ OBSERVATION : "obs_id: The observation to which the file pertains"
-    APPLY_CAL }|--|{ OBSERVATION : "obs_id: The observation to which the calibration is applied"
-    APPLY_CAL }|--|{ OBSERVATION : "cal_obs_id: The calibration observation"
+    APPLY_CAL }|--|{ OBSERVATION : "obs_id: Target observation"
+    APPLY_CAL }|--|{ OBSERVATION : "cal_obs_id: Candidate calibration obs"
 
     OBSERVATION {
         int obs_id(PK)
@@ -60,3 +62,7 @@ erDiagram
         string notes
     }
 ```
+
+## Tables
+
+
