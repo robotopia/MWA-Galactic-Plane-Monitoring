@@ -41,6 +41,7 @@ erDiagram
     }
     ACACIA_FILE {
         int id(PK)
+        int obs_id(->observation.obs_id)
         string type
         string path
     }
