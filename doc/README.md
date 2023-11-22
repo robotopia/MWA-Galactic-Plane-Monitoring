@@ -21,6 +21,21 @@ source GP-Monitor-garrawarla.profile
 
 ## Database operations
 
+Once the [profile has been loaded](#load-the-gpm-profile), the environment variable `GPMCONTAINER` contains the path to a singularity container in which various operations, jobs, and scripts can be run, including the database scripts described in this section.
+To run a command inside the container, preface the command with
+```
+singularity exec $GPMCONTAINER ...
+```
+In addition, be aware that the database scripts themselves will not (by default) be in your path, so you will typically need to give the path to their location as well.
+For example, even though the documentation below describes commands such as
+```
+gpm_track.py import_obs --obs_id 1346053400
+```
+in reality, the command you will run will be
+```
+singularity exec $GPMCONTAINER $GPMBASE/gpm_track.py obs_processing --obs_id 1346053400
+```
+
 ### Add an observation's metadata to the database
 
 ```
