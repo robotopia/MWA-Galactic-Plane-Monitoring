@@ -1,7 +1,9 @@
 # Documentation
 
 - [Setting up](#setting-up)
+  - [Cloning this repository](#cloning-this-repository)
   - [Loading the GPM profile](#loading-the-GPM-profile)
+  - [Obtaining the Singularity container](#obtaining the Singularity container)
 - [Interacting with the database](#interacting-with-the-database)
   - [Add an observation's metadata to the database](#add-an-observations-metadata-to-the-database)
   - [Assign a calibration obs to an observation](#assign-a-calibration-obs-to-an-observation)
@@ -11,11 +13,28 @@
 
 ## Setting up
 
+### Cloning this repository
+
+```
+git clone git@github.com:robotopia/MWA-Galactic-Plane-Monitoring.git
+```
+
+### Obtaining the Singularity container
+
+To build the container from source, see [Containers](../containers).
+
+If you have access to Acacia and have the required priviliges, a copy of the container can be obtained from `mwasci/gpmon2/containers/`, e.g.
+```
+mc cp mwasci/gpmon2/containers/gpm_tools-v0.2.img
+```
+The container can be placed anywhere, as long as the `GPMCONTAINER` environment variable points to it (see [Loading the GPM profile](#loading-the-gpm-profile)).
+
+### Setting up an SSH key paira... TODO
+
 ### Loading the GPM profile
 
-Make a copy of the file `GP-Monitor.profile` and edit it according to the
-computing environment that is being used to run the pipeline. Do not git-track
-the copied file.
+Make a copy of the file `GP-Monitor.profile` and edit it according to the computing environment that is being used to run the pipeline.
+Do not git-track the copied file.
 
 For example,
 
