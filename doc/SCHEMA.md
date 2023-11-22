@@ -5,10 +5,10 @@
 title: Schema
 ---
 erDiagram
-    OBSERVATION }o--o{ OBSERVATION : cal_obs_id
-    ACACIA_FILE }|--|{ OBSERVATION : obs_id
-    APPLY_CAL }|--|{ OBSERVATION : obs_id
-    APPLY_CAL }|--|{ OBSERVATION : cal_obs_id
+    OBSERVATION }o--o{ OBSERVATION : "cal_obs_id: The calibration observation which has been assigned to this observation"
+    ACACIA_FILE }|--|{ OBSERVATION : "obs_id: The observation to which the file pertains"
+    APPLY_CAL }|--|{ OBSERVATION : "obs_id: The observation to which the calibration is applied"
+    APPLY_CAL }|--|{ OBSERVATION : "cal_obs_id: The calibration observation"
 
     OBSERVATION {
         int obs_id(PK)
@@ -41,7 +41,7 @@ erDiagram
     }
     ACACIA_FILE {
         int id(PK)
-        int obs_id(->observation.obs_id)
+        int obs_id(observation)
         string type
         string path
     }
@@ -54,6 +54,8 @@ erDiagram
     }
     APPLY_CAL {
         int id(PK)
+        int obs_id(observation)
+        int cal_obs_id(observation)
         bool usable
         string notes
     }
