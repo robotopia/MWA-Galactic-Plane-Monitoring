@@ -1,6 +1,17 @@
 # Documentation
 
-## Load the GPM profile
+- [Setting up](#setting-up)
+  - [Loading the GPM profile](#loading-the-GPM-profile)
+- [Interacting with the database](#interacting-with-the-database)
+  - [Add an observation's metadata to the database](#add-an-observations-metadata-to-the-database)
+  - [Assign a calibration obs to an observation](#assign-a-calibration-obs-to-an-observation)
+  - [Signal that a calibration can/cannot be transferred to a particular observation](#signal-that-a-calibration-can-cannot-be-transferred-to-a-particular-observation)
+  - [Check the processing history of a particular observation](#check-the-processing-history-of-a-particular-observation)
+  - [Get a summary of the processing of a particular Epoch](#get-a-summary-of-the-processing-of-a-particular-epoch)
+
+## Setting up
+
+### Loading the GPM profile
 
 Make a copy of the file `GP-Monitor.profile` and edit it according to the
 computing environment that is being used to run the pipeline. Do not git-track
@@ -19,7 +30,7 @@ Then, `source` it to "load the profile":
 source GP-Monitor-garrawarla.profile
 ```
 
-## Database operations
+## Interacting with the database
 
 Once the [profile has been loaded](#load-the-gpm-profile), the environment variable `GPMCONTAINER` contains the path to a singularity container in which various operations, jobs, and scripts can be run, including the database scripts described in this section.
 To run a command inside the container, preface the command with
