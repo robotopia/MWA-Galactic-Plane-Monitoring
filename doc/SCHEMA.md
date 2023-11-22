@@ -7,10 +7,10 @@
 title: Schema
 ---
 erDiagram
-    OBSERVATION }o--o{ OBSERVATION : "cal_obs_id: The calibration observation which has been assigned to this observation"
-    ACACIA_FILE }|--|{ OBSERVATION : "obs_id: The observation to which the file pertains"
-    APPLY_CAL }|--|{ OBSERVATION : "obs_id: Target observation"
-    APPLY_CAL }|--|{ OBSERVATION : "cal_obs_id: Candidate calibration obs"
+    OBSERVATION }o--o{ OBSERVATION : "cal_obs_id: Currently assigned calibration obs"
+    ACACIA_FILE }|--|{ OBSERVATION : "obs_id"
+    APPLY_CAL }|--|{ OBSERVATION : "obs_id: Target obs"
+    APPLY_CAL }|--|{ OBSERVATION : "cal_obs_id: Calibration obs"
 
     OBSERVATION {
         int obs_id(PK)
@@ -65,4 +65,15 @@ erDiagram
 
 ## Tables
 
-
+| Table | Type | Description |
+| :---- | :--- | :---------- |
+| `acacia_file`  | Base | The locations of data products that have been uploaded to Acacia |
+| `antennaflag`  | Base | Tiles that have been flagged as unusable over a specified time period |
+| `apply_cal`    | Base | Calibration solutions that can/can't be applied to specific observations |
+| `assigned_cal` | View | Same as `apply_cal`, but shows the epoch instead of the id |
+| `calapparent`  | Base | [Deprecated] |
+| `epoch`        | View | For each observation, which "epoch" it belongs to. |
+| `mosaic`       | Base | Generated mosaics (not currently used) |
+| `observation`  | Base | The metadata for MWA observations |
+| `processing`   | Base | Processing jobs run on the supercomputer |
+| `sources`      | Base | Source models for calibration (currently not used) |
