@@ -7,6 +7,8 @@ title: Schema
 erDiagram
     OBSERVATION }o--o{ OBSERVATION : cal_obs_id
     ACACIA_FILE }|--|{ OBSERVATION : obs_id
+    APPLY_CAL }|--|{ OBSERVATION : obs_id
+    APPLY_CAL }|--|{ OBSERVATION : cal_obs_id
 
     OBSERVATION {
         int obs_id(PK)
@@ -41,5 +43,17 @@ erDiagram
         int id(PK)
         string type
         string path
+    }
+    ANTENNA_FLAG {
+        int id(PK)
+        int start_obs_id
+        int end_obs_id
+        int antenna
+        string notes
+    }
+    APPLY_CAL {
+        int id(PK)
+        bool usable
+        string notes
     }
 ```
