@@ -2,7 +2,7 @@
 
 - [Setting up](#setting-up)
   - [Cloning this repository](#cloning-this-repository)
-  - [Loading the GPM profile](#loading-the-GPM-profile)
+  - [Loading the GPM profile](#loading-the-gpm-profile)
   - [Obtaining the Singularity container](#obtaining-the-singularity-container)
   - [Setting up an SSH key pair (optional\*)](#setting-up-an-ssh-key-pair-optional)
   - [Loading the GPM profile](#loading-the-gpm-profile)
@@ -94,9 +94,9 @@ For example, even though the documentation below describes commands such as
 ```
 gpm_track.py import_obs --obs_id 1346053400
 ```
-in reality, the command you will run will be
+in reality, the full command you would run is
 ```
-singularity exec $GPMCONTAINER $GPMBASE/gpm_track.py obs_processing --obs_id 1346053400
+singularity exec $GPMCONTAINER $GPMBASE/gpm_track.py import_obs --obs_id 1346053400
 ```
 
 ### Add an observation's metadata to the database
