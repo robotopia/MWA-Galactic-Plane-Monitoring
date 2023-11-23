@@ -29,7 +29,16 @@ mc cp mwasci/gpmon2/containers/gpm_tools-v0.2.img
 ```
 The container can be placed anywhere, as long as the `GPMCONTAINER` environment variable points to it (see [Loading the GPM profile](#loading-the-gpm-profile)).
 
-### Setting up an SSH key paira... TODO
+### Setting up an SSH key pair (optional*)
+\*I think
+
+The [GPM profile](#loading-the-gpm-profile) includes the environment parameter `GPMSSH`, which should point to a local private SSH key.
+If you need to create a new public/private key pair, or if you would like to have an SSH key that is used solely by this software, you can do it in the usual way by running the command
+```
+ssh-keygen
+```
+and following the prompts.
+Place the keys in a directory that makes sense for your system.
 
 ### Loading the GPM profile
 
@@ -48,6 +57,27 @@ Then, `source` it to "load the profile":
 ```
 source GP-Monitor-garrawarla.profile
 ```
+
+**NB:** The first time you load the profile, it will download a few files that are needed for certain parts of the data processing.
+The files are quite large, so make sure you run the command from a file system that has adequate storage.
+For example, on Pawsey systems, do not run it from your home directory, which sits on a login node with minimal storage.
+
+### Database privileges
+
+Users of the GPM software will be granted access to the GPM processing database via the set of "secret" environment variables:
+```
+GPMDBHOST
+GPMDBPORT
+GPMDBUSER
+GPMDBPASS
+```
+
+Keep these environment variables in a file of your choosing and make it (somewhat) secure by setting the permission flags to
+```
+chmod 600 /path/to/secrets/file
+```
+
+The `GPMSECRETS` environment variable (see [Interacting with the database](#interacting-with-the-database)) should be set to the path to this file.
 
 ## Interacting with the database
 
