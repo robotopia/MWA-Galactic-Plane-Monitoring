@@ -2,7 +2,7 @@
 
 - [Setting up](#setting-up)
   - [Cloning this repository](#cloning-this-repository)
-  - [Loading the GPM profile](#loading-the-GPM-profile)
+  - [Loading the GPM profile](#loading-the-gpm-profile)
   - [Obtaining the Singularity container](#obtaining-the-singularity-container)
   - [Setting up an SSH key pair (optional\*)](#setting-up-an-ssh-key-pair-optional)
   - [Loading the GPM profile](#loading-the-gpm-profile)
