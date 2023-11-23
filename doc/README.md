@@ -10,7 +10,7 @@
 - [Interacting with the database](#interacting-with-the-database)
   - [Add an observation's metadata to the database](#add-an-observations-metadata-to-the-database)
   - [Assign a calibration obs to an observation](#assign-a-calibration-obs-to-an-observation)
-  - [Signal that a calibration can/cannot be transferred to a particular observation](#signal-that-a-calibration-can-cannot-be-transferred-to-a-particular-observation)
+  - [Signal that a calibration can/cannot be transferred to a particular observation](#signal-that-a-calibration-cancannot-be-transferred-to-a-particular-observation)
   - [Check the processing history of a particular observation](#check-the-processing-history-of-a-particular-observation)
   - [Get a summary of the processing of a particular Epoch](#get-a-summary-of-the-processing-of-a-particular-epoch)
 
