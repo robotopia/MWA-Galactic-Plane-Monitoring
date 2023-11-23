@@ -82,6 +82,21 @@ chmod 600 /path/to/secrets/file
 
 The `GPMSECRETS` environment variable (see [Interacting with the database](#interacting-with-the-database)) should be set to the path to this file.
 
+## First- vs second-pass processing
+
+When the data were first being collected, an automatic pipeline was set up to "hijack" the GLEAM-X processing pipeline to process the GPM data.
+This processing happened in "real time", in the sense that each night, a cron job fired off the processing tasks, produced images, ran them through some automatic filtering, and saved candidate detections for human inspection the following day.
+This initial run of the processing, and the data products that resulted from it, are termed the **first pass**.
+
+**Second pass** refers to the processing that is currently ongoing.
+Even though it is exactly the same dataset, three things motivate the need for it to be re-processed:
+
+1. It was incomplete. Some of the later "epochs" were never finally processed.
+2. Sometimes the calibration solutions were not suitable for all observations in their respective epochs. This manifest primarily as a distinctive "smearing" affect in the images.
+3. The first pass only processed Stokes I, but after some investigation on the feasibility of removing polarisation leakage via fitting a low-order correction across the images, it became apparent that Stokes V images would be a useful data product to generate.
+
+First pass data products are stored on Acacia in the `mwasci/gpmon` bucket, and second pass products should be put in the `mwasci/gpmon2` bucket.
+
 ## Interacting with the database
 
 Once the [profile has been loaded](#load-the-gpm-profile), the environment variable `GPMCONTAINER` contains the path to a singularity container in which various operations, jobs, and scripts can be run, including the database scripts described in this section.
