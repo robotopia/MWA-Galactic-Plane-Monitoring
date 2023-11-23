@@ -28,7 +28,7 @@ To build the container from source, see [Containers](../containers).
 
 If you have access to Acacia and have the required priviliges, a copy of the container can be obtained from `mwasci/gpmon2/containers/`, e.g.
 ```
-mc cp mwasci/gpmon2/containers/gpm_tools-v0.2.img
+mc cp mwasci/gpmon2/containers/gpm_tools-v0.2.img $GPMBASE/containers/gpm_tools-v0.2.img
 ```
 The container can be placed anywhere, as long as the `GPMCONTAINER` environment variable points to it (see [Loading the GPM profile](#loading-the-gpm-profile)).
 
