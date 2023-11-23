@@ -3,7 +3,10 @@
 - [Setting up](#setting-up)
   - [Cloning this repository](#cloning-this-repository)
   - [Loading the GPM profile](#loading-the-GPM-profile)
-  - [Obtaining the Singularity container](#obtaining the Singularity container)
+  - [Obtaining the Singularity container](#obtaining-the-singularity-container)
+  - [Setting up an SSH key pair (optional\*)](#setting-up-an-ssh-key-pair-optional)
+  - [Loading the GPM profile](#loading-the-gpm-profile)
+  - [Database secrets file](#database-secrets-file)
 - [Interacting with the database](#interacting-with-the-database)
   - [Add an observation's metadata to the database](#add-an-observations-metadata-to-the-database)
   - [Assign a calibration obs to an observation](#assign-a-calibration-obs-to-an-observation)
@@ -29,7 +32,7 @@ mc cp mwasci/gpmon2/containers/gpm_tools-v0.2.img
 ```
 The container can be placed anywhere, as long as the `GPMCONTAINER` environment variable points to it (see [Loading the GPM profile](#loading-the-gpm-profile)).
 
-### Setting up an SSH key pair (optional*)
+### Setting up an SSH key pair (optional\*)
 \*I think
 
 The [GPM profile](#loading-the-gpm-profile) includes the environment parameter `GPMSSH`, which should point to a local private SSH key.
@@ -62,7 +65,7 @@ source GP-Monitor-garrawarla.profile
 The files are quite large, so make sure you run the command from a file system that has adequate storage.
 For example, on Pawsey systems, do not run it from your home directory, which sits on a login node with minimal storage.
 
-### Database privileges
+### Database secrets file
 
 Users of the GPM software will be granted access to the GPM processing database via the set of "secret" environment variables:
 ```
