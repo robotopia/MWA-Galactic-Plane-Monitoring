@@ -1,4 +1,4 @@
-# usage: ./gp_calibrate.sh <cal_id>
+# usage: ./gpm_calibrate.sh <cal_id>
 
 calid="$1"
 
