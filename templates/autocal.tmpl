@@ -81,8 +81,8 @@ Dec=$( pyhead.py -p DEC "$metafits" | awk '{print $3}' )
 chan=$( pyhead.py -p CENTCHAN "$metafits" | awk '{print $3}' )
 
 calmodel="${obsnum}_local_gleam_model.txt"
-if [[ ! -e "${calmodel}" ]]
-then
+#if [[ ! -e "${calmodel}" ]]
+#then
     # crop_catalogue.py --ra="${RA}" --dec="${Dec}" --radius=30 --minflux=1.0 --metafits="${metafits}" \
     #                     --catalogue="${catfile}" --fluxcol=S_200 --plot "${obsnum}_local_gleam_model.png" \
     #                     --output "${obsnum}_cropped_catalogue.fits"
@@ -91,7 +91,7 @@ then
                         --output "${obsnum}_cropped_catalogue.fits"
     vo2model.py --catalogue="${obsnum}_cropped_catalogue.fits" --point --output="${calmodel}" \
                 --racol=RAJ2000 --decol=DEJ2000 --acol=a --bcol=b --pacol=pa --fluxcol=S_200 --alphacol=alpha
-fi
+#fi
 
 cd "${datadir}/${obsnum}" || exit
 
