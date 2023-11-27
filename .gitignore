@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Scripts and logs, in case they are directed to within this folder structure
+script_*/*.sh
+script_*/*.sbatch
+log_*/*
+log_*/*
+
+# Container images
+containers/*.img
