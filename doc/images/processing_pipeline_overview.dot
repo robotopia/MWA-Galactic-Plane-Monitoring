@@ -9,20 +9,21 @@ digraph G {
   apply_cal [label="Apply calibration\nsolution\n(obs_apply_cal)"];
   uvflag [label="Apply UV flags\n(obs_uvflag)"];
   image [label="Generate image\n(obs_image)"];
-  postimageI [label="Post-process Stokes I\n(obs_postimageI)"];
-  postimageV [label="Post-process Stokes V\n(obs_postimageV)"];
-  calc_leakage [label="Calculate polari-\nsation leakage\n(obs_calcleakage)"];
+  postimageI [label="Generate deep\nStokes I\n(obs_postimageI)"];
+  postimageV [label="Generate deep\nStokes V\n(obs_postimageV)"];
+  calc_leakage [label="Correct polari-\nsation leakage\n(obs_calcleakage)"];
   transient [label="Make time cubes\n(obs_transient)"];
   tfilter [label="Apply matched and other filters\n(obs_tfilter)"];
 
   manta -> autoflag -> is_cal;
-  is_cal -> autocal [label="Y"];
-  apply_cal -> uvflag -> image -> postimageI -> calc_leakage -> transient -> tfilter;
-  image -> postimageV -> calc_leakage;
+  autocal -> is_cal [dir=back; label="Y"];
   autocal:s -> calsol:n;
-  apply_cal -> calsol [dir="back"; style=dashed];
+  apply_cal -> uvflag -> image -> transient -> tfilter;
+  image -> postimageI -> postimageV -> calc_leakage;
+  calsol -> apply_cal [style=dashed];
   is_cal:s -> apply_cal:n [label="N"];
 
   {rank="same"; apply_cal; calsol;}
   {rank="same"; is_cal; autocal;}
+  {rank="same"; image; postimageI;}
 }
