@@ -21,12 +21,15 @@ digraph G {
   autocal -> calsol;
   image -> uvflag [dir=back];
   uvflag -> apply_cal [dir=back];
-  image -> transient -> tfilter;
-  image -> postimageI -> postimageV -> calc_leakage;
+  transient -> image [dir=back];
+  transient -> tfilter;
+  image -> postimageI;
+  postimageI -> postimageV;
+  postimageV -> calc_leakage;
   apply_cal -> calsol [dir=back; style=dashed];
   is_cal -> apply_cal [label="N"];
 
   {rank="same"; manta; autoflag; is_cal; autocal;}
-  {rank="same"; apply_cal; calsol; uvflag; image;}
-  {rank="same"; postimageI; transient;}
+  {rank="same"; apply_cal; calsol; uvflag; image; transient;}
+  {rank="same"; tfilter; postimageI; postimageV; calc_leakage;}
 }
