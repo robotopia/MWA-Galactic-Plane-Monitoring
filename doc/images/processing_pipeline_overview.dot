@@ -1,4 +1,16 @@
 digraph G {
+  rankdir="LR";
+
+  // TODO: Make this subgraph actually do something! (And add other subgraphs)
+  subgraph cluster_0 {
+    style=filled;
+    color=lightgrey;
+    transient [label="Make time cubes\n(obs_transient)"];
+    tfilter [label="Apply matched and\nother filters\n(obs_tfilter)"];
+    transient -> tfilter;
+    label="Transients"
+  }
+
   is_cal [shape=diamond; label="Is this a\ncalibration\nobservation?"];
   postimageI [label="postimage-I"];
   postimageV [label="postimage-V"];
@@ -9,20 +21,24 @@ digraph G {
   apply_cal [label="Apply calibration\nsolution\n(obs_apply_cal)"];
   uvflag [label="Apply UV flags\n(obs_uvflag)"];
   image [label="Generate image\n(obs_image)"];
-  postimageI [label="Post-process Stokes I\n(obs_postimageI)"];
-  postimageV [label="Post-process Stokes V\n(obs_postimageV)"];
-  calc_leakage [label="Calculate polari-\nsation leakage\n(obs_calcleakage)"];
-  transient [label="Make time cubes\n(obs_transient)"];
-  tfilter [label="Apply matched and other filters\n(obs_tfilter)"];
+  postimageI [label="Generate deep\nStokes I\n(obs_postimageI)"];
+  postimageV [label="Generate deep\nStokes V\n(obs_postimageV)"];
+  calc_leakage [label="Correct polari-\nsation leakage\n(obs_calcleakage)"];
 
   manta -> autoflag -> is_cal;
   is_cal -> autocal [label="Y"];
-  apply_cal -> uvflag -> image -> postimageI -> calc_leakage -> transient -> tfilter;
-  image -> postimageV -> calc_leakage;
-  autocal:s -> calsol:n;
-  apply_cal -> calsol [dir="back"; style=dashed];
-  is_cal:s -> apply_cal:n [label="N"];
+  autocal -> calsol;
+  image -> uvflag [dir=back];
+  uvflag -> apply_cal [dir=back];
+  transient -> image [dir=back];
+  tfilter -> postimageI [style=invis];
+  image -> postimageI;
+  postimageI -> postimageV;
+  postimageV -> calc_leakage;
+  apply_cal -> calsol [dir=back; style=dashed];
+  is_cal -> apply_cal [label="N"];
 
-  {rank="same"; apply_cal; calsol;}
-  {rank="same"; is_cal; autocal;}
+  {rank="same"; manta; autoflag; is_cal; autocal;}
+  {rank="same"; apply_cal; calsol; uvflag; image; transient;}
+  {rank="same"; tfilter; postimageI; postimageV; calc_leakage;}
 }
