@@ -1,0 +1,4 @@
+digraph G {
+   array_job_test -> change_database -> change_phase_centre;
+   change_database -> something_else;
+}
