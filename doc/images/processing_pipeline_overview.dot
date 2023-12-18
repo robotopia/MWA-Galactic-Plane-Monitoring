@@ -20,6 +20,7 @@ digraph G {
   autocal [label="Generate cali-\nbration solution\n(obs_autocal)"];
   apply_cal [label="Apply calibration\nsolution\n(obs_apply_cal)"];
   uvflag [label="Apply UV flags\n(obs_uvflag)"];
+  uvsub [label="Apply UV subtraction\n(obs_uvsub)"];
   image [label="Generate image\n(obs_image)"];
   postimageI [label="Generate deep\nStokes I\n(obs_postimageI)"];
   postimageV [label="Generate deep\nStokes V\n(obs_postimageV)"];
@@ -28,7 +29,8 @@ digraph G {
   manta -> autoflag -> is_cal;
   is_cal -> autocal [label="Y"];
   autocal -> calsol;
-  image -> uvflag [dir=back];
+  image -> uvsub [dir=back];
+  uvsub -> uvflag [dir=back];
   uvflag -> apply_cal [dir=back];
   transient -> image [dir=back];
   tfilter -> postimageI [style=invis];
@@ -39,6 +41,6 @@ digraph G {
   is_cal -> apply_cal [label="N"];
 
   {rank="same"; manta; autoflag; is_cal; autocal;}
-  {rank="same"; apply_cal; calsol; uvflag; image; transient;}
+  {rank="same"; apply_cal; calsol; uvflag; uvsub; image; transient;}
   {rank="same"; tfilter; postimageI; postimageV; calc_leakage;}
 }

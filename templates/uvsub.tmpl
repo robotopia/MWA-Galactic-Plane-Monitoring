@@ -1,0 +1,103 @@
+#! /bin/bash -l
+
+# A template script to generate a model of a-team sources that will be subtracted
+# from the visibility dataset. The idea is to make small images around a-team sources
+# which that than subtracted from the visibilities. We are using wsclean to first chgcenter
+# and the clean a small region arount the source. This is then subtracted from the 
+# column (DATA or CORRECTED_DATA). 
+
+set -x
+
+pipeuser=PIPEUSER
+obsnum=OBSNUM
+debug=DEBUG
+
+# If obsnum is a file, then we are in an array job
+if [[ -f "${obsnum}" ]]
+then
+    taskid=${SLURM_ARRAY_TASK_ID}
+    jobid=${SLURM_ARRAY_JOB_ID}
+
+    echo "obsfile ${obsnum}"
+    obsnum=$(sed -n -e "${SLURM_ARRAY_TASK_ID}"p "${obsnum}")
+    echo "uvsubtract obsid ${obsnum}"
+else
+    taskid=1
+    jobid=${SLURM_JOB_ID}
+fi
+
+echo "jobid: ${jobid}"
+echo "taskid: ${taskid}"
+
+function test_fail {
+if [[ $1 != 0 ]]
+then
+    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    exit "$1"
+fi
+}
+
+datadir=DATADIR
+
+# start
+track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+
+cd "${datadir}/${obsnum}" || exit
+
+metafits="${obsnum}.metafits"
+if [[ ! -e ${metafits} ]] || [[ ! -s ${metafits} ]]
+then
+    wget -O "${metafits}" "http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}"
+    test_fail $?
+fi
+
+
+# Check whether the phase centre has already changed
+# Calibration will fail if it has, so measurement set must be shifted back to its original position
+current=$(chgcentre "${obsnum}.ms") 
+
+if [[ $current == *"shift"* ]] 
+then
+    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
+    coords=$(calc_pointing.py "${metafits}")
+    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
+    chgcentre \
+            "${obsnum}.ms" \
+            ${coords}
+else 
+    echo "Detected that no shift is needed for this measurement set."
+fi
+
+submodel="${obsnum}.ateam_outlier"
+
+if [[ ! -e "${submodel}" ]]
+then
+    debugoption=
+    if [[ ! -z $debug ]]
+    then
+        debugoption='--corrected-data'
+    fi
+    echo "Generating model of A-Team sources for uv-subtraction"
+    generate_ateam_subtract_model.py "${obsnum}.metafits" \
+                                    --mode wsclean \
+                                    --min-elevation 0.0 \
+                                    --min-flux 5  \
+                                    --check-fov \
+                                    $debugoption \
+                                    --model-output "${submodel}" 
+fi
+
+if [[ -e "${submodel}" ]]
+then
+    echo "Running wslean outlier clean and subtraction... "
+    chmod +x "${submodel}"
+    ./"${submodel}"
+    test_fail $?
+
+    echo "Removing outlier files"
+    rm *outlier*fits
+else
+    echo "No wsclean script ${submodel} found. Exiting. "
+fi
+
+track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
