@@ -111,7 +111,7 @@ then
     echo "Detected that this measurement set has already had its phase centre changed. Not shifting."
 else
     # Determine whether to shift the pointing centre to be more optimally-centred on the peak of the primary beam sensitivity
-    coords=$($GPMBASE/gleam_x/bin/calc_optimum_pointing.py --metafits "${metafits}")
+    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
     echo "Optimally shifting co-ordinates of measurement set to $coords, with zenith shiftback."
     chgcentre \
     "${obsnum}.ms" \
