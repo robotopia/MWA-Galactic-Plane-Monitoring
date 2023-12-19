@@ -14,14 +14,14 @@ fres=FRES
 # start download
 cd "${base}" || exit 1
 n=1
-for obsnum in $list
+for obsnum in $obsids
 do
     track_task.py start --jobid="${SLURM_JOBID}" --taskid=$n --start_time="$(date +%s)"
     ((n+=1))
 done
 
 n=1
-for obsnum in $list
+for obsnum in $obsids
 do
     cd "${base}" || exit 1
     

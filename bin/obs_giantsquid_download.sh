@@ -64,7 +64,6 @@ cd "${base}"
 # Add the metadata to the observations table in the database
 # import_observations_from_db.py --obsid "${obslist}"
 
-dllist=""
 timestamp=$(date +"%Y%m%d_%H%M%S")
 
 # Construct the giant-squid script to be run
@@ -138,7 +137,7 @@ output="${output//%A/${jobid[0]}}"
 
 # record submission
 n=1
-for obsid in $dllist
+for obsid in $obsids
 do
     if [ "${GPMTRACK}" = "track" ]
     then
