@@ -92,3 +92,23 @@ This gets the detection statistics at the locations of known sources (nks_ prepe
 GetValsAtCoords.py --vals-from ${obsnum}_${filtname}.fits --vals-name det_stat --in_fname ${obsnum}_known.fits --out_fname ${obsnum}_${filtname}_knownsrcs.fits
 ```
 Cross-matching
+This puts the cross-match information in the original table
+```
+DoCrossMatching.py --in-fname ${obsnum}_${filtname}_cands.fits --match-fname ${obsnum}_${filtname}_knownsrcs.fits
+```
+Add some useful statistics
+```
+AddStats.py --cands ${obsnum}_${filtname}_cands.fits --known ${obsnum}_${filtname}_knownsrcs.fits --out_fname ${obsnum}_${filtname}_cands_wstats.fits
+```
+Cutting sources based on statistics
+```
+SelectSources.py --in_fname ${obsnum}_${filtname}_cands_wstats.fits --out_fname ${obsnum}_${filtname}_cands_wstats_selected.fits --match_fname ${GPMBASE}/models/GGSM.fits
+```
+ Plotting: Make plots
+ ```
+DiagnosticPlots.py --candidates ${obsnum}_${filtname}_cands_wstats_selected.fits --observation ${obsnum}_transient.hdf5 --filter ${obsnum}_${filtname}.fits --known ${obsnum}_${filtname}_knownsrcs.fits
+        if [[ ! -d results ]]
+        then
+            mkdir results/
+        fi
+```
