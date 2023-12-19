@@ -1,0 +1,168 @@
+# Observation Pipeline: Transients
+## transient
+A template imaging script to search for transient sources. This requires that a deep clean using the normal obs_image.sh to have populated the data model column first.
+
+TODO: replace with find
+```
+metafits="$(ls -t ${obsnum}*metafits* | head -1)"
+```
+Set up telescope-configuration-dependent options
+```
+if [[ $obsnum -lt 1151402936 ]] ; then
+    telescope="MWA128T"
+    basescale=1.1
+    imsize=4000
+    robust=-1.0
+    timeres=4
+    elif [[ $obsnum -ge 1151402936 ]] && [[ $obsnum -lt 1191580576 ]] ; then
+    telescope="MWAHEX"
+    basescale=2.0
+    imsize=2000
+    robust=-2.0
+    timeres=8
+    elif [[ $obsnum -ge 1191580576 ]] ; then
+    telescope="MWALB"
+    basescale=0.6
+    imsize=8000
+    robust=0.5
+    timeres=4
+fi
+```
+Set up channel-dependent options
+```
+chan="$(pyhead.py -p CENTCHAN ${metafits} | awk '{print $3}')"
+```
+Settings to support transient imaging / cleaning
+```
+niter=12000
+size=2400
+taper=2amin
+auto_threshold=3
+minuv_l=50
+taper_inner_tukey=50
+```
+Pixel scale. At least 2 pix per synth beam for each channel. Original 'scale=1amin' was from the IPS version of the code. Decreasing the scale to be 2 pixels per BMIN, was originally 4 in normal imaging mode.
+```
+scale=$(echo "$basescale / $chan * 2" | bc -l)
+```
+Skipping first and last 8 seconds
+```
+interval_start=$((8/timeres))
+nscans=$(pyhead.py -p NSCANS "${metafits}" | awk '{print $3}')
+```
+native time resolution is 0.5 seconds
+```
+ninterval=$(echo "$nscans*0.5/$timeres" | bc)
+interval_stop=$((ninterval-interval_start))
+intervals_out=$((interval_stop-interval_start))
+```
+Check whether the phase centre has already changed
+```
+current=$(chgcentre "${obsnum}.ms")
+if [[ $current == *"shift"* ]]
+then
+    echo "Detected that this measurement set has already had its phase centre changed. Not shifting."
+else
+```
+Determine whether to shift the pointing centre to be more optimally-centred on the peak of the primary beam sensitivity
+```
+coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
+    echo "Optimally shifting co-ordinates of measurement set to $coords, with zenith shiftback."
+    chgcentre \
+    "${obsnum}.ms" \
+    ${coords}
+```
+ Now shift the pointing centre to point straight up, which approximates minw without making the phase centre rattle around
+```
+    chgcentre \
+    -zenith \
+    -shiftback \
+    "${obsnum}.ms"
+fi
+
+
+if [[ ! -e "${obsnum}_transient-t0020-image.fits" ]]
+then
+    wsclean -name "${obsnum}_transient" \
+    -subtract-model \
+    -abs-mem ${GPMMEMORY} \
+    -nwlayers ${GPMNCPUS} \
+    -data-column ${datacolumn} \
+    -pol I \
+    -size $size $size \
+    -minuv-l ${minuv_l} \
+    -taper-inner-tukey ${taper_inner_tukey} \
+    -taper-gaussian ${taper} \
+    -niter $niter \
+    -auto-threshold $auto_threshold \
+    -scale "${scale:0:8}" \
+    -log-time \
+    -no-reorder \
+    -no-update-model-required \
+    -interval $interval_start $interval_stop \
+    -intervals-out $intervals_out \
+    "${obsnum}.ms"
+
+fi
+```
+Then you need to source-find the data... BANE would be expensive to run more than once, so just do it... once. This keeps failing for some reason, and it's no longer part of the default processing, so skip it
+```
+#BANE --noclobber --cores ${GPMNCPUS} --compress "${obsnum}_transient-t0020-image.fits"
+#test_fail $?
+#
+#for file in "${obsnum}"_transient-t????-image.fits
+#do
+#    aegean \
+#    --cores ${GPMNCPUS}\
+#    --maxsummits=2 \
+#    --background="${obsnum}"_transient-t0020-image_bkg.fits \
+#    --noise="${obsnum}"_transient-t0020-image_rms.fits \
+#    --seedclip=5 \
+#    --negative \
+#    --table="${file},${file%.fits}.reg" \
+#    "${file}"
+#done
+#test_fail $?
+#
+#for file in "${obsnum}"_transient-t????-image_comp.fits
+#do
+#    stilts \
+#    tpipe \
+#    in="${file}" \
+#    cmd="addcol -before island file \\\"${file}\\\"" \
+#    cmd="addcol -before island interval_start ${interval_start}" \
+#    cmd="addcol -before island interval_stop ${interval_stop}" \
+#    cmd="addcol -before island nscans ${nscans}" \
+#    cmd="addcol -before island timeres ${timeres}" \
+#    out="${file%.fits}_mod.fits"
+#done
+#
+#ls "${obsnum}"_transient-t????-image_comp_mod.fits > concat.list
+#stilts tcat in=@concat.list out="${obsnum}_transient_concatenated_table.fits"
+#stilts tmatch1 \
+#matcher="sky" \
+#params=120 \
+#action="identify" \
+#values="ra dec" \
+#in="${obsnum}_transient_concatenated_table.fits" \
+#out="${obsnum}_transient_matched_table.fits"\
+```
+Make a cube and a standard deviation image
+```
+make_time_cube.py ${obsnum}_transient
+
+n=`ls "${obsnum}"_transient-t????-image.fits | wc -l`
+# Dump the image and model files into a hdf5 container
+make_imstack.py --start 0 --suffixes image -n $n "${obsnum}_transient"
+```
+Save the flags
+```
+ms="${obsnum}.ms"
+taql "select ctod(TIME), gsum(ntrue(amplitude(DATA[,::3])==0.0)), gsum(ntrue(FLAG[,::3])), gmean(WEIGHT_SPECTRUM[,::3]) from $ms where ANTENNA1 != ANTENNA2 groupby TIME" > "${obsnum}_summary.txt"
+```
+Clean up
+```
+rm "${obsnum}"_transient-t????-*.fits
+#rm "${obsnum}_transient_concatenated_table.fits"
+track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+```
