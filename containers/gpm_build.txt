@@ -85,7 +85,8 @@ DEBIAN_FRONTEND=noninteractive apt install -y \
             parallel \
             vim \
             autoconf \
-            libtool
+            libtool \
+            procps
 
 
 apt autoremove -y
@@ -129,7 +130,6 @@ pip3 install --no-cache-dir \
             git+https://gitlab.com/Sunmish/flux_warp.git \
             git+https://github.com/tjgalvin/fits_warp.git \
             git+https://github.com/MWATelescope/mwa-calplots.git \
-            git+https://github.com/ICRAR/manta-ray-client.git \
             git+https://github.com/tjgalvin/mwa_pb_lookup.git \
             git+https://github.com/robotopia/MWA-Galactic-Plane-Monitoring.git
 
@@ -372,6 +372,15 @@ cd /opt && \
     cd mwa_hyperdrive && \
     cargo install --features=all-static --path .
 # ------------------------------------------------
+
+# ------------------------------------------------
+# giant-squid
+# ------------------------------------------------
+
+cd /opt && \
+    git clone https://github.com/MWATelescope/giant-squid && \
+    cd giant-squid && \
+    cargo install --path .
 
 # ------------------------------------------------
 # Clean up

@@ -10,6 +10,7 @@
 - Upgraded `wsclean` version in container to v3.4
 - Added documentation describing the overall pipeline
 - Download scripts increased to 24h
+- Replaced the `mantaray` client with `giant-squid` in the container
 
 ### Fixed
 
