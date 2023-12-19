@@ -2,7 +2,7 @@
 
 usage()
 {
-echo "obs_manta.sh [-p project] [-d depend] [-s timeres] [-k freqres] [-e edgeflag] [-t] obsid [obsid ...]
+echo "obs_giantsquid_download.sh [-p project] [-d depend] [-t] obsid [obsid ...]
   -d depend         : job number for dependency (afterok)
   -p project        : project, (must be specified, no default)
   -t                : test. Don't submit job, just make the batch file
@@ -17,9 +17,6 @@ exit 1;
 pipeuser=${GPMUSER}
 depend=
 tst=
-timeres=
-freqres=
-edgeflag=80
 force=
 obsids=
 
@@ -67,7 +64,7 @@ cd "${base}"
 timestamp=$(date +"%Y%m%d_%H%M%S")
 
 # Construct the giant-squid script to be run
-script="${GPMSCRIPT}/manta_${timestamp}.sh"
+script="${GPMSCRIPT}/giantsquid_${timestamp}.sh"
 
 cat "${GPMBASE}/templates/giantsquid_download.tmpl" | sed \
                                  -e "s:OBSIDS:\"${obsids}\":g" \
@@ -76,7 +73,7 @@ cat "${GPMBASE}/templates/giantsquid_download.tmpl" | sed \
 
 chmod 755 "${script}"
 
-# Construct the sbatch wrapper for the manta script
+# Construct the sbatch wrapper for the giantsquid script
 sbatch_script="${script%.sh}.sbatch"
 
 BEGIN="now+1minutes"
@@ -116,7 +113,7 @@ singularity run ${GPMCONTAINER} ${script}
 
 # This is the only task that should reasonably be expected to run on another cluster. 
 # Export all GLEAM-X pipeline configurable variables and the MWA_ASVO_API_KEY to ensure 
-# obs_manta completes as expected
+# obs_giantsquid completes as expected
 sub="sbatch ${depend} --export="${EXPORT}" ${sbatch_script}"
 
 if [[ ! -z ${tst} ]]
