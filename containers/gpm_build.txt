@@ -270,7 +270,7 @@ cd / \
     && cd wsclean \
     && git fetch \
     && git fetch --tags \
-    && git checkout wsclean2.9 \
+    && git checkout v3.4 \
     && cd wsclean \
     && mkdir build \
     && cd build \
