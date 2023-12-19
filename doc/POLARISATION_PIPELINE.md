@@ -1,0 +1,272 @@
+# Observation image - Polarisation
+## postimage (I / V)
+Sub-channels
+```
+subchans="0000 0001 0002 0003 MFS"
+```
+flux_warp method
+```
+method=scaled
+```
+Sky model
+```
+POS_MODEL_CATALOGUE="${GPMBASE}/models/NVSS_SUMSS_psfcal.fits"
+FLUX_MODEL_CATALOGUE="${GPMBASE}/models/GGSM_sparse_unresolved.fits"
+```
+Set max separation for flux_warp crossmatch as ~ 1' -- unlikely that the ionosphere would be that brutal
+```
+separation=$(echo "60/3600" | bc -l)
+```
+Set exclusion for flux_warp internal exclusive crossmatch as ~ 3'
+```
+exclusion=$(echo "180/3600" | bc -l)
+datadir=BASEDIR
+wget -O "${metafits}" http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}
+```
+_No comments provided_
+```
+chan=$( pyhead.py -p CENTCHAN "$metafits" | awk '{print $3}' )
+ra=$(pyhead.py -p RA "$metafits" | awk '{print $3}')
+dec=$(pyhead.py -p DEC "$metafits" | awk '{print $3}')
+b=$(python -c "import astropy.units as u; from astropy.coordinates import SkyCoord; print(abs(SkyCoord($ra*u.deg, $dec*u.deg).galactic.b.deg))")minsrcs=500
+if [[ "${chan}" -eq 69 ]] && (( $(echo  "$b < 10" | bc -l) ))
+then
+    minsrcs=50
+fi
+
+metafits=$(ls -t ${obsnum}*metafits* | head -1)
+for subchan in ${subchans}
+do
+    BMAJ=$(pyhead.py -p BMAJ "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" | awk '{print $3}' )
+    if [[ "$BMAJ" == "0"  ]]
+    then
+        echo "${obsnum}_deep-${subchan}-${pol}-image-pb.fits has zero-size PSF: something is broken!"
+        exit 1
+    fi
+```
+The mask_image.py operation will destructively remove the pixels. I can not think of a case where we actually want to keep pixels below 5% of the PB, apart from _maybe_ causing non-uniform noise issues in the swarp image. In any case, the below attempts to preserve the original image as a just in case.
+```
+if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_original.fits" ]]
+        then
+            cp -v "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" "${obsnum}_deep-${subchan}-${pol}-image-pb_original.fits"
+        fi
+        if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" ]]
+        then
+            if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_original.fits" ]]
+            then
+                echo "Missing ${obsnum}_deep-${subchan}-${pol}-image-pb.fits file, and no copy found. This should not happen. "
+                test_fail 2
+            fi
+            cp -v "${obsnum}_deep-${subchan}-${pol}-image-pb_original.fits" "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
+        fi
+```
+ Generate a weight map for mosaicking
+ ```
+        chans=($( pyhead.py -p CHANNELS "${obsnum}.metafits" | awk '{print $3}' | sed "s/,/ /g" ))
+        if [[ ${subchan} == "MFS" ]]
+        then
+            i=0
+            j=23
+        else
+            n=${subchan:3}
+            i=$((n * 6))
+            j=$((i + 5))
+        fi
+        cstart=${chans[$i]}
+        cend=${chans[$j]}
+
+# DIRTY HACK for ch 156 data
+#            ((cstart+=1))
+#            ((cend+=1))
+
+        lookup_beam.py "${obsnum}" \
+        "_deep-${subchan}-${pol}-image-pb.fits" \
+        "${obsnum}_deep-${subchan}-${pol}-image-pb-" \
+        -c "$cstart-$cend"
+
+        mask_image.py "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" \        "${obsnum}_deep-${subchan}-${pol}-image-pb-XX-beam.fits" \
+        "${obsnum}_deep-${subchan}-${pol}-image-pb-YY-beam.fits" \
+        --apply-mask -v
+```
+Move into place the new masked image
+```
+rm "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" && mv "${obsnum}_deep-${subchan}-${pol}-image-pb_mask.fits" "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
+BANE --cores ${GPMNCPUS} --compress --noclobber "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
+# TODO: Replace the redirection
+aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" > >(tee -a "${obsnum}_deep-${subchan}_aegean.log") 2> >(tee -a "${obsnum}_deep-${subchan}_aegean.log" >&2)
+`fi
+ nsrc=$(grep "INFO found" "${obsnum}_deep-${subchan}_aegean.log" | head -1 | awk '{print $3}')
+ if [[ $nsrc -lt $minsrcs ]]
+ then
+   echo "Can't warp ${obsnum} -- only $nsrc sources and minimum required id $minsrcs -- probably a horrible image"
+  else
+        RA=$( pyhead.py -p RA "${obsnum}.metafits" | awk '{print $3}' )
+        Dec=$( pyhead.py -p DEC "${obsnum}.metafits" | awk '{print $3}' )
+        chan=$( pyhead.py -p CENTCHAN "${obsnum}.metafits" | awk '{print $3}' )
+        mid=$( pyhead.py -p CRVAL3 "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" | awk '{print $3}' )
+        freqq=$(echo "$mid" | awk '{printf "%03.0f",($1)/1e6}')
+```
+Roughly the centre and radius of the image:
+```
+coords="$RA $Dec"
+```
+TODO make this dependent on CENTCHAN
+```
+radius=50. #24.8
+
+        if [[ ! -e "${obsnum}_${subchan}_complete_sources_xm.fits" ]]
+        then
+            fits_warp.py \
+            --incat "${obsnum}_deep-${subchan}-${pol}-image-pb_comp.fits" \
+            --refcat "${POS_MODEL_CATALOGUE}" \
+            --xm "${obsnum}_${subchan}_complete_sources_xm.fits" \
+            --plot \
+            --ra1 ra \
+            --dec1 dec \
+            --ra2 RAJ2000 \
+            --dec2 DEJ2000 \
+            --infits "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
+        fi
+
+        if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" ]]
+        then
+            fits_warp.py --incat "./${obsnum}_deep-${subchan}-${pol}-image-pb_comp.fits" \
+            --refcat "${POS_MODEL_CATALOGUE}" \
+            --corrected "./${obsnum}_deep-${subchan}-${pol}-image-pb_comp_warp-corrected.fits" \
+            --xm "./${obsnum}_${subchan}_fits_warp_xm.fits" \
+            --suffix warp \
+            --infits "./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" \
+            --ra1 ra --dec1 dec \
+            --ra2 RAJ2000 --dec2 DEJ2000 \
+            --plot \
+            --nsrcs 750 \
+            --vm 10 \
+            --progress \
+            --cores ${GPMNPCPUS} \
+            --signal peak_flux_1 \
+            --enforce-min-srcs 100
+            # --signal peak_flux --noise local_rms --SNR 10
+        fi
+        if [[ ! -e ${obsnum}_${subchan}_xm.fits ]]
+        then
+            # flux_wrap dependency here
+            # Match the image catalogue to the model table:
+            match_catalogues \
+            "${obsnum}_deep-${subchan}-${pol}-image-pb_comp_warp-corrected.fits" \
+            "${FLUX_MODEL_CATALOGUE}" \
+            --separation "${separation}" \
+            --exclusion_zone "${exclusion}" \
+            --outname "./${obsnum}_${subchan}_xm.fits" \
+            --threshold 0.1 \
+            --nmax 1000 \
+            --coords ${coords} \
+            --radius "${radius}" \
+            --ra2 "RAJ2000" \
+            --dec2 "DEJ2000" \
+            --ra1 "ra" \
+            --dec1 "dec" \
+            -F "int_flux" \
+            --eflux "err_int_flux" \
+            --localrms "local_rms"
+        fi
+            # GLEAM-X options
+            #--mode mean \
+            #--update-bscale \
+#        if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_${method}_cf_output.txt" ]]
+        if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_unscaled.fits" ]]
+        then
+            flux_warp \
+            "${obsnum}_${subchan}_xm.fits" \
+            "${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" \
+            --freq "${freqq}" \
+            --threshold 0.1 \
+            --mode=linear_screen \
+            --nmax 400 \
+            --flux_key "flux" \
+            --smooth 5.0 \
+            --ignore_magellanic \
+            --localrms_key "local_rms" \
+            --add-to-header \
+            --ra_key "RAJ2000" \
+            --dec_key "DEJ2000" \
+            --index "alpha" \
+            --curvature "beta" \
+            --ref_flux_key "S_200" \
+            --ref_freq 200.0 \
+            --alpha -0.77 \
+            --plot \
+            --cmap "gnuplot2" \
+            --order 2 \
+            --ext png \
+            --nolatex
+        fi
+```
+The _scaled stem will break onward processing so move the filenames around.
+```
+mv ${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_unscaled.fits
+        mv ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits
+        # Compress the scaling image so I can apply it to the RMS and BKG images
+        factor=$(pyhead.py -p BN_CFAC "${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits" | awk '{print $3}')
+        SR6 -f $factor -o ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf.fits
+        python3 $GPMBASE/gleam_x/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits
+        python3 $GPMBASE/gleam_x/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_bkg.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits
+        #factor=$(pyhead.py -p BSCALE "${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" | awk '{print $3}')
+
+        # The RMS and BKG maps will not have changed much from the ionospheric warping, so I can just
+        # rename them and update BSCALE
+        #mv "${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits" "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
+        #mv "${obsnum}_deep-${subchan}-${pol}-image-pb_bkg.fits" "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits"
+        #pyhead.py -u BSCALE "$factor" "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits"
+        #pyhead.py -u BSCALE "$factor" "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
+
+        # rerun the source-finding -- don't save to the log this time as the numbers should not have changed
+        if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_comp.fits" ]]
+        then
+            aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits"
+        fi
+        if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_weight.fits" ]]
+        then
+```
+Generate a weight map for mosaicking
+```
+chans=($( pyhead.py -p CHANNELS "${obsnum}.metafits" | awk '{print $3}' | sed "s/,/ /g" ))
+if [[ ${subchan} == "MFS" ]]
+            then
+                i=0
+                j=23
+            else
+                n=${subchan:3}
+                i=$((n * 6))
+                j=$((i + 5))
+            fi
+            cstart=${chans[$i]}
+            cend=${chans[$j]}
+
+# DIRTY HACK for ch 156 data
+
+#            ((cstart+=1))
+#            ((cend+=1))
+            lookup_beam.py "${obsnum}" \
+            "_deep-${subchan}-${pol}-image-pb_warp.fits" \
+            "${obsnum}_deep-${subchan}-${pol}-image-pb_warp-" \
+            -c "$cstart-$cend"
+            generate_weight_map.py "${obsnum}_deep-${subchan}-${pol}-image-pb_warp-XX-beam.fits" \
+            "${obsnum}_deep-${subchan}-${pol}-image-pb_warp-YY-beam.fits" \
+            "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
+        fi
+    fi
+done
+```
+## calcleakage
+Calculate the Stokes V leakage, and fix
+```
+subchans="0000 0001 0002 0003 MFS"
+for subchan in $subchans
+do
+    calc_leakage.py \
+        --Inonpb ${obsnum}_deep-${subchan}-I-image.fits \
+        --Ipb ${obsnum}_deep-${subchan}-I-image-pb.fits \
+        --Vpb ${obsnum}_deep-${subchan}-V-image-pb.fits \
+        --plots
+done
+```
