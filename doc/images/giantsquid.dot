@@ -1,0 +1,12 @@
+digraph G {
+    START [label="Request ASVO job\nwith obsids"; shape=rectangle]
+    already_downloaded [label="Has the obsid already\nbeen downloaded?"; shape=diamond]
+    asvo_job_exist [label="Does ASVO\njob exist?"; shape=diamond]
+    asvo_job_ready [label="Is obs ready\nfor download?"; shape=diamond]
+    do_nothing [label="Do nothing"]
+
+    START -> already_downloaded [label="For each\nobsid..."]
+    already_downloaded -> asvo_job_exist [label="No"]
+    asvo_job_exist -> asvo_job_ready [label="Yes"]
+    asvo_job_ready -> do_nothing [label="No"]
+}

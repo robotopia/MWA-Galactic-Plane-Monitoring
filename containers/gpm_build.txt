@@ -86,7 +86,8 @@ DEBIAN_FRONTEND=noninteractive apt install -y \
             vim \
             autoconf \
             libtool \
-            procps
+            procps \
+            jq
 
 
 apt autoremove -y
