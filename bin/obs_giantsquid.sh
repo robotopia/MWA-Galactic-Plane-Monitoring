@@ -2,7 +2,7 @@
 
 usage()
 {
-echo "obs_giantsquid_download.sh [-p project] [-d depend] [-t] obsid [obsid ...]
+echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
   -d depend         : job number for dependency (afterok)
   -p project        : project, (must be specified, no default)
   -t                : test. Don't submit job, just make the batch file
