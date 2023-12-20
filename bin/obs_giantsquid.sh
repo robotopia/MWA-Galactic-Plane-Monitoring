@@ -1,5 +1,7 @@
 #! /bin/bash
 
+#set -x
+
 usage()
 {
 echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
@@ -92,7 +94,7 @@ else
 fi
 
 # Get the list of ASVO jobs
-asvo_json=$(singularity exec $GPMCONTAINER giant-squid list ${obsids})
+asvo_json=$(singularity exec $GPMCONTAINER giant-squid list ${obsids} --json)
 
 # Tast #2: separate the list into three sublists:
 #   1. State = Ready                     -->  Submit download job
@@ -115,11 +117,19 @@ do
     then
         echo "Obs ${obsid} is already being processed on ASVO. Skipping."
         # Do nothing
+    elif [[ $state == "Cancelled" || $state == "Expired" || $state == "Error" ]]
+    then
+        echo "Obs ${obsid} was previously in state \"${state}\". Will submit fresh preprocessing job for this obs."
+        preprocess_obsids="$preprocess_obsids $obsid"
     else
-        echo "Obs ${obsid} has not been successfully, or is not currently being, processed. Adding it to the preprocessing list"
+        echo "Obs ${obsid} is not in your ASVO job list. Adding it to the preprocessing list"
         preprocess_obsids="$preprocess_obsids $obsid"
     fi
 done
+
+echo "Preprocessing list: ${preprocess_obsids}"
+echo "Download list: ${download_list}"
+exit 0
 
 #---------------------------------------
 # Submit the giant-squid conversion jobs
