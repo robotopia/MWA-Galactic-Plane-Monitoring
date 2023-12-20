@@ -70,7 +70,7 @@ cd "${base}"
 # in a flowchart diagram in doc/images/giantsquid.png
 
 # Task #1: eliminate obsids that have already been downloaded (unless the -f option was given)
-if [[ ! -z $force ]] # i.e. if the -f option was NOT supplied
+if [[ -z $force ]] # i.e. if the -f option was NOT supplied
 then
     filtered_obsids=
     for obsid in $obsids
@@ -114,7 +114,7 @@ do
     elif [[ $state == "Processing" || $state == "Queued" ]]
     then
         echo "Obs ${obsid} is already being processed on ASVO. Skipping."
-        ; # Do nothing
+        # Do nothing
     else
         echo "Obs ${obsid} has not been successfully, or is not currently being, processed. Adding it to the preprocessing list"
         preprocess_obsids="$preprocess_obsids $obsid"
