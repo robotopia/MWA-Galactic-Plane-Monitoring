@@ -40,6 +40,7 @@ DIRECTIVES = (
     "acacia_path",
     "ls_obs_for_cal",
     "obs_epoch",
+    "epoch_obs",
     "obs_processing",
     "epoch_processing",
 )
@@ -322,6 +323,7 @@ def check_observation_status(obs_id):
 
     return res[0][0]
 
+
 def observation_epoch(obs_id):
     """Retrieves the epoch for a given observation
 
@@ -342,6 +344,27 @@ def observation_epoch(obs_id):
     res = cur.fetchall()
     if len(res) > 0:
         print(res[0][0])
+    conn.close()
+
+def epoch_observations(epoch):
+    """Retrieves the observations for a given epoch
+
+    Args:
+        epoch (str): epoch name (e.g. "Epoch0032") whose observations are to be retrieved
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # Find out if a row with this obs_id and cal_id already exists
+    cur.execute("""
+            SELECT obs_id FROM epoch
+            WHERE epoch = %s COLLATE utf8mb4_bin
+            """,
+            (epoch,),
+            )
+
+    res = cur.fetchall()
+    print('\n'.join([str(res[i][0]) for i in range(len(res))]))
     conn.close()
 
 def obs_flagantennae(obs_id):
@@ -713,6 +736,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "obs_epoch":
         require(args, ["obs_id"])
         observation_epoch(args.obs_id)
+
+    elif args.directive.lower() == "epoch_obs":
+        require(args, ["epoch"])
+        epoch_observations(args.epoch)
 
     elif args.directive.lower() == "check_obs_status":
         require(args, ["obs_id",])
