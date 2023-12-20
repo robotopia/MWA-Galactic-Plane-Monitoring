@@ -129,7 +129,6 @@ done
 
 echo "Preprocessing list: ${preprocess_obsids}"
 echo "Download list: ${download_list}"
-exit 0
 
 #---------------------------------------
 # Submit the giant-squid conversion jobs
