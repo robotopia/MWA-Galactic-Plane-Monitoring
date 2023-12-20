@@ -65,6 +65,8 @@ timestamp=$(date +"%Y%m%d_%H%M%S")
 preprocess_list=
 download_list=
 
+asvo_output=$(singularity exec $GPMCONTAINER giant-squid list ${obsids})
+
 for obsid in $obsids
 do
     # Already downloaded? (= Yes, if the measurement set folder exists)
