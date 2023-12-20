@@ -13,10 +13,6 @@ echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
                            | -z           | Debugging mode. Whatever that means for each command,
                            |              | do it.
                            | -v           | Verbose mode
-                manta      | -s timeres   | time resolution in sec. default = 2 s
-                           | -k freqres   | freq resolution in KHz. default = 40 kHz
-                           | -e edgeflag  | number of edge band channels flagged. default = 80
-                           | -g           | download gpubox fits files instead of measurement sets
                 autocal    | -i           | Disable the ionospheric tests (default = False)
                            | -F frac      | the acceptable fraction of spectrum that may be flagged
                            |              | in a calibration solution file before it is marked as
@@ -31,28 +27,23 @@ echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
 
   commands    : A string of space-delimited commands to run, as a dependency chain, in the order in which they are listed.
                 e.g. \"image postimage\" will run \"obs_image.sh\" followed by \"obs_postimage.sh\". Available commands:
-                    apply_cal, autocal, autoflag, calcleakage, image, manta, postimage,
+                    apply_cal, autocal, autoflag, calcleakage, image, postimage,
                     postimageI, postimageV, tfilter, transient, uvflag
 
   obsid       : The obsid(s) of the observation(s) to be processed
 
   EXAMPLE:
 
-      gpm_pipe.sh \"manta autoflag apply_cal uvflag image transient postimage-I postimage-V tfilter\" OBSID1 OBSID2 ..." 1>&2;
+      gpm_pipe.sh \"autoflag apply_cal uvflag image transient postimage-I postimage-V tfilter\" OBSID1 OBSID2 ..." 1>&2;
 }
 
 commands=
 
-soption=
-koption=
-eoption=
-goption=
 zoption=
 ioption=
 Foption=
 Soption=
 Poption=
-foption=
 toption=
 voption=
 
@@ -60,14 +51,6 @@ voption=
 while getopts 'hs:k:e:gc:ziF:S:P:ftv' OPTION
 do
     case "$OPTION" in
-        s)
-            soption="-s ${OPTARG}";;
-        k)
-            koption="-k ${OPTARG}";;
-        e)
-            eoption="-e ${OPTARG}";;
-        g)
-            goption="-g";;
         z)
             zoption="-z";;
         i)
@@ -78,8 +61,6 @@ do
             Soption="-S ${OPTARG}";;
         P)
             Poption="-P ${OPTARG}";;
-        f)
-            foption="-f";;
         t)
             toption="-t";;
         v)
@@ -132,13 +113,11 @@ do
     echo "============================="
     echo " OBSID: $obsid"
 
-    # Loope through commands
+    # Loop through commands
     for cmd in $commands
     do
         # Construct options
         case "$cmd" in
-            manta)
-                options="$soption $koption $eoption $goption $toption $foption" ;;
             autoflag)
                 options="$toption" ;;
             autocal)

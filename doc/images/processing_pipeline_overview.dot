@@ -15,7 +15,7 @@ digraph G {
   postimageI [label="postimage-I"];
   postimageV [label="postimage-V"];
   calsol [shape=rectangle; label="Calibration\nsolution"];
-  manta [label="Download data\nfrom ASVO\n(obs_manta)"];
+  giantsquid [label="Download data\nfrom ASVO\n(obs_giantsquid)"];
   autoflag [label="Flag tiles\n(obs_autoflag)"];
   autocal [label="Generate cali-\nbration solution\n(obs_autocal)"];
   apply_cal [label="Apply calibration\nsolution\n(obs_apply_cal)"];
@@ -26,7 +26,7 @@ digraph G {
   postimageV [label="Generate deep\nStokes V\n(obs_postimageV)"];
   calc_leakage [label="Correct polari-\nsation leakage\n(obs_calcleakage)"];
 
-  manta -> autoflag -> is_cal;
+  giantsquid -> autoflag -> is_cal;
   is_cal -> autocal [label="Y"];
   autocal -> calsol;
   image -> uvsub [dir=back];
@@ -40,7 +40,7 @@ digraph G {
   apply_cal -> calsol [dir=back; style=dashed];
   is_cal -> apply_cal [label="N"];
 
-  {rank="same"; manta; autoflag; is_cal; autocal;}
+  {rank="same"; giantsquid; autoflag; is_cal; autocal;}
   {rank="same"; apply_cal; calsol; uvflag; uvsub; image; transient;}
   {rank="same"; tfilter; postimageI; postimageV; calc_leakage;}
 }
