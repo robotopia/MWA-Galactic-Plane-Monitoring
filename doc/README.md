@@ -123,7 +123,13 @@ gpm_track.py import_obs --obs_id [OBS_ID]
 ### Obtain a list of all ObsIDs for a given epoch
 
 ```
-gpm_track.py epoch_obs --epoch Epoch0032 > Epoch0032_obsids.txt
+gpm_track.py epoch_obs --epoch Epoch0032
+```
+
+### Obtain a list of all calibrator observations
+
+```
+gpm_track.py calibrations
 ```
 
 ### Assign a calibration obs to an observation

@@ -43,6 +43,7 @@ DIRECTIVES = (
     "epoch_obs",
     "obs_processing",
     "epoch_processing",
+    "calibrations",
 )
 
 
@@ -364,7 +365,7 @@ def epoch_observations(epoch):
             )
 
     res = cur.fetchall()
-    print('\n'.join([str(res[i][0]) for i in range(len(res))]))
+    print('\n'.join([f"{row[0]}" for row in res]))
     conn.close()
 
 def obs_flagantennae(obs_id):
@@ -570,6 +571,25 @@ def epoch_processing(epoch):
     print("Epoch       ObsID        Submitted             Task              Status       Job ID")
     print("-------------------------------------------------------------------------------------------")
     print('\n'.join([f"{row[0]}   {row[1]}   {datetime.datetime.fromtimestamp(row[2])}   {row[3]:15}   {row[4]:9} {row[5]:10}" for row in res]))
+    conn.close()
+
+
+def calibrations():
+    """A select function that will return the list of all obsids of calibrator observations.
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    user = os.environ["GPMUSER"]
+
+    cur.execute("""
+                SELECT obs_id
+                FROM observation
+                WHERE calibration = 1
+                """,
+    )
+    res = cur.fetchall()
+    print('\n'.join([f"{row[0]}" for row in res]))
     conn.close()
 
 
@@ -788,6 +808,9 @@ if __name__ == "__main__":
     elif args.directive.lower() == "epoch_processing":
         require(args, ["epoch"])
         epoch_processing(args.epoch)
+
+    elif args.directive.lower() == "calibrations":
+        calibrations()
 
     else:
         print(
