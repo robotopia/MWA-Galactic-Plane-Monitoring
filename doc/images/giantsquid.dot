@@ -1,12 +1,32 @@
+// Flowchart for obs_giantsquid.sh
+
 digraph G {
-    START [label="Request ASVO job\nwith obsids"; shape=rectangle]
-    already_downloaded [label="Has the obsid already\nbeen downloaded?"; shape=diamond]
+    START [shape=rectangle]
+    END [shape=rectangle]
+    next_obs [label="For next ObsID\nin input list..."; shape=plaintext]
+    already_downloaded [label="Already\ndownloaded?"; shape=diamond]
+    force [label="Force\nre-download?"; shape=diamond]
     asvo_job_exist [label="Does ASVO\njob exist?"; shape=diamond]
     asvo_job_ready [label="Is obs ready\nfor download?"; shape=diamond]
-    do_nothing [label="Do nothing"]
+    add_to_download_list [label="Add obs to\nlist of\ndownload jobs"]
+    add_to_preprocess_list [label="Add obs to\nlist of\npreprocess jobs"]
+    submit_preprocess_list [label="Submit preprocess\njobs to ASVO"]
+    submit_download_list [label="Submit download\njobs to ASVO"]
+    end_of_list [label="End of\ninput list?"; shape=diamond]
 
-    START -> already_downloaded [label="For each\nobsid..."]
+    START -> next_obs
+    next_obs -> end_of_list
+    end_of_list -> already_downloaded [label="No"]
     already_downloaded -> asvo_job_exist [label="No"]
+    already_downloaded -> force [label="Yes"]
+    force -> next_obs [label="No"]
+    force -> asvo_job_exist [label="Yes"]
     asvo_job_exist -> asvo_job_ready [label="Yes"]
-    asvo_job_ready -> do_nothing [label="No"]
+    asvo_job_exist -> add_to_preprocess_list [label="No"]
+    asvo_job_ready -> next_obs [label="No"]
+    asvo_job_ready -> add_to_download_list [label="Yes"]
+    add_to_download_list -> next_obs
+    add_to_preprocess_list -> next_obs
+    end_of_list -> submit_preprocess_list [label="Yes"]
+    submit_preprocess_list -> submit_download_list -> END
 }
