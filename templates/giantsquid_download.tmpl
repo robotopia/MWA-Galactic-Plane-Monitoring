@@ -2,88 +2,34 @@
 
 set -x
 
-echo "${GPMBASE}"
+# This script is expected to be
+obsnum=$SLURM_ARRAY_TASK_ID
 
-pipeuser=PIPEUSER
-base=BASEDIR
-obsids=OBSIDS # Expected to be a whitespace-separated list of valid obsid numbers, e.g. "1234000000 1235000000 1236000000"
-stem=STEM
-tres=TRES
-fres=FRES
+cd "${GPMBASE}" || exit 1
 
-# start download
-cd "${base}" || exit 1
-n=1
-for obsnum in $obsids
-do
-    track_task.py start --jobid="${SLURM_JOBID}" --taskid=$n --start_time="$(date +%s)"
-    ((n+=1))
-done
+# Mark start of download in database
+track_task.py start --jobid="${SLURM_JOBID}" --taskid=$obsnum --start_time="$(date +%s)"
 
-cd "${base}" || exit 1
-n=1
-for obsnum in $obsids
-do
-    
-    # files are stored as either
-    # obsnum_jobid_vis.tar
-    # obsnum_jobid_ms.tar
-    # where the jobid refers to the slurm jobid of the mwasvo processing task
-    # and said jobid is not known during obs_mantal.sh template generation.   
-    # obsfile=$(find ./"${obsnum}"_[0-9]*_"${stem}".tar -maxdepth 1 -type f)
-    
-    mkdir -p "${obsnum}" && cd "${obsnum}"
+# Ensure that the target download directory exists and cd into it
+mkdir -p "${obsnum}" && cd "${obsnum}"
 
-    giant-squid download ${obsnum}
+# Make (doubly) sure that the measurement set hasn't already been downloaded (in full or in part)
+if [[ -d "${obsnum}.ms" ]]
+then
+    echo "${obsnum}.ms already exists; please remove directory before trying to (re)download."
+    track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+    exit 1
+fi
 
-    if [[ -d "${obsnum}.ms" ]]
-    then
-        echo "${obsnum}.ms already exists; please remove directory before trying to (re)download."
-        track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
-    else
-        track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
-    
-        # At the moment birli does not do edge channel flagging. Use flagmwa to do this
-        # for us now. The time and freq resolution parameters are used only for this operation and
-        # can be removed once birli reaches feature parity with cotter. Note that
-        # this is not robust to a change in MWA configuration in the same request. If
-        # a separate set of time and frequency resolutions are required between obsids
-        # in the same mwa_client request flagging may be incorrectly. Note however 
-        # this is consistent with the implicit assumption made in the obs_mantra.sh script
-        # anyway (timeres and freqres are in a loop and testing for not empty)
-        if [[ ${obsnum} -ge 1314921618 ]]
-        then 
-            echo "Applying flagmwa"
-            nfreqchan=$(echo "80 / $fres" | bc )
-            nsubbands=24
+# Submit the download request via giant-squid
+giant-squid download ${obsnum}
 
-            # Andrew Williams suggests the worst case the the typical worst case for
-            # attenuators to settle is 2.5 seconds. 
-            ntsquack=1
-            if (( $(echo "$tres < 2.5" | bc -l) ))
-            then 
-                # this should flag all potential time intervals, including a potential
-                # wrap needed for the integer to work out correctly
-                ntsquack=$(echo "(2.5+$tres)/$tres" | bc)
-            fi
+# Check if the download was successful
+if [[ $? -ne 0 ]] # i.e. if it failed
+then
+    track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+    exit 1
+fi
 
-            echo "Flagging ${nfreqchan} edge channels across ${nsubbands} sub-bands, and quacking ${ntsquack} timesteps"
+track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
 
-            flagmwa \
-                "${obsnum}.ms" \
-                $ntsquack \
-                $nsubbands \
-                1 \
-                $nfreqchan 
-
-            metafits=${obsnum}.metafits
-            if [[ ! -e ${metafits} ]]
-            then
-               wget -O ${metafits}  http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}
-            fi
-        fi
-
-        cd ../
-    fi    
-    ((n+=1))
-done
