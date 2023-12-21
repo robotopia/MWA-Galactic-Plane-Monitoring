@@ -25,8 +25,7 @@ In the table below, variable names in square brackets are for hard-coded values 
 | chan | Receiver channel number | (Depends on observation, but always 157 for GPM) |
 | minuv | Minimum baseline  for calibration (in wavelengths) | 75 (=250m at 88 MHz) |
 | minuvm | Minimum of UV range for calibration based on GLEAM-based sky model (in metres) | 568 * `minuv` / `chan` = about 271.3 |
-| maxumv | Maximum of UV range for calibration based on GLEAM-based sky model (in metres). In wavelengths, maximum 128T baseline at 200MHz was 1667 lambda long
- (300/1.28 * 1667 = 390000). | 390000 / (${chan} + 11) |
+| maxumv | Maximum of UV range for calibration based on GLEAM-based sky model (in metres). In wavelengths, maximum 128T baseline at 200MHz was 1667 lambda long (300/1.28 * 1667 = 390000). | 390000 / (${chan} + 11) |
 | catfile | The input catalogue sky model | `GGSM_updated.fits` |
 | calibrator | The name of the calibrator source | (Depends on observation) |
 | calmodel | The cropped sky model | `${obsnum}_local_gleam_model.txt` |
