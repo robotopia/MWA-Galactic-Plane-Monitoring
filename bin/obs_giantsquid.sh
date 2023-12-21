@@ -81,6 +81,8 @@ then
         if [[ ! -d $ms ]] # If the measurement set does NOT exist
         then
             filtered_obsids="$filtered_obsids $obsid"
+        else
+            echo "Obs ${obsid} already has measurement set on disk. Skipping."
         fi
     done
     obsids="$filtered_obsids"
