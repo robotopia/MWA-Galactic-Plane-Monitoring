@@ -68,8 +68,8 @@ Variables:
 | :------- | :---------- | :---- |
 | subchans | WSClean suffixes for subchannels and MFS | "MFS 0000 0001 0002 0003" |
 | minuv | Minimum uvw for self-calibration (in wavelengths) | 75 |
-| msigma | S/N Level at which to choose masked pixels for deepclean | 5 |
-| tsigma | S/N Threshold at which to stop cleaning | 3 |
+| msigma | S/N Level at which to choose masked pixels for deepclean | 3 |
+| tsigma | S/N Threshold at which to stop cleaning | 1 |
 | telescope | The MWA configuration | MWALB (= long baseline) |
 | basescale | Per-frequency scaling (depends on array config) | 0.6 |
 | imsize | Size of resulting image in pixels | 8000 |
@@ -94,6 +94,7 @@ Variables:
 Create a template image that has all the same properties as our eventual WSClean image
 ```
 wsclean \
+            -gridder wgridder \
             -abs-mem ${GPMMEMORY} \
             -mgain 1.0 \
             -nmiter 1 \
@@ -152,6 +153,7 @@ done
 
 ```
 wsclean \
+        -gridder wgridder \
         -abs-mem ${GPMMEMORY} \
         $multiscale \
         -nmiter 5 \
