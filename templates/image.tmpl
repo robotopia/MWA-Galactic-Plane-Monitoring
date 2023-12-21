@@ -101,33 +101,35 @@ minuvm=$(echo "234 * $minuv / $chan" | bc -l)
 # Found that multiscale cleaning recovers flux density in the extragalactic sky better than not, and doesn't add much to processing time
 multiscale="-multiscale -mgain 0.85 -multiscale-gain 0.15"
 
+## Commenting this out whilst trialling wgridder option in wsclean v3.4 below
 # Check whether the phase centre has already changed
-current=$(chgcentre "${obsnum}.ms")
-
-if [[ $current == *"shift"* ]]
-then
-    echo "Detected that this measurement set has already had its phase centre changed. Not shifting."
-else
-    # Determine whether to shift the pointing centre to be more optimally-centred 
-    # on the peak of the primary beam sensitivity
-    coords=$(calc_pointing.py "${metafits}")
-    echo "Optimally shifting co-ordinates of measurement set to $coords, with zenith shiftback."
-    chgcentre \
-            "${obsnum}.ms" \
-            ${coords}
-
-    # Now shift the pointing centre to point straight up, 
-    # which approximates minw without making the phase centre rattle around
-    chgcentre \
-            -zenith \
-            -shiftback \
-            "${obsnum}.ms"
-fi
+#current=$(chgcentre "${obsnum}.ms")
+#
+#if [[ $current == *"shift"* ]]
+#then
+#    echo "Detected that this measurement set has already had its phase centre changed. Not shifting."
+#else
+#    # Determine whether to shift the pointing centre to be more optimally-centred 
+#    # on the peak of the primary beam sensitivity
+#    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
+#    echo "Optimally shifting co-ordinates of measurement set to $coords, with zenith shiftback."
+#    chgcentre \
+#            "${obsnum}.ms" \
+#            ${coords}
+#
+#    # Now shift the pointing centre to point straight up, 
+#    # which approximates minw without making the phase centre rattle around
+#    chgcentre \
+#            -zenith \
+#            -shiftback \
+#            "${obsnum}.ms"
+#fi
 
 # Create a template image that has all the same properties as our eventual WSClean image
 if [[ ! -e "${obsnum}_template.fits" ]]
 then
     wsclean \
+            -gridder wgridder \
             -abs-mem ${GPMMEMORY} \
             -mgain 1.0 \
             -nmiter 1 \
@@ -175,6 +177,7 @@ done
 set -o pipefail
 # Deep clean (for pipeline)
 wsclean \
+        -gridder wgridder \
         -abs-mem ${GPMMEMORY} \
         $multiscale \
         -nmiter 5 \
