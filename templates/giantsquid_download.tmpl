@@ -15,10 +15,12 @@ then
     exit 1
 fi
 
-cd "${GPMBASE}" || exit 1
+cd "${GPMSCRATCH}" || exit 1
+
+project=$(${GPMBASE}/gpm_track.py obs_epoch --obs_id $obsnum)
 
 # Ensure that the target download directory exists and cd into it
-mkdir -p "${obsnum}" && cd "${obsnum}"
+mkdir -p "${project}/${obsnum}" && cd "${project}/${obsnum}"
 
 # Make (doubly) sure that the measurement set hasn't already been downloaded (in full or in part)
 if [[ -d "${obsnum}.ms" ]]
