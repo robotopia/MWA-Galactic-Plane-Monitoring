@@ -19,6 +19,19 @@ We are using the `GGSM_updated.fits` sky model (included in this repo).
 catfile="${GPMBASE}/catalogue/GGSM_updated.fits"
 ```
 
+For plotting purposes, select a different reference antenna based on ObsID:
+```
+if [[ $obsnum -gt 1300000000 ]] && [[ $obsnum -lt 1342950000 ]]
+then
+    refant=0
+elif [[ $obsnum -gt 1342950000 ]]
+then
+    refant=8
+else
+    refant=127
+fi
+```
+
 For calibration, we're using a minimum baseline of 75 lambda (=250m at 88 MHz)
 ```
 minuv=75

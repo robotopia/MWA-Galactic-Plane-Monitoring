@@ -9,7 +9,7 @@ echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
   -p project        : project, (must be specified, no default)
   -t                : test. Don't submit job, just make the batch file
                       and then return the submission command
-  -f                : Force re-download (default is to quit with exit code "2"
+  -f                : Force re-download (default is to ignore obsids
                       if the measurement set already exists).
   -o obsid_file     : the path to a file containing obsid(s) to process" 1>&2;
 }
