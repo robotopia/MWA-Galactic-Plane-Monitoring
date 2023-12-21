@@ -3,6 +3,11 @@ set -x
 
 pipeuser=PIPEUSER
 obsnum=OBSNUM
+cores=${GPMNCPUS}
+datadir=DATADIR
+fraction=FRACTION
+sthresh=STHRESH
+ion=IONOTEST # Perform ionospheric triage? (1 means yes, blank means no)
 
 # If obsnum is a file, then we are in an array job
 if [[ -f "${obsnum}" ]]
@@ -29,8 +34,6 @@ then
 fi
 }
 
-cores=${GPMNCPUS}
-datadir=DATADIR
 if [[ $obsnum -gt 1300000000 ]] && [[ $obsnum -lt 1342950000 ]]
 then
     refant=0
@@ -41,16 +44,26 @@ else
     refant=127
 fi
 
-fraction=FRACTION
-sthresh=STHRESH
-ion=IONOTEST # Perform ionospheric triage? (1 means yes, blank means no)
-catfile="${GPMBASE}/catalogue/GGSM_updated.fits" # GLEAM-X sky model
+echo "Running infield calibration for $obsnum"
+RA=$( pyhead.py -p RA "$metafits" | awk '{print $3}' )
+Dec=$( pyhead.py -p DEC "$metafits" | awk '{print $3}' )
+chan=$( pyhead.py -p CENTCHAN "$metafits" | awk '{print $3}' ) # Centre channel (receiver channel number)
+
+# Minimum/minimum baselines
+minuv=75   # Minimum baseline of 75 lambda (=250m at 88 MHz) for calibration
+# UV range for calibration based on GLEAM-based sky model
+# Calibrate takes a maximum UV range in metres
+# Calculate min UVW in metres
+minuvm=$(echo "568 * ${minuv} / ${chan}" | bc -l)
+# In wavelengths, maximum 128T baseline at 200MHz was 1667 lambda long
+# 300/1.28 * 1667 = 390000
+# Calculate max UVW in metres
+maxuvm=$(echo "390000 / (${chan} + 11)" | bc -l)
+
+calmodel="${obsnum}_local_gleam_model.txt"
 
 # MWA beam information
 MWAPATH="${GPMMWAPB}"
-
-# Minimum baseline of 75 lambda (=250m at 88 MHz) for calibration
-minuv=75
 
 # start
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
@@ -64,15 +77,12 @@ then
     test_fail $?
 fi
 
+# Calibration input and output files
+catfile="${GPMBASE}/catalogue/GGSM_updated.fits" # GLEAM-X sky model
 calibrator=$( pyhead.py -p CALIBSRC "$metafits" | awk '{print $3}' )
+
 echo "Calibrator is $calibrator"
 
-echo "Running infield calibration for $obsnum"
-RA=$( pyhead.py -p RA "$metafits" | awk '{print $3}' )
-Dec=$( pyhead.py -p DEC "$metafits" | awk '{print $3}' )
-chan=$( pyhead.py -p CENTCHAN "$metafits" | awk '{print $3}' )
-
-calmodel="${obsnum}_local_gleam_model.txt"
 #if [[ ! -e "${calmodel}" ]]
 #then
     # crop_catalogue.py --ra="${RA}" --dec="${Dec}" --radius=30 --minflux=1.0 --metafits="${metafits}" \
@@ -103,15 +113,8 @@ else
     echo "Detected that this measurement set has not yet had its phase centre changed. Not shifting."
 fi
 
-# uv range for calibration based on GLEAM-based sky model
-# Calibrate takes a maximum uv range in metres
-# Calculate min uvw in metres
-minuvm=$(echo "568 * ${minuv} / ${chan}" | bc -l)
-# In wavelengths, maximum 128T baseline at 200MHz was 1667 lambda long
-# 300/1.28 * 1667 = 390000
-# Calculate max uvw in metres
-maxuvm=$(echo "390000 / (${chan} + 11)" | bc -l)
 
+# Perform ionospheric triage
 if [[ ! -z $ion ]]
 then
 

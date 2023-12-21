@@ -14,54 +14,58 @@ flagantennae ${obsnum}.ms $flags
 
 ## autocal 
 
-- We are using the `GGSM_updated.fits` sky model (included in this repo).
-- For plotting purposes, select a different reference antenna based on ObsID
+### Variables
 
-| ObsID range | Reference antenna |
-| :---------: | :---------------: |
-| 1300000000 to 1342950000 |  0  |
-| > 1342950000             |  8  |
-| All others               | 127 |
+In the table below, variable names in square brackets are for hard-coded values that are never assigned to an explicit variable.
 
-- Using a minimum baseline (`minuv`) of 75 lambda (=250m at 88 MHz)
-- For ionospheric triage:
-  - Use 10 time steps (but there are 30 x 4s timesteps in a typical 120 s calibration observation)
-  - Run `calibrate` with 
+| Variable | Description | Value |
+| :------- | :---------- | :---- |
+| fraction | Acceptable fraction of flagged baselines | 0.25 |
+| sthresh | Segment threshold (currently not used) | 0.4 |
+| chan | Receiver channel number | (Depends on observation, but always 157 for GPM) |
+| minuv | Minimum baseline  for calibration (in wavelengths) | 75 (=250m at 88 MHz) |
+| minuvm | Minimum of UV range for calibration based on GLEAM-based sky model (in metres) | 568 * `minuv` / `chan` = about 271.3 |
+| maxumv | Maximum of UV range for calibration based on GLEAM-based sky model (in metres). In wavelengths, maximum 128T baseline at 200MHz was 1667 lambda long
+ (300/1.28 * 1667 = 390000). | 390000 / (${chan} + 11) |
+| catfile | The input catalogue sky model | `GGSM_updated.fits` |
+| calibrator | The name of the calibrator source | (Depends on observation) |
+| calmodel | The cropped sky model | `${obsnum}_local_gleam_model.txt` |
+| refant | The reference antenna to use when plotting calibration solutions | 0 (for ObsIDs 1300000000 to 1342950000)<br>8 (for ObsIDs > 1342950000)<br>127 (for all other ObsIDs) |
+| ts | Number of timesteps to use for ionospheric triage | 10 |
+| [top-bright] | The maximum number of brightest sources to keep in the cropped sky model | 250 |
+| [radius] | The maximum angular separation from the pointing centre to keep in the cropped sky model (in degrees) | 30 |
 
-calibrator=$( pyhead.py -p CALIBSRC "$metafits" | awk '{print $3}' )
-RA=$( pyhead.py -p RA "$metafits" | awk '{print $3}' )
-Dec=$( pyhead.py -p DEC "$metafits" | awk '{print $3}' )
-chan=$( pyhead.py -p CENTCHAN "$metafits" | awk '{print $3}' )
+### Crop the catalogue
 
-calmodel="${obsnum}_local_gleam_model.txt"
-
+```
     crop_catalogue.py --ra="${RA}" --dec="${Dec}" --radius=30 --top-bright=250 --metafits="${metafits}" \
                         --catalogue="${catfile}" --fluxcol=S_200 --plot "${obsnum}_local_gleam_model.png" \
                         --output "${obsnum}_cropped_catalogue.fits"
     vo2model.py --catalogue="${obsnum}_cropped_catalogue.fits" --point --output="${calmodel}" \
                 --racol=RAJ2000 --decol=DEJ2000 --acol=a --bcol=b --pacol=pa --fluxcol=S_200 --alphacol=alpha
 ```
-Check whether the phase centre has already changed, the calibration will fail if it has. The measurement set must be shifted back to its original position.
+
+### Reset phase centre, if needed
+
+Make sure the phase centre is where it should be:
 ```
 current=$(chgcentre "${obsnum}.ms")
-coords=$($GPMBASE/gleam_x/bin/calc_optimum_pointing.py --metafits "${metafits}")
-chgcentre \
-  "${obsnum}.ms" \
-  ${coords}
+
+if [[ $current == *"shift"* ]]
+then
+    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before calibration."
+    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
+    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
+    chgcentre \
+            "${obsnum}.ms" \
+            ${coords}
+else
+    echo "Detected that this measurement set has not yet had its phase centre changed. Not shifting."
+fi
 ```
-uv range for calibration based on GLEAM-based sky model. Calibrate takes a maximum uv range in metres. Calculate min uvw in metres.
-```
-minuvm=$(echo "568 * ${minuv} / ${chan}" | bc -l)
-```
-In wavelengths, maximum 128T baseline at 200MHz was 1667 lambda long. 300/1.28 * 1667 = 390000. Calculate max uvw in metres.
-```
-maxuvm=$(echo "390000 / (${chan} + 11)" | bc -l)
-```
-Ionospheric Triage
-```
-solutions="${obsnum}_${calmodel%%.txt}_solutions_ts${ts}.bin"
-```
-Remove duplicate obsnum
+
+### Ionospheric triage
+
 ```
 solutions="${solutions/${obsnum}_${obsnum}_/${obsnum}_}"
 calibrate \
@@ -73,19 +77,24 @@ calibrate \
             -applybeam -mwa-path "${MWAPATH}" \
             "${obsnum}.ms" \
             "${solutions}"
-    aocal_plot.py --refant="${refant}" --amp_max=2 "${solutions}"
-    aocal_diff.py --metafits="${metafits}" --names "${solutions}" --refant="${refant}"
-    iono_update.py --ionocsv "${obsnum}_ionodiff.csv"
+aocal_plot.py --refant="${refant}" --amp_max=2 "${solutions}"
+aocal_diff.py --metafits="${metafits}" --names "${solutions}" --refant="${refant}"
+iono_update.py --ionocsv "${obsnum}_ionodiff.csv"
 ```
-At the moment, assume that the ionosphere is OK, and derive some real solutions.
+
+We will not automate the *checking* of the output; the next step (deriving real solutions) is carried out regardless.
+
+### Obtain calibration solutions
+
+Set the name of the output file(s):
+
 ```
 solutions="${obsnum}_${calmodel%%.txt}_solutions_initial.bin"
-```
-Remove duplicate obsnum
-```
 solutions="${solutions/${obsnum}_${obsnum}_/${obsnum}_}"
 ```
-Calibrate
+
+#### Perform the calibration itself
+
 ```
 calibrate \
         -j ${cores} \
@@ -95,21 +104,27 @@ calibrate \
         -applybeam -mwa-path "${MWAPATH}" \
         "${obsnum}".ms \
         "${solutions}"
-test_fail $?
 ```
+
+#### Apply the "XY polarisation" phase shift
+
 Create a version divided through by the reference antenna, so that all observations have the same relative XY phase, allowing polarisation calibration solutions to be transferred. This also sets the cross-terms to zero by default
 ```
 aocal_phaseref.py "${solutions}" "${solutions%.bin}_ref.bin" "${refant}" --xy -2.806338586067941065e+01 --dxy -4.426533296449057023e-07  --ms "${obsnum}.ms"
 ```
+
 Plot calibration solutions
 ```
 aocal_plot.py --refant="${refant}" --amp_max=2 "${solutions%.bin}_ref.bin"
-test_fail $?
 ```
+
 Test to see if the calibration solution meets minimum quality control. At the moment this is a simple check based on the number of flagged solutions. 
 ```
 result=$(check_assign_solutions.py -t "${fraction}" check "${solutions%.bin}_ref.bin")
-mv "${solutions%.bin}_ref.bin" "${solutions%.bin}_ref_failed.bin"
+if echo "${result}" | grep -q fail
+then
+    mv "${solutions%.bin}_ref.bin" "${solutions%.bin}_ref_failed.bin"
     test_fail 1
+fi
 ```
 
