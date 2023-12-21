@@ -140,6 +140,7 @@ download_array=( $download_obsids )
 if [[ ${#proprocess_array} -ge 1 ]]
 then
 
+    echo "==================================="
     echo "Preprocessing list: ${preprocess_obsids}"
 
     timestamp=$(date +"%Y%m%d_%H%M%S")
@@ -238,6 +239,7 @@ fi
 if [[ ${#download_array} -ge 1 ]]
 then
 
+    echo "==================================="
     echo "Download list: ${download_obsids}"
 
     timestamp=$(date +"%Y%m%d_%H%M%S")
