@@ -52,12 +52,6 @@ MWAPATH="${GPMMWAPB}"
 # Minimum baseline of 75 lambda (=250m at 88 MHz) for calibration
 minuv=75
 
-# Interval for ionospheric triage (in time steps)
-# Typically we have 2-minute observations which have been averaged to 4s
-# So in total they contain 30 time steps
-# Do do useful ionospheric differencing we need to compare the start and the end
-ts=10
-
 # start
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
@@ -120,7 +114,15 @@ maxuvm=$(echo "390000 / (${chan} + 11)" | bc -l)
 
 if [[ ! -z $ion ]]
 then
+
     echo "Performing ionospheric triage. "
+
+    # Interval for ionospheric triage (in time steps)
+    # Typically we have 2-minute observations which have been averaged to 4s
+    # So in total they contain 30 time steps
+    # Do do useful ionospheric differencing we need to compare the start and the end
+    ts=10
+
     # Ionospheric triage
     solutions="${obsnum}_${calmodel%%.txt}_solutions_ts${ts}.bin"
     # Remove duplicate obsnum

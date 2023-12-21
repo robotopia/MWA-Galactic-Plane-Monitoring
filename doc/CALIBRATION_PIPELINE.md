@@ -14,35 +14,19 @@ flagantennae ${obsnum}.ms $flags
 
 ## autocal 
 
-We are using the `GGSM_updated.fits` sky model (included in this repo).
-```
-catfile="${GPMBASE}/catalogue/GGSM_updated.fits"
-```
+- We are using the `GGSM_updated.fits` sky model (included in this repo).
+- For plotting purposes, select a different reference antenna based on ObsID
 
-For plotting purposes, select a different reference antenna based on ObsID:
-```
-if [[ $obsnum -gt 1300000000 ]] && [[ $obsnum -lt 1342950000 ]]
-then
-    refant=0
-elif [[ $obsnum -gt 1342950000 ]]
-then
-    refant=8
-else
-    refant=127
-fi
-```
+| ObsID range | Reference antenna |
+| :---------: | :---------------: |
+| 1300000000 to 1342950000 |  0  |
+| > 1342950000             |  8  |
+| All others               | 127 |
 
-For calibration, we're using a minimum baseline of 75 lambda (=250m at 88 MHz)
-```
-minuv=75
-```
-
-Interval for ionospheric triage (in time steps).
-Typically we have 2-minute observations which have been averaged to 4s, so in total they contain 30 time steps.
-To do useful ionospheric differencing we need to compare the start and the end
-```
-wget -O "${metafits}" http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}
-test_fail $?
+- Using a minimum baseline (`minuv`) of 75 lambda (=250m at 88 MHz)
+- For ionospheric triage:
+  - Use 10 time steps (but there are 30 x 4s timesteps in a typical 120 s calibration observation)
+  - Run `calibrate` with 
 
 calibrator=$( pyhead.py -p CALIBSRC "$metafits" | awk '{print $3}' )
 RA=$( pyhead.py -p RA "$metafits" | awk '{print $3}' )
