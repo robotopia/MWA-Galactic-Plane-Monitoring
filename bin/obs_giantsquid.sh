@@ -109,7 +109,7 @@ download_obsids=
 for obsid in $obsids
 do
     # Get the ASVO job state
-    state=$(echo "$asvo_json" | singularity exec $GPMCONTAINER jq -r '.[]|.jobState')
+    state=$(echo "$asvo_json" | singularity exec $GPMCONTAINER jq -r ".[]| select( .obsid == ${obsid} ).jobState")
 
     if [[ $state == "Ready" ]]
     then
