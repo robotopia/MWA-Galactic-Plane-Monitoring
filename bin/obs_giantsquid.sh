@@ -110,7 +110,6 @@ for obsid in $obsids
 do
     # Get the ASVO job state
     state=$(echo "$asvo_json" | singularity exec $GPMCONTAINER jq -r '.[]|.jobState')
-    echo "$obsid: state = $state"
 
     if [[ $state == "Ready" ]]
     then
@@ -131,7 +130,7 @@ do
 done
 
 echo "Preprocessing list: ${preprocess_obsids}"
-echo "Download list: ${download_list}"
+echo "Download list: ${download_obsids}"
 
 #---------------------------------------
 # Submit the giant-squid conversion jobs
