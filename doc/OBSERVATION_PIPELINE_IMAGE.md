@@ -39,7 +39,7 @@ The idea is to make small images around a-team sources which that than subtracte
 We are using wsclean to first chgcenter and the clean a small region arount the source.
 This is then subtracted from the column DATA.
 
-Check whether the phase centre has already changed. Calibration will fail if it has, so measurement set must be shifted back to its original position.
+Reset the phase centre:
 ```
 current=$(chgcentre "${obsnum}.ms")
 coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
@@ -49,7 +49,7 @@ chgcentre \
 submodel="${obsnum}.ateam_outlier"
 ```
 
-If submodel does not exist:
+If submodel does not exist, make one:
 ```
 generate_ateam_subtract_model.py "${obsnum}.metafits" \
                                     --mode wsclean \
@@ -59,7 +59,20 @@ generate_ateam_subtract_model.py "${obsnum}.metafits" \
                                     $debugoption \
                                     --model-output "${submodel}"
 ```
+
 ## image
+
+Variables:
+
+| Variable | Description | Value |
+| :------- | :---------- | :---- |
+| subchans | WSClean suffixes for subchannels and MFS | "MFS 0000 0001 0002 0003" |
+| minuv | Minimum uvw for self-calibration (in wavelengths) | 75 |
+| msigma | S/N Level at which to choose masked pixels for deepclean | 5 |
+| tsigma | S/N Threshold at which to stop cleaning | 3 |
+| telescope | The MWA configuration | MWALB (= long baseline) |
+| basescale |  | 0.6 |
+
 WSClean suffixes for subchannels and MFS
 ```
 subchans="MFS 0000 0001 0002 0003"
