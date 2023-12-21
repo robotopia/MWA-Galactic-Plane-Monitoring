@@ -1,11 +1,32 @@
 # Calibration Pipeline
+
 ## autoflag
+
+The flags are obtained from the `gp_monitor` database,
+```
+flags=$(${GPMBASE}/gpm_track.py --obs_id ${obsnum} obs_flagantennae)
+```
+
+Then, they are applied to the measurement set:
 ```
 flagantennae ${obsnum}.ms $flags
 ```
 
 ## autocal 
-Interval for ionospheric triage (in time steps). Typically we have 2-minute observations which have been averaged to 4s, so in total they contain 30 time steps. To do useful ionospheric differencing we need to compare the start and the end
+
+We are using the `GGSM_updated.fits` sky model (included in this repo).
+```
+catfile="${GPMBASE}/catalogue/GGSM_updated.fits"
+```
+
+For calibration, we're using a minimum baseline of 75 lambda (=250m at 88 MHz)
+```
+minuv=75
+```
+
+Interval for ionospheric triage (in time steps).
+Typically we have 2-minute observations which have been averaged to 4s, so in total they contain 30 time steps.
+To do useful ionospheric differencing we need to compare the start and the end
 ```
 wget -O "${metafits}" http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}
 test_fail $?
