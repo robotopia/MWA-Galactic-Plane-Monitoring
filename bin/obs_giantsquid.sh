@@ -180,7 +180,7 @@ then
     EXPORT="$(echo ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY"
     TIME="01:30:00"
     CLUSTERS="${GPMCOPYM}"
-    OUTPUT="${GPMLOG}/giantsquid_download_${timestamp}.o%A"
+    OUTPUT="${GPMLOG}/giantsquid_download_${timestamp}.o%A-%j"
     ERROR="${GPMLOG}/giantsquid_download_${timestamp}.e%A"
     PARTITION="${GPMCOPYQ}"
     ACCOUNT="${GPMACCOUNT}"
