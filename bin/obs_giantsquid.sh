@@ -198,22 +198,24 @@ then
 
     echo "#!/bin/bash
 
-    #SBATCH --begin=${BEGIN}
-    #SBATCH --mem=${MEM}
-    #SBATCH --export=${EXPORT}
-    #SBATCH --time=${TIME}
-    #SBATCH --clusters=${CLUSTERS}
-    #SBATCH --output=${OUTPUT}
-    #SBATCH --error=${ERROR}
-    #SBATCH --partition=${PARTITION}
-    #SBATCH --account=${ACCOUNT}
-    #SBATCH --array=${ARRAY}
+#SBATCH --begin=${BEGIN}
+#SBATCH --mem=${MEM}
+#SBATCH --export=${EXPORT}
+#SBATCH --time=${TIME}
+#SBATCH --clusters=${CLUSTERS}
+#SBATCH --output=${OUTPUT}
+#SBATCH --error=${ERROR}
+#SBATCH --partition=${PARTITION}
+#SBATCH --account=${ACCOUNT}
+#SBATCH --array=0-$((${#download_array}-1))
 
-    module load singularity/3.7.4
+module load singularity/3.7.4
 
-    export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}
+export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}
 
-    singularity run ${GPMCONTAINER} ${script}
+obsids=(${download_obsids})
+
+singularity run ${GPMCONTAINER} ${script} \${obsids[$SLURM_ARRAY_TASK_ID]}
     " >> "${sbatch_script}"
 
     # This is the only task that should reasonably be expected to run on another cluster. 

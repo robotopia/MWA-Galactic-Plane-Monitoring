@@ -2,13 +2,20 @@
 
 set -x
 
-# This script is expected to be
-obsnum=$SLURM_ARRAY_TASK_ID
-
-cd "${GPMBASE}" || exit 1
+# Consume the first argument as the obsid
+obsnum=$1
 
 # Mark start of download in database
-track_task.py start --jobid="${SLURM_JOBID}" --taskid=$obsnum --start_time="$(date +%s)"
+track_task.py start --jobid="${SLURM_JOBID}" --taskid="${SLURM_ARRAY_TASK_ID}" --start_time="$(date +%s)"
+
+if [[ -z $obsnum ]]
+then
+    echo "No obsid passed to giant-squid download script. Not downloading anything."
+    track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
+    exit 1
+fi
+
+cd "${GPMBASE}" || exit 1
 
 # Ensure that the target download directory exists and cd into it
 mkdir -p "${obsnum}" && cd "${obsnum}"
