@@ -108,6 +108,7 @@ for obsid in $obsids
 do
     # Get the ASVO job state
     state=$(echo "$asvo_json" | singularity exec $GPMCONTAINER jq -r '.[]|.jobState')
+    echo "$obsid: state = $state"
 
     if [[ $state == "Ready" ]]
     then
