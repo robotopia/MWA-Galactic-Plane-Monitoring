@@ -129,182 +129,196 @@ do
     fi
 done
 
-echo "Preprocessing list: ${preprocess_obsids}"
-echo "Download list: ${download_obsids}"
+# Count how many in lists
+proprocess_array=( $preprocess_obsids )
+download_array=( $download_obsids )
 
 #---------------------------------------
 # Submit the giant-squid conversion jobs
 #---------------------------------------
 
-timestamp=$(date +"%Y%m%d_%H%M%S")
-
-script="${GPMSCRIPT}/giantsquid_conversion_${timestamp}.sh"
-cat "${GPMBASE}/templates/giantsquid_conversion.tmpl" | sed \
-    -e "s:OBSIDS:\"$(echo ${obsids} | xargs)\":g" \
-    -e "s:BASEDIR:${base}:g" \
-    -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
-
-chmod 755 "${script}"
-
-# Construct the sbatch wrapper for the giantsquid script
-sbatch_script="${script%.sh}.sbatch"
-
-BEGIN="now+1minutes"
-MEM="50G"
-EXPORT="$(echo ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY"
-TIME="00:05:00"
-CLUSTERS="${GPMCOPYM}"
-OUTPUT="${GPMLOG}/giantsquid_conversion_${timestamp}.o%A"
-ERROR="${GPMLOG}/giantsquid_conversion_${timestamp}.e%A"
-PARTITION="${GPMCOPYQ}"
-ACCOUNT="${GPMACCOUNT}"
-
-# Override ACCOUNT if GPMCOPYA is not empty
-if [[ ! -z $GPMCOPYA ]]
+if [[ ${#proprocess_array} -ge 1 ]]
 then
-    ACCOUNT="--account=${GPMCOPYA}"
-fi
 
-echo "#!/bin/bash
+    echo "Preprocessing list: ${preprocess_obsids}"
 
-#SBATCH --begin=${BEGIN}
-#SBATCH --mem=${MEM}
-#SBATCH --export=${EXPORT}
-#SBATCH --time=${TIME}
-#SBATCH --clusters=${CLUSTERS}
-#SBATCH --output=${OUTPUT}
-#SBATCH --error=${ERROR}
-#SBATCH --partition=${PARTITION}
-#SBATCH --account=${ACCOUNT}
+    timestamp=$(date +"%Y%m%d_%H%M%S")
 
-module load singularity/3.7.4
+    script="${GPMSCRIPT}/giantsquid_conversion_${timestamp}.sh"
+    cat "${GPMBASE}/templates/giantsquid_conversion.tmpl" | sed \
+        -e "s:OBSIDS:\"$(echo ${obsids} | xargs)\":g" \
+        -e "s:BASEDIR:${base}:g" \
+        -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
-export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}
+    chmod 755 "${script}"
 
-singularity run ${GPMCONTAINER} ${script}
-" >> "${sbatch_script}"
+    # Construct the sbatch wrapper for the giantsquid script
+    sbatch_script="${script%.sh}.sbatch"
 
-# This is the only task that should reasonably be expected to run on another cluster. 
-# Export all GPM pipeline configurable variables and the MWA_ASVO_API_KEY to ensure 
-# obs_giantsquid completes as expected
-sub="sbatch ${depend} --export="${EXPORT}" ${sbatch_script}"
+    BEGIN="now+1minutes"
+    MEM="50G"
+    EXPORT="$(echo ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY"
+    TIME="00:05:00"
+    CLUSTERS="${GPMCOPYM}"
+    OUTPUT="${GPMLOG}/giantsquid_conversion_${timestamp}.o%A"
+    ERROR="${GPMLOG}/giantsquid_conversion_${timestamp}.e%A"
+    PARTITION="${GPMCOPYQ}"
+    ACCOUNT="${GPMACCOUNT}"
 
-if [[ ! -z ${tst} ]]
-then
-    echo "script is ${script}"
-    echo "submit via:"
-    echo "${sub}"
-    exit 0
-fi
-
-# submit job
-jobid=($(${sub}))
-jobid=${jobid[3]}
-
-# rename the err/output files as we now know the jobid
-error="${error//%A/${jobid[0]}}"
-output="${output//%A/${jobid[0]}}"
-
-# record submission
-n=1
-for obsid in $obsids
-do
-    if [ "${GPMTRACK}" = "track" ]
+    # Override ACCOUNT if GPMCOPYA is not empty
+    if [[ ! -z $GPMCOPYA ]]
     then
-        ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
-                        --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+        ACCOUNT="--account=${GPMCOPYA}"
     fi
-    ((n+=1))
-done
 
-echo "Submitted ${script} as ${jobid} . Follow progress here:"
-echo "${output}"
-echo "${error}"
+    echo "#!/bin/bash
+
+    #SBATCH --begin=${BEGIN}
+    #SBATCH --mem=${MEM}
+    #SBATCH --export=${EXPORT}
+    #SBATCH --time=${TIME}
+    #SBATCH --clusters=${CLUSTERS}
+    #SBATCH --output=${OUTPUT}
+    #SBATCH --error=${ERROR}
+    #SBATCH --partition=${PARTITION}
+    #SBATCH --account=${ACCOUNT}
+
+    module load singularity/3.7.4
+
+    export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}
+
+    singularity run ${GPMCONTAINER} ${script}
+    " >> "${sbatch_script}"
+
+    # This is the only task that should reasonably be expected to run on another cluster. 
+    # Export all GPM pipeline configurable variables and the MWA_ASVO_API_KEY to ensure 
+    # obs_giantsquid completes as expected
+    sub="sbatch ${depend} --export="${EXPORT}" ${sbatch_script}"
+
+    if [[ ! -z ${tst} ]]
+    then
+        echo "script is ${script}"
+        echo "submit via:"
+        echo "${sub}"
+        exit 0
+    fi
+
+    # submit job
+    jobid=($(${sub}))
+    jobid=${jobid[3]}
+
+    # rename the err/output files as we now know the jobid
+    error="${error//%A/${jobid[0]}}"
+    output="${output//%A/${jobid[0]}}"
+
+    # record submission
+    n=1
+    for obsid in $obsids
+    do
+        if [ "${GPMTRACK}" = "track" ]
+        then
+            ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
+                            --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+        fi
+        ((n+=1))
+    done
+
+    echo "Submitted ${script} as ${jobid} . Follow progress here:"
+    echo "${output}"
+    echo "${error}"
+fi
 
 #-------------------------------------
 # Submit the giant-squid download jobs
 #-------------------------------------
 
-timestamp=$(date +"%Y%m%d_%H%M%S")
-
-script="${GPMSCRIPT}/giantsquid_download_${timestamp}.sh"
-cat "${GPMBASE}/templates/giantsquid_download.tmpl" > "${script}"
-
-chmod 755 "${script}"
-
-# Construct the sbatch wrapper for the giantsquid script
-sbatch_script="${script%.sh}.sbatch"
-
-BEGIN="now+1minutes"
-MEM="50G"
-EXPORT="$(echo ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY"
-TIME="01:30:00"
-CLUSTERS="${GPMCOPYM}"
-OUTPUT="${GPMLOG}/giantsquid_download_${timestamp}.o%A"
-ERROR="${GPMLOG}/giantsquid_download_${timestamp}.e%A"
-PARTITION="${GPMCOPYQ}"
-ACCOUNT="${GPMACCOUNT}"
-ARRAY="$(echo "$download_obsids" | xargs | tr ' ' ',')" # turn into whitespace-trimmed, comma-separated list
-
-# Override ACCOUNT if GPMCOPYA is not empty
-if [[ ! -z $GPMCOPYA ]]
+if [[ ${#download_array} -ge 1 ]]
 then
-    ACCOUNT="--account=${GPMCOPYA}"
-fi
 
-echo "#!/bin/bash
+    echo "Download list: ${download_obsids}"
 
-#SBATCH --begin=${BEGIN}
-#SBATCH --mem=${MEM}
-#SBATCH --export=${EXPORT}
-#SBATCH --time=${TIME}
-#SBATCH --clusters=${CLUSTERS}
-#SBATCH --output=${OUTPUT}
-#SBATCH --error=${ERROR}
-#SBATCH --partition=${PARTITION}
-#SBATCH --account=${ACCOUNT}
-#SBATCH --array=${ARRAY}
+    timestamp=$(date +"%Y%m%d_%H%M%S")
 
-module load singularity/3.7.4
+    script="${GPMSCRIPT}/giantsquid_download_${timestamp}.sh"
+    cat "${GPMBASE}/templates/giantsquid_download.tmpl" > "${script}"
 
-export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}
+    chmod 755 "${script}"
 
-singularity run ${GPMCONTAINER} ${script}
-" >> "${sbatch_script}"
+    # Construct the sbatch wrapper for the giantsquid script
+    sbatch_script="${script%.sh}.sbatch"
 
-# This is the only task that should reasonably be expected to run on another cluster. 
-# Export all GPM pipeline configurable variables and the MWA_ASVO_API_KEY to ensure 
-# obs_giantsquid completes as expected
-sub="sbatch ${depend} --export="${EXPORT}" ${sbatch_script}"
+    BEGIN="now+1minutes"
+    MEM="50G"
+    EXPORT="$(echo ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY"
+    TIME="01:30:00"
+    CLUSTERS="${GPMCOPYM}"
+    OUTPUT="${GPMLOG}/giantsquid_download_${timestamp}.o%A"
+    ERROR="${GPMLOG}/giantsquid_download_${timestamp}.e%A"
+    PARTITION="${GPMCOPYQ}"
+    ACCOUNT="${GPMACCOUNT}"
+    ARRAY="$(echo "$download_obsids" | xargs | tr ' ' ',')" # turn into whitespace-trimmed, comma-separated list
 
-if [[ ! -z ${tst} ]]
-then
-    echo "script is ${script}"
-    echo "submit via:"
-    echo "${sub}"
-    exit 0
-fi
-
-# submit job
-jobid=($(${sub}))
-jobid=${jobid[3]}
-
-# rename the err/output files as we now know the jobid
-error="${error//%A/${jobid[0]}}"
-output="${output//%A/${jobid[0]}}"
-
-# record submission
-n=1
-for obsid in $obsids
-do
-    if [ "${GPMTRACK}" = "track" ]
+    # Override ACCOUNT if GPMCOPYA is not empty
+    if [[ ! -z $GPMCOPYA ]]
     then
-        ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
-                        --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+        ACCOUNT="--account=${GPMCOPYA}"
     fi
-    ((n+=1))
-done
 
-echo "Submitted ${script} as ${jobid} . Follow progress here:"
-echo "${output}"
-echo "${error}"
+    echo "#!/bin/bash
+
+    #SBATCH --begin=${BEGIN}
+    #SBATCH --mem=${MEM}
+    #SBATCH --export=${EXPORT}
+    #SBATCH --time=${TIME}
+    #SBATCH --clusters=${CLUSTERS}
+    #SBATCH --output=${OUTPUT}
+    #SBATCH --error=${ERROR}
+    #SBATCH --partition=${PARTITION}
+    #SBATCH --account=${ACCOUNT}
+    #SBATCH --array=${ARRAY}
+
+    module load singularity/3.7.4
+
+    export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}
+
+    singularity run ${GPMCONTAINER} ${script}
+    " >> "${sbatch_script}"
+
+    # This is the only task that should reasonably be expected to run on another cluster. 
+    # Export all GPM pipeline configurable variables and the MWA_ASVO_API_KEY to ensure 
+    # obs_giantsquid completes as expected
+    sub="sbatch ${depend} --export="${EXPORT}" ${sbatch_script}"
+
+    if [[ ! -z ${tst} ]]
+    then
+        echo "script is ${script}"
+        echo "submit via:"
+        echo "${sub}"
+        exit 0
+    fi
+
+    # submit job
+    jobid=($(${sub}))
+    jobid=${jobid[3]}
+
+    # rename the err/output files as we now know the jobid
+    error="${error//%A/${jobid[0]}}"
+    output="${output//%A/${jobid[0]}}"
+
+    # record submission
+    n=1
+    for obsid in $obsids
+    do
+        if [ "${GPMTRACK}" = "track" ]
+        then
+            ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
+                            --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+        fi
+        ((n+=1))
+    done
+
+    echo "Submitted ${script} as ${jobid} . Follow progress here:"
+    echo "${output}"
+    echo "${error}"
+
+fi
