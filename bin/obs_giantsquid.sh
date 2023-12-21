@@ -143,9 +143,17 @@ then
     echo "==================================="
     echo "Preprocessing list: ${preprocess_obsids}"
 
-    singularity exec $GPMCONTAINER giant-squid submit-conv -p avg_time_res=4,avg_freq_res=40,flag_edge_width=80,output=ms $preprocess_obsids
-
-    echo "Preprocessing jobs sent to ASVO"
+    if [[ ! -z ${tst} ]]
+    then
+        echo "Test mode active: Command that would be run is:"
+        echo
+        echo "singularity exec $GPMCONTAINER giant-squid submit-conv -p avg_time_res=4,avg_freq_res=40,flag_edge_width=80,output=ms $preprocess_obsids"
+        echo
+    else
+        singularity exec $GPMCONTAINER giant-squid submit-conv -p avg_time_res=4,avg_freq_res=40,flag_edge_width=80,output=ms $preprocess_obsids
+        echo
+        echo "Preprocessing jobs sent to ASVO"
+    fi
 else
     echo "No preprocessing jobs sent"
 fi
