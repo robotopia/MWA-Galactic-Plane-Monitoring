@@ -130,15 +130,11 @@ do
     fi
 done
 
-# Count how many in lists
-proprocess_array=( $preprocess_obsids )
-download_array=( $download_obsids )
-
 #---------------------------------------
 # Submit the giant-squid conversion jobs
 #---------------------------------------
 
-if [[ ${#proprocess_array} -ge 1 ]]
+if [[ $(echo "$preprocess_obsids" | wc -w) -ge 1 ]]
 then
 
     echo "==================================="
@@ -163,7 +159,7 @@ fi
 # Submit the giant-squid download jobs
 #-------------------------------------
 
-if [[ ${#download_array} -ge 1 ]]
+if [[ $(echo "$download_obsids" | wc -w) -ge 1 ]]
 then
 
     echo "==================================="
@@ -207,15 +203,16 @@ then
 #SBATCH --error=${ERROR}
 #SBATCH --partition=${PARTITION}
 #SBATCH --account=${ACCOUNT}
-#SBATCH --array=0-$((${#download_array}-1))
+#SBATCH --array=0-$(($(echo "$download_obsids" | wc -w)-1))
 
 module load singularity/3.7.4
 
 export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}
 
-obsids=(${download_obsids})
+obsids=\"${download_obsids}\"
+obsid=\$(echo \$obsids | cut -d \" \" -f \$SLURM_ARRAY_TASK_ID)
 
-singularity run ${GPMCONTAINER} ${script} \${obsids[$SLURM_ARRAY_TASK_ID]}
+singularity run ${GPMCONTAINER} ${script} \$obsid
     " >> "${sbatch_script}"
 
     # This is the only task that should reasonably be expected to run on another cluster. 
