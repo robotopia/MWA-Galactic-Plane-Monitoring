@@ -1,10 +1,20 @@
 # Observation Pipeline: To image
+
 ## autoflag
+
+The flags are obtained from the `gp_monitor` database,
+```
+flags=$(${GPMBASE}/gpm_track.py --obs_id ${obsnum} obs_flagantennae)
+```
+
+Then, they are applied to the measurement set:
 ```
 flagantennae ${obsnum}.ms $flags
 ```
+
 ## apply_cal
-_See aux_getcal_
+
+Get the assigned calibration solution from the database (see [AUX_GETCAL.md](AUX_GETCAL.md)).
 
 In production mode, apply to Data column:
 ```
@@ -13,16 +23,22 @@ In production mode, apply to Data column:
                 ${obsnum}.ms \
                 "${calfile}"
 ```
+
 ## uvflag
+
+Assuming production mode (i.e. using DATA column in measurement set):
+
 ```
 ms_flag_by_uvdist.py "${obsnum}.ms" DATA -a
 ```
 
 ## uvsub
-A template script to generate a model of a-team sources that will be subtracted from the visibility dataset. The idea is to make small images around a-team sources which that than subtracted from the visibilities. We are using wsclean to first chgcenter and the clean a small region arount the source. This is then subtracted from the column Data.
-```
-wget -O "${metafits}" "http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}"
-```
+
+A template script to generate a model of a-team sources that will be subtracted from the visibility dataset.
+The idea is to make small images around a-team sources which that than subtracted from the visibilities.
+We are using wsclean to first chgcenter and the clean a small region arount the source.
+This is then subtracted from the column DATA.
+
 Check whether the phase centre has already changed. Calibration will fail if it has, so measurement set must be shifted back to its original position.
 ```
 current=$(chgcentre "${obsnum}.ms")
@@ -32,6 +48,7 @@ chgcentre \
           ${coords}
 submodel="${obsnum}.ateam_outlier"
 ```
+
 If submodel does not exist:
 ```
 generate_ateam_subtract_model.py "${obsnum}.metafits" \
