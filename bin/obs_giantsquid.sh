@@ -200,32 +200,35 @@ then
         echo "script is ${script}"
         echo "submit via:"
         echo "${sub}"
-        exit 0
+    else
+
+        # submit job
+        jobid=($(${sub}))
+        jobid=${jobid[3]}
+
+        # rename the err/output files as we now know the jobid
+        error="${error//%A/${jobid[0]}}"
+        output="${output//%A/${jobid[0]}}"
+
+        # record submission
+        n=1
+        for obsid in $obsids
+        do
+            if [ "${GPMTRACK}" = "track" ]
+            then
+                ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
+                                --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+            fi
+            ((n+=1))
+        done
+
+        echo "Submitted ${script} as ${jobid} . Follow progress here:"
+        echo "${output}"
+        echo "${error}"
+
     fi
-
-    # submit job
-    jobid=($(${sub}))
-    jobid=${jobid[3]}
-
-    # rename the err/output files as we now know the jobid
-    error="${error//%A/${jobid[0]}}"
-    output="${output//%A/${jobid[0]}}"
-
-    # record submission
-    n=1
-    for obsid in $obsids
-    do
-        if [ "${GPMTRACK}" = "track" ]
-        then
-            ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
-                            --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
-        fi
-        ((n+=1))
-    done
-
-    echo "Submitted ${script} as ${jobid} . Follow progress here:"
-    echo "${output}"
-    echo "${error}"
+else
+    echo "No preprocessing jobs sent"
 fi
 
 #-------------------------------------
@@ -294,31 +297,34 @@ then
         echo "script is ${script}"
         echo "submit via:"
         echo "${sub}"
-        exit 0
+    else
+
+        # submit job
+        jobid=($(${sub}))
+        jobid=${jobid[3]}
+
+        # rename the err/output files as we now know the jobid
+        error="${error//%A/${jobid[0]}}"
+        output="${output//%A/${jobid[0]}}"
+
+        # record submission
+        n=1
+        for obsid in $obsids
+        do
+            if [ "${GPMTRACK}" = "track" ]
+            then
+                ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
+                                --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+            fi
+            ((n+=1))
+        done
+
+        echo "Submitted ${script} as ${jobid} . Follow progress here:"
+        echo "${output}"
+        echo "${error}"
+
     fi
-
-    # submit job
-    jobid=($(${sub}))
-    jobid=${jobid[3]}
-
-    # rename the err/output files as we now know the jobid
-    error="${error//%A/${jobid[0]}}"
-    output="${output//%A/${jobid[0]}}"
-
-    # record submission
-    n=1
-    for obsid in $obsids
-    do
-        if [ "${GPMTRACK}" = "track" ]
-        then
-            ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
-                            --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
-        fi
-        ((n+=1))
-    done
-
-    echo "Submitted ${script} as ${jobid} . Follow progress here:"
-    echo "${output}"
-    echo "${error}"
-
+else
+    echo "No download jobs sent"
 fi
+
