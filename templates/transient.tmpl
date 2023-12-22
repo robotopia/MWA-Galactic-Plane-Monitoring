@@ -104,29 +104,31 @@ interval_stop=$((ninterval-interval_start))
 intervals_out=$((interval_stop-interval_start))
 
 # Check whether the phase centre has already changed
-current=$(chgcentre "${obsnum}.ms")
+#current=$(chgcentre "${obsnum}.ms")
 
-if [[ $current == *"shift"* ]]
-then
-    echo "Detected that this measurement set has already had its phase centre changed. Not shifting."
-else
+#if [[ $current == *"shift"* ]]
+#then
+#    echo "Detected that this measurement set has already had its phase centre changed. Not shifting."
+#else
     # Determine whether to shift the pointing centre to be more optimally-centred on the peak of the primary beam sensitivity
     coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
-    echo "Optimally shifting co-ordinates of measurement set to $coords, with zenith shiftback."
-    chgcentre \
-    "${obsnum}.ms" \
-    ${coords}
+#    echo "Optimally shifting co-ordinates of measurement set to $coords, with zenith shiftback."
+#    chgcentre \
+#    "${obsnum}.ms" \
+#    ${coords}
     
     # Now shift the pointing centre to point straight up, which approximates minw without making the phase centre rattle around
-    chgcentre \
-    -zenith \
-    -shiftback \
-    "${obsnum}.ms"
-fi
+#    chgcentre \
+#    -zenith \
+#    -shiftback \
+#    "${obsnum}.ms"
+#fi
 
 if [[ ! -e "${obsnum}_transient-t0020-image.fits" ]]
 then
     wsclean -name "${obsnum}_transient" \
+    -gridder wgridder \
+    -shift ${coord} \
     -subtract-model \
     -abs-mem ${GPMMEMORY} \
     -nwlayers ${GPMNCPUS} \
