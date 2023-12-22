@@ -79,6 +79,11 @@ Variables:
 | minuvm | Minimum UVW in metres | 234 * minuv / chan |
 | multiscale | Settings for better extragalactic sky flux density recovery | "-multiscale -mgain 0.85 -multiscale-gain 0.15" |
 
+Optimum coords for image pointing are obtained:
+```
+coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
+```
+
 ### Template image
 
 | Variable | Description | Value |
@@ -95,6 +100,7 @@ Create a template image that has all the same properties as our eventual WSClean
 ```
 wsclean \
             -gridder wgridder \
+            -shift ${coord} \
             -abs-mem ${GPMMEMORY} \
             -mgain 1.0 \
             -nmiter 1 \
@@ -154,6 +160,7 @@ done
 ```
 wsclean \
         -gridder wgridder \
+        -shift ${coord} \
         -abs-mem ${GPMMEMORY} \
         $multiscale \
         -nmiter 5 \
