@@ -140,6 +140,8 @@ do
                 options="$zoption $toption" ;;
             uvflag)
                 options="$zoption $toption" ;;
+            uvsub)
+                options="$zoption $toption" ;;
             *)
                 echo "unrecognised command: $cmd. Exiting"
                 exit 1 ;;
