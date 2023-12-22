@@ -101,7 +101,6 @@ minuvm=$(echo "234 * $minuv / $chan" | bc -l)
 # Found that multiscale cleaning recovers flux density in the extragalactic sky better than not, and doesn't add much to processing time
 multiscale="-multiscale -mgain 0.85 -multiscale-gain 0.15"
 
-## Commenting this out whilst trialling wgridder option in wsclean v3.4 below
 # Check whether the phase centre has already changed
 #current=$(chgcentre "${obsnum}.ms")
 #
@@ -111,7 +110,7 @@ multiscale="-multiscale -mgain 0.85 -multiscale-gain 0.15"
 #else
 #    # Determine whether to shift the pointing centre to be more optimally-centred 
 #    # on the peak of the primary beam sensitivity
-#    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
+    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
 #    echo "Optimally shifting co-ordinates of measurement set to $coords, with zenith shiftback."
 #    chgcentre \
 #            "${obsnum}.ms" \
@@ -130,6 +129,7 @@ if [[ ! -e "${obsnum}_template.fits" ]]
 then
     wsclean \
             -gridder wgridder \
+            -shift ${coord} \
             -abs-mem ${GPMMEMORY} \
             -mgain 1.0 \
             -nmiter 1 \
@@ -178,6 +178,7 @@ set -o pipefail
 # Deep clean (for pipeline)
 wsclean \
         -gridder wgridder \
+        -shift ${coord} \
         -abs-mem ${GPMMEMORY} \
         $multiscale \
         -nmiter 5 \
