@@ -12,6 +12,7 @@ echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
                            | -t           | Test. Whatever that means for each command, do it.
                            | -z           | Debugging mode. Whatever that means for each command,
                            |              | do it.
+                           | -d DEP       | Make the first job dependent on DEP.
                            | -v           | Verbose mode
                 autocal    | -i           | Disable the ionospheric tests (default = False)
                            | -F frac      | the acceptable fraction of spectrum that may be flagged
@@ -46,6 +47,7 @@ Soption=
 Poption=
 toption=
 voption=
+depend=
 
 # parse args and set options
 while getopts 'hs:k:e:gc:ziF:S:P:ftv' OPTION
@@ -66,6 +68,8 @@ do
         v)
             set -ex
             voption="-v";;
+        d)
+            depend="-d ${OPTARG}";;
         h)
             usage
             exit 1;;
@@ -101,9 +105,6 @@ SINGCMD="singularity exec ${GPMCONTAINER} "
 
 for obsid in $obsids
 do
-    # Start with no dependency
-    depend=
-
     # Get the obsid's epoch from the database to use as the "project directory"
     epoch=$(${SINGCMD} "${GPMBASE}/gpm_track.py" obs_epoch --obs_id $obsid)
     datadir="${GPMSCRATCH}/${epoch}"
