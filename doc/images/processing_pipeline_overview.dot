@@ -12,8 +12,6 @@ digraph G {
   }
 
   is_cal [shape=diamond; label="Is this a\ncalibration\nobservation?"];
-  postimageI [label="postimage-I"];
-  postimageV [label="postimage-V"];
   calsol [shape=rectangle; label="Calibration\nsolution"];
   giantsquid [label="Download data\nfrom ASVO\n(obs_giantsquid)"];
   autoflag [label="Flag tiles\n(obs_autoflag)"];
@@ -21,9 +19,9 @@ digraph G {
   apply_cal [label="Apply calibration\nsolution\n(obs_apply_cal)"];
   uvflag [label="Apply UV flags\n(obs_uvflag)"];
   uvsub [label="Apply UV subtraction\n(obs_uvsub)"];
-  image [label="Generate image\n(obs_image)"];
-  postimageI [label="Generate deep\nStokes I\n(obs_postimageI)"];
-  postimageV [label="Generate deep\nStokes V\n(obs_postimageV)"];
+  image [label="Generate images\n(obs_image)"];
+  postimageI [label="Find sources\nFlux-warp\nFits-warp\n(obs_postimageI)"];
+  postimageV [label="Find sources\nFlux-warp\nFits-warp\n(obs_postimageV)"];
   calc_leakage [label="Correct polari-\nsation leakage\n(obs_calcleakage)"];
 
   giantsquid -> autoflag -> is_cal;
@@ -34,9 +32,7 @@ digraph G {
   uvflag -> apply_cal [dir=back];
   transient -> image [dir=back];
   tfilter -> postimageI [style=invis];
-  image -> postimageI;
-  postimageI -> postimageV;
-  postimageV -> calc_leakage;
+  image -> calc_leakage -> postimageI -> postimageV;
   apply_cal -> calsol [dir=back; style=dashed];
   is_cal -> apply_cal [label="N"];
 
