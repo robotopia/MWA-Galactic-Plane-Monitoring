@@ -39,6 +39,17 @@ track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date
 datadir="${base}/${obsnum}"
 cd "${datadir}" || exit
 
+# The default output name of calc_leakage (below) appends _fixed to the stem
+# of the fixed V image:
+#
+#   ${obsnum}_deep-${subchan}-V-image-pb_fixed.fits
+#
+# However, the postimage step assumes filenames without the _fixed part. So,
+# we first move the Stokes V image to a different name, and ask calc_leakage
+# to output the fixed image with the original (non-"_fixed") name:
+mv -v ${obsnum}_deep-${subchan}-V-image-pb.fits \
+      ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits
+
 # Calculate the Stokes V leakage, and fix
 subchans="0000 0001 0002 0003 MFS"
 for subchan in $subchans
@@ -46,7 +57,8 @@ do
     calc_leakage.py \
         --Inonpb ${obsnum}_deep-${subchan}-I-image.fits \
         --Ipb ${obsnum}_deep-${subchan}-I-image-pb.fits \
-        --Vpb ${obsnum}_deep-${subchan}-V-image-pb.fits \
+        --Vpb ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits \
+        --Vout ${obsnum}_deep-${subchan}-V-image-pb.fits \
         --plots
 done
 
