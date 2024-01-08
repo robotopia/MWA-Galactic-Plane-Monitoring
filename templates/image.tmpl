@@ -198,7 +198,7 @@ wsclean \
         -data-column ${datacolumn} \
         "${obsnum}.ms" | tee wsclean.log
 # Outputs have the generic format:
-#    {name}-t{ts:04d}-{chan:04d}-{pol}-image.fits
+#    {name}-deep-{chan:04d}-{pol}-image.fits
 
 test_fail $?
 track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
