@@ -272,7 +272,6 @@ cd / \
     && git fetch \
     && git fetch --tags \
     && git checkout v3.4 \
-    && cd wsclean \
     && mkdir build \
     && cd build \
     && cmake .. \
