@@ -1,10 +1,8 @@
 
 # Change Log
 
-## [Unreleased] - yyyy-mm-dd
+## v0.3 - 2024-01-11
  
-### Added
-
 ### Changed
 
 - Upgraded `wsclean` version in container to v3.4
