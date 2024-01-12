@@ -24,7 +24,7 @@ tst=
 force=
 
 # parse args and set options
-while getopts ':thd:p:o:f' OPTION
+while getopts ':tT:hd:p:o:f' OPTION
 do
     case "$OPTION" in
     d)
