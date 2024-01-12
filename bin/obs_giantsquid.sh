@@ -2,6 +2,8 @@
 
 #set -x
 
+time_request="02:00:00"
+
 usage()
 {
 echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
@@ -9,6 +11,7 @@ echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
   -p project        : project, (must be specified, no default)
   -t                : test. Don't submit job, just make the batch file
                       and then return the submission command
+  -T                : override the default SLURM time request  (${time_request})
   -f                : Force re-download (default is to ignore obsids
                       if the measurement set already exists).
   -o obsid_file     : the path to a file containing obsid(s) to process" 1>&2;
@@ -30,6 +33,8 @@ do
         project=${OPTARG} ;;
     t)
         tst=1 ;;
+    T)
+        time_request="${OPTARG}" ;;
     f)
         force=1 ;;
     o)
@@ -178,7 +183,7 @@ then
     BEGIN="now+1minutes"
     MEM="50G"
     EXPORT="$(echo ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY"
-    TIME="01:30:00"
+    TIME="${time_request}"
     CLUSTERS="${GPMCOPYM}"
     OUTPUT="${GPMLOG}/giantsquid_download_${timestamp}.o%A-%j"
     ERROR="${GPMLOG}/giantsquid_download_${timestamp}.e%A"
