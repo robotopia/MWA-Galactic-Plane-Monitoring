@@ -78,7 +78,7 @@ then
         debugoption='--corrected-data'
     fi
     echo "Generating model of A-Team sources for uv-subtraction"
-    generate_ateam_subtract_model.py "${obsnum}.metafits" \
+    ${GPMBASE}/gpm/bin/generate_ateam_subtract_model.py "${obsnum}.metafits" \
                                     --mode wsclean \
                                     --min-elevation 0.0 \
                                     --min-flux 5  \
