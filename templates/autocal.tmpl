@@ -99,19 +99,19 @@ cd "${datadir}/${obsnum}" || exit
 
 # Check whether the phase centre has already changed
 # Calibration will fail if it has, so measurement set must be shifted back to its original position
-current=$(chgcentre "${obsnum}.ms") 
-
-if [[ $current == *"shift"* ]] 
-then
-    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before calibration."
-    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
-    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
-    chgcentre \
-            "${obsnum}.ms" \
-            ${coords}
-else
-    echo "Detected that this measurement set has not yet had its phase centre changed. Not shifting."
-fi
+#current=$(chgcentre "${obsnum}.ms") 
+#
+#if [[ $current == *"shift"* ]] 
+#then
+#    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before calibration."
+#    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
+#    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
+#    chgcentre \
+#            "${obsnum}.ms" \
+#            ${coords}
+#else
+#    echo "Detected that this measurement set has not yet had its phase centre changed. Not shifting."
+#fi
 
 
 # Perform ionospheric triage
