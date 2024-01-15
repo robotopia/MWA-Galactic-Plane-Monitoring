@@ -327,7 +327,14 @@ def wsclean_script(
     with open(outpath, "w") as out:
         out.write("#!/bin/bash \n")
         out.write("set -x \n\n")
+
         for c, (imagename, phasecenter, imsize) in enumerate(
+
+            # Write this out first so that wsclean v3.4 can use it with the new -gridder option
+            # and thereby avoid calls to chgcentre
+            coords = f"coords=\"{phasecenter.replace('J2000 ', '')}\"\n\n"
+            out.write(coords)
+
             zip(outliers["imagename"], outliers["phasecenter"], outliers["imsize"])
         ):
             datacolumn = "DATA" if corrected_data is False else "CORRECTED_DATA"
@@ -335,6 +342,7 @@ def wsclean_script(
             taql = f"taql alter table {obsid}.ms drop column MODEL_DATA\n\n"
             out.write(taql)
 
+            '''
             chg = (
                 f"chgcentre "
                 f"{obsid}.ms "
@@ -345,10 +353,12 @@ def wsclean_script(
                 f"{obsid}.ms \n\n"
             )
             out.write(chg)
+            '''
 
             spec_fit = "-join-channels -channels-out 64 -fit-spectral-pol 4"
             wsclean = (
                 f"wsclean "
+                f"-gridder wgridder -shift $coords"
                 f"-mgain 0.8 -abs-mem {mem} -nmiter 10 -niter 100000 -size 128 128 -pol XXYY "
                 f"-data-column {datacolumn} -name {imagename} -scale 10arcsec "
                 f"-weight briggs 0.5  -auto-mask 3 -auto-threshold 1 "
@@ -362,9 +372,7 @@ def wsclean_script(
             )
             out.write(taql)
 
-        coords = f"coords=$(calc_optimum_pointing.py --metafits '{metafits}') \n\n"
-        out.write(coords)
-
+        '''
         chg = (
             f"chgcentre "
             f"{obsid}.ms "
@@ -375,6 +383,7 @@ def wsclean_script(
             f"{obsid}.ms \n\n"
         )
         out.write(chg)
+        '''
 
 
 @u.quantity_input(search_radius=u.arcminute, min_elevation=u.degree)

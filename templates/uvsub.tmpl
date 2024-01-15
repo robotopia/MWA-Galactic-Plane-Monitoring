@@ -56,17 +56,17 @@ fi
 # Calibration will fail if it has, so measurement set must be shifted back to its original position
 current=$(chgcentre "${obsnum}.ms") 
 
-if [[ $current == *"shift"* ]] 
-then
-    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
-    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
-    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
-    chgcentre \
-            "${obsnum}.ms" \
-            ${coords}
-else 
-    echo "Detected that no shift is needed for this measurement set."
-fi
+#if [[ $current == *"shift"* ]] 
+#then
+#    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
+#    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
+#    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
+#    chgcentre \
+#            "${obsnum}.ms" \
+#            ${coords}
+#else 
+#    echo "Detected that no shift is needed for this measurement set."
+#fi
 
 submodel="${obsnum}.ateam_outlier"
 
