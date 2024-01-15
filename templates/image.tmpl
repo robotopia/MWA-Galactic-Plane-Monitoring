@@ -129,7 +129,7 @@ if [[ ! -e "${obsnum}_template.fits" ]]
 then
     wsclean \
             -gridder wgridder \
-            -shift ${coord} \
+            -shift ${coords} \
             -abs-mem ${GPMMEMORY} \
             -mgain 1.0 \
             -nmiter 1 \
@@ -178,7 +178,7 @@ set -o pipefail
 # Deep clean (for pipeline)
 wsclean \
         -gridder wgridder \
-        -shift ${coord} \
+        -shift ${coords} \
         -abs-mem ${GPMMEMORY} \
         $multiscale \
         -nmiter 5 \
