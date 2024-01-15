@@ -329,16 +329,14 @@ def wsclean_script(
         out.write("set -x \n\n")
 
         for c, (imagename, phasecenter, imsize) in enumerate(
+            zip(outliers["imagename"], outliers["phasecenter"], outliers["imsize"])
+        ):
 
             # Write this out first so that wsclean v3.4 can use it with the new -gridder option
             # and thereby avoid calls to chgcentre
             coords = f"coords=\"{phasecenter.replace('J2000 ', '')}\"\n\n"
-            print(coords)
             out.write(coords)
-            exit()
 
-            zip(outliers["imagename"], outliers["phasecenter"], outliers["imsize"])
-        ):
             datacolumn = "DATA" if corrected_data is False else "CORRECTED_DATA"
 
             taql = f"taql alter table {obsid}.ms drop column MODEL_DATA\n\n"
