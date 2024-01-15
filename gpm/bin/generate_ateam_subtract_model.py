@@ -333,7 +333,9 @@ def wsclean_script(
             # Write this out first so that wsclean v3.4 can use it with the new -gridder option
             # and thereby avoid calls to chgcentre
             coords = f"coords=\"{phasecenter.replace('J2000 ', '')}\"\n\n"
+            print(coords)
             out.write(coords)
+            exit()
 
             zip(outliers["imagename"], outliers["phasecenter"], outliers["imsize"])
         ):
