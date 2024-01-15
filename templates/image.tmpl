@@ -104,11 +104,11 @@ multiscale="-multiscale -mgain 0.85 -multiscale-gain 0.15"
 # Check whether the phase centre has already changed
 # image will fail if it has, so measurement set must be shifted back to its original position
 current=$(chgcentre "${obsnum}.ms") 
+coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
 
 if [[ $current == *"shift"* ]] 
 then
     echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
-    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
     echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
     chgcentre \
             "${obsnum}.ms" \
