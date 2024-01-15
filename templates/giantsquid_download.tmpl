@@ -26,7 +26,7 @@ mkdir -p "${project}/${obsnum}" && cd "${project}/${obsnum}"
 if [[ -d "${obsnum}.ms" ]]
 then
     echo "${obsnum}.ms already exists; please remove directory before trying to (re)download."
-    track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+    track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
     exit 1
 fi
 
@@ -36,9 +36,9 @@ giant-squid download ${obsnum}
 # Check if the download was successful
 if [[ $? -ne 0 ]] # i.e. if it failed
 then
-    track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+    track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
     exit 1
 fi
 
-track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${n}" --finish_time="$(date +%s)"
+track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
 
