@@ -208,7 +208,7 @@ then
 #SBATCH --error=${ERROR}
 #SBATCH --partition=${PARTITION}
 #SBATCH --account=${ACCOUNT}
-#SBATCH --array=0-$(($(echo "$download_obsids" | wc -w)-1))
+#SBATCH --array=1-"$(echo "$download_obsids" | wc -w)"
 
 module load singularity/3.7.4
 
