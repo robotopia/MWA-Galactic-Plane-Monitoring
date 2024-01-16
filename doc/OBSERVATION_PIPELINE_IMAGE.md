@@ -181,4 +181,4 @@ wsclean \
         "${obsnum}.ms" | tee wsclean.log
 ```
 
-Outputs have the generic format: {name}-t{ts:04d}-{chan:04d}-{pol}-image.fits
+Outputs have the generic format: `{name}-deep-{chan:04d}-{pol}-image.fits`
