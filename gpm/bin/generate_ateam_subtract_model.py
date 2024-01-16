@@ -358,7 +358,7 @@ def wsclean_script(
             spec_fit = "-join-channels -channels-out 64 -fit-spectral-pol 4"
             wsclean = (
                 f"wsclean "
-                f"-gridder wgridder -shift $coords"
+                f"-gridder wgridder -shift $coords "
                 f"-mgain 0.8 -abs-mem {mem} -nmiter 10 -niter 100000 -size 128 128 -pol XXYY "
                 f"-data-column {datacolumn} -name {imagename} -scale 10arcsec "
                 f"-weight briggs 0.5  -auto-mask 3 -auto-threshold 1 "
