@@ -70,22 +70,19 @@ fi
 
 submodel="${obsnum}.ateam_outlier"
 
-if [[ ! -e "${submodel}" ]]
+debugoption=
+if [[ ! -z $debug ]]
 then
-    debugoption=
-    if [[ ! -z $debug ]]
-    then
-        debugoption='--corrected-data'
-    fi
-    echo "Generating model of A-Team sources for uv-subtraction"
-    ${GPMBASE}/gpm/bin/generate_ateam_subtract_model.py "${obsnum}.metafits" \
-                                    --mode wsclean \
-                                    --min-elevation 0.0 \
-                                    --min-flux 5  \
-                                    --check-fov \
-                                    $debugoption \
-                                    --model-output "${submodel}" 
+    debugoption='--corrected-data'
 fi
+echo "Generating model of A-Team sources for uv-subtraction"
+${GPMBASE}/gpm/bin/generate_ateam_subtract_model.py "${obsnum}.metafits" \
+                                --mode wsclean \
+                                --min-elevation 0.0 \
+                                --min-flux 5  \
+                                --check-fov \
+                                $debugoption \
+                                --model-output "${submodel}" 
 
 if [[ -e "${submodel}" ]]
 then
