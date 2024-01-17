@@ -141,30 +141,30 @@ then
     mv "${obsnum}_template-image.fits" "${obsnum}_template.fits"
 fi
 
-# Hardcoding John's PB script location for now
-# Also hardcoding creating four sub-band beams
-pols="XX XXi XY XYi YX YXi YY YYi"
-
-for n in {0..3}
-do
-    i=$((n * 6))
-    cstart=${chans[$i]}
-    j=$((i + 5))
-    cend=${chans[$j]}
-    for pol in $pols
-    do 
-        if [[ ! -e "${obsnum}_000${n}-${pol}-beam.fits" ]]
-        then
-            lookup_jones.py ${obsnum} _template.fits ${obsnum}_000${n}- -c $cstart-$cend --wsclean_names
-            if [[ $? != 0 ]]
-            then
-                echo "The script lookup_jones.py failed. Stopping now."
-                exit 1
-            fi
-        fi
-        ln -s "${obsnum}_000${n}-${pol}-beam.fits" "${obsnum}_deep-000${n}-beam-${pol}.fits"
-    done
-done
+## Hardcoding John's PB script location for now
+## Also hardcoding creating four sub-band beams
+#pols="XX XXi XY XYi YX YXi YY YYi"
+#
+#for n in {0..3}
+#do
+#    i=$((n * 6))
+#    cstart=${chans[$i]}
+#    j=$((i + 5))
+#    cend=${chans[$j]}
+#    for pol in $pols
+#    do 
+#        if [[ ! -e "${obsnum}_000${n}-${pol}-beam.fits" ]]
+#        then
+#            lookup_jones.py ${obsnum} _template.fits ${obsnum}_000${n}- -c $cstart-$cend --wsclean_names
+#            if [[ $? != 0 ]]
+#            then
+#                echo "The script lookup_jones.py failed. Stopping now."
+#                exit 1
+#            fi
+#        fi
+#        ln -s "${obsnum}_000${n}-${pol}-beam.fits" "${obsnum}_deep-000${n}-beam-${pol}.fits"
+#    done
+#done
 
 # Set the pipefail so the test_fail does not test for tee
 set -o pipefail
