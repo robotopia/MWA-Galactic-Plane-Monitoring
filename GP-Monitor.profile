@@ -75,7 +75,7 @@ fi
 
 # Data dependencies
 # Data dependencies are downloaded into the directories below if the directories do not exist. 
-export GPMMWAPB="${GPMBASE}/data/mwa_pb"  # The calibrate program requires the FEE model of the MWA primary beam.
+export GPMMWAPB="${GPMBASE}/mwapy/data"  # The calibrate program requires the FEE model of the MWA primary beam.
                                         # This describes the path that containers the file mwa_full_embedded_element_pattern.h5
                                         # and can be downloaded from http://cerberus.mwa128t.org/mwa_full_embedded_element_pattern.h5
                                         # If this folder does not exist, it is created. 
