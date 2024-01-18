@@ -256,7 +256,7 @@ cd / \
     && rm -r graphviz-2.44.1 graphviz-2.44.1.tar.gz
 
 cd / \
-    && git clone https://git.astron.nl/RD/EveryBeam.git \
+    && git clone --branch v0.3.0 https://git.astron.nl/RD/EveryBeam.git \
     && cd EveryBeam \
     && mkdir build \
     && cd build \
