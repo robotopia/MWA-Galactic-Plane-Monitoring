@@ -99,7 +99,7 @@ freqrange="${lowfreq}-${highfreq}"
 minuvm=$(echo "234 * $minuv / $chan" | bc -l)
 
 # Found that multiscale cleaning recovers flux density in the extragalactic sky better than not, and doesn't add much to processing time
-multiscale="-multiscale -mgain 0.85 -multiscale-gain 0.15"
+multiscale="-multiscale -mgain 0.85 -multiscale-gain 0.15 -multiscale-scale-bias 0.7"
 
 # Check whether the phase centre has already changed
 # image will fail if it has, so measurement set must be shifted back to its original position
