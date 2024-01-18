@@ -47,7 +47,7 @@ Soption=
 Poption=
 toption=
 voption=
-depend=
+init_depend=
 
 # parse args and set options
 while getopts 'hs:k:e:gc:ziF:S:P:ftv' OPTION
@@ -69,7 +69,7 @@ do
             set -ex
             voption="-v";;
         d)
-            depend="-d ${OPTARG}";;
+            init_depend="-d ${OPTARG}";;
         h)
             usage
             exit 1;;
@@ -113,6 +113,12 @@ do
 
     echo "============================="
     echo " OBSID: $obsid"
+
+    depend=$init_depend
+    if [[ ! -z $depend ]]
+    then
+        echo " Dependent on: $depend"
+    fi
 
     # Loop through commands
     for cmd in $commands
