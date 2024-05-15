@@ -210,7 +210,7 @@ then
 #SBATCH --account=${ACCOUNT}
 #SBATCH --array=1-"$(echo "$download_obsids" | wc -w)"
 
-module load singularity/3.7.4
+module load singularity/3.11.4-slurm
 
 export SINGULARITY_BINDPATH=${SINGULARITY_BINDPATH}
 
