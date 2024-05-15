@@ -8,6 +8,7 @@ datadir=DATADIR
 fraction=FRACTION
 sthresh=STHRESH
 ion=IONOTEST # Perform ionospheric triage? (1 means yes, blank means no)
+metafits="${obsnum}.metafits"
 
 # If obsnum is a file, then we are in an array job
 if [[ -f "${obsnum}" ]]
@@ -70,7 +71,6 @@ track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date
 
 cd "${datadir}/${obsnum}" || exit
 
-metafits="${obsnum}.metafits"
 if [[ ! -e ${metafits} ]] || [[ ! -s ${metafits} ]]
 then
     wget -O "${metafits}" http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}
