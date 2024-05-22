@@ -31,7 +31,9 @@ then
 fi
 
 # Submit the download request via giant-squid
-giant-squid download ${obsnum}
+giant-squid download --keep-zip ${obsnum}
+untar -xf ${obsnum}_*_ms.tar
+sha1sum -c birli_manifest.sha1sum
 
 # Check if the download was successful
 if [[ $? -ne 0 ]] # i.e. if it failed
