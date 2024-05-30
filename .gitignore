@@ -134,6 +134,9 @@ script_*/*.sbatch
 log_*/*
 log_*/*
 
+# Swap files (e.g. for vim)
+*.swp
+
 # Container images
 containers/*.img
 
