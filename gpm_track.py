@@ -44,6 +44,7 @@ DIRECTIVES = (
     "obs_processing",
     "epoch_processing",
     "calibrations",
+    "last_obs",
 )
 
 
@@ -573,6 +574,18 @@ def epoch_processing(epoch):
     print('\n'.join([f"{row[0]}   {row[1]}   {datetime.datetime.fromtimestamp(row[2])}   {row[3]:15}   {row[4]:9} {row[5]:10}" for row in res]))
     conn.close()
 
+def get_last_obs():
+    """
+    A select function that will get the most recent observation (i.e. the highest obs_id)
+    from the database, and prints it to stdout
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT obs_id FROM observation ORDER BY obs_id DESC LIMIT 1;")
+    res = cur.fetchone()
+    print(res[0])
+    conn.close()
 
 def calibrations():
     """A select function that will return the list of all obsids of calibrator observations.
@@ -811,6 +824,9 @@ if __name__ == "__main__":
 
     elif args.directive.lower() == "calibrations":
         calibrations()
+
+    elif args.directive.lower() == "last_obs":
+        get_last_obs()
 
     else:
         print(
