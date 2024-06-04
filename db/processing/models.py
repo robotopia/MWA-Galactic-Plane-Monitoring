@@ -19,7 +19,7 @@ class AcaciaFile(models.Model):
         unique_together = (('obs', 'type'),)
 
 
-class Antennaflag(models.Model):
+class AntennaFlag(models.Model):
     start_obs_id = models.IntegerField()
     end_obs_id = models.IntegerField()
     antenna = models.IntegerField()
@@ -33,7 +33,7 @@ class Antennaflag(models.Model):
 class ApplyCal(models.Model):
     obs = models.ForeignKey('Observation', models.DO_NOTHING)
     cal_obs = models.ForeignKey('Observation', models.DO_NOTHING, related_name='applycal_cal_obs_set')
-    usable = models.IntegerField(blank=True, null=True)
+    usable = models.BooleanField(blank=True, null=True)
     notes = models.CharField(max_length=4096, blank=True, null=True)
 
     class Meta:
@@ -42,9 +42,9 @@ class ApplyCal(models.Model):
         unique_together = (('obs', 'cal_obs'),)
 
 
-class Calapparent(models.Model):
+class CalApparent(models.Model):
     obs = models.OneToOneField('Observation', models.DO_NOTHING, primary_key=True)  # The composite primary key (obs_id, source) found, that is not supported. The first column is selected.
-    source = models.ForeignKey('Sources', models.DO_NOTHING, db_column='source')
+    source = models.ForeignKey('Source', models.DO_NOTHING, db_column='source')
     appflux = models.FloatField(blank=True, null=True)
     infov = models.IntegerField(blank=True, null=True)
 
@@ -101,9 +101,13 @@ class Observation(models.Model):
     nfiles = models.IntegerField(blank=True, null=True)
     status = models.TextField(blank=True, null=True)
 
+    def __str__(self) -> str:
+        return f"{self.obs_id}"
+
     class Meta:
         managed = False
         db_table = 'observation'
+        ordering = ['-obs_id']
 
 
 class PipelineStep(models.Model):
@@ -137,9 +141,10 @@ class Processing(models.Model):
         managed = False
         db_table = 'processing'
         unique_together = (('job_id', 'task_id', 'host_cluster'),)
+        ordering = ['-submission_time']
 
 
-class Sources(models.Model):
+class Source(models.Model):
     source = models.CharField(primary_key=True, max_length=255)
     raj2000 = models.FloatField(db_column='RAJ2000', blank=True, null=True)  # Field name made lowercase.
     decj2000 = models.FloatField(db_column='DecJ2000', blank=True, null=True)  # Field name made lowercase.
