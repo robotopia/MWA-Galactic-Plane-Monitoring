@@ -1,6 +1,27 @@
 from django.contrib import admin
 from .models import *
 
+# Epoch filter
+class EpochListFilter(admin.SimpleListFilter):
+    title = "epoch"
+    parameter_name = "epoch"
+
+    def lookups(self, request, model_admin):
+        qs = model_admin.get_queryset(request)
+        query_attrs = dict([(param, val) for param, val in request.GET.items()])
+        qs = qs.filter(**query_attrs)
+        if qs.model.__name__ == 'Observation':
+            distinct_epochs = {observation.epoch for observation in qs}
+            return [(epoch, epoch) for epoch in distinct_epochs]
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            min_obsid = int(self.value[4:])*86400 + 1335398418
+            max_obsid = (int(self.value[4:]) + 1)*86400 + 1335398418 - 1
+            return queryset.filter(obs__gte=min_obsid, obs__lt=max_obsid)
+        else:
+            return queryset
+
 # Register your models here.
 @admin.register(AcaciaFile)
 class AcaciaFileAdmin(admin.ModelAdmin):
@@ -24,7 +45,8 @@ class MosaicAdmin(admin.ModelAdmin):
 
 @admin.register(Observation)
 class ObservationAdmin(admin.ModelAdmin):
-    list_display = ['obs_id', 'projectid', 'cal_obs', 'status']
+    list_display = ['obs', 'projectid', 'epoch', 'cal_obs', 'status']
+    list_filter = [EpochListFilter]
 
 @admin.register(PipelineStep)
 class PipelineStepAdmin(admin.ModelAdmin):
@@ -32,7 +54,7 @@ class PipelineStepAdmin(admin.ModelAdmin):
 
 @admin.register(Processing)
 class ProcessingAdmin(admin.ModelAdmin):
-    list_display = ['job_id', 'obs', 'user', 'task', 'submission_time', 'status']
+    list_display = ['job_id', 'obs_id', 'user', 'task', 'submission_time', 'status']
     list_filter = ['user']
 
 @admin.register(Source)

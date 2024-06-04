@@ -73,7 +73,7 @@ class Mosaic(models.Model):
 
 
 class Observation(models.Model):
-    obs_id = models.IntegerField(primary_key=True)
+    obs = models.IntegerField(primary_key=True, db_column="obs_id")
     projectid = models.TextField(blank=True, null=True)
     lst_deg = models.FloatField(blank=True, null=True)
     starttime = models.TextField(blank=True, null=True)
@@ -102,12 +102,16 @@ class Observation(models.Model):
     status = models.TextField(blank=True, null=True)
 
     def __str__(self) -> str:
-        return f"{self.obs_id}"
+        return f"{self.obs}"
+
+    @property
+    def epoch(self):
+        return f"Epoch{(self.obs - 1335398418)//86400:04d}"
 
     class Meta:
         managed = False
         db_table = 'observation'
-        ordering = ['-obs_id']
+        ordering = ['-obs']
 
 
 class PipelineStep(models.Model):
@@ -142,6 +146,7 @@ class Processing(models.Model):
         db_table = 'processing'
         unique_together = (('job_id', 'task_id', 'host_cluster'),)
         ordering = ['-submission_time']
+        verbose_name_plural = "Processing"
 
 
 class Source(models.Model):
