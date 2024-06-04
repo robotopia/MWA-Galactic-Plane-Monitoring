@@ -88,7 +88,7 @@ class Observation(models.Model):
     freq_res = models.FloatField(blank=True, null=True)
     int_time = models.FloatField(blank=True, null=True)
     delays = models.TextField(blank=True, null=True)
-    calibration = models.IntegerField(blank=True, null=True)
+    calibration = models.BooleanField(blank=True, null=True)
     cal_obs = models.ForeignKey('self', models.DO_NOTHING, blank=True, null=True)
     calibrators = models.TextField(blank=True, null=True)
     peelsrcs = models.TextField(blank=True, null=True)

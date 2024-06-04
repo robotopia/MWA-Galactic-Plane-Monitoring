@@ -8,6 +8,13 @@ class EpochListFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         qs = model_admin.get_queryset(request)
+
+        year = request.GET.get("year")
+        if year == '2022':
+            qs = qs.filter(obs__gte=1325030418, obs__lte=1356566417)
+        elif year == '2024':
+            qs = qs.filter(obs__gte=1388102418, obs__lte=1419724817)
+
         if qs.model.__name__ == 'Observation':
             distinct_epochs = list({observation.epoch for observation in qs})
         else:
@@ -63,8 +70,8 @@ class MosaicAdmin(admin.ModelAdmin):
 
 @admin.register(Observation)
 class ObservationAdmin(admin.ModelAdmin):
-    list_display = ['obs', 'projectid', 'epoch', 'cal_obs', 'status']
-    list_filter = [YearListFilter, EpochListFilter]
+    list_display = ['obs', 'projectid', 'epoch', 'cal_obs', 'calibration', 'ra_pointing', 'dec_pointing']
+    list_filter = ['calibration', YearListFilter, EpochListFilter]
 
 @admin.register(PipelineStep)
 class PipelineStepAdmin(admin.ModelAdmin):
