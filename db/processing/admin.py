@@ -8,19 +8,37 @@ class EpochListFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         qs = model_admin.get_queryset(request)
-        query_attrs = dict([(param, val) for param, val in request.GET.items()])
-        qs = qs.filter(**query_attrs)
         if qs.model.__name__ == 'Observation':
-            distinct_epochs = {observation.epoch for observation in qs}
-            return [(epoch, epoch) for epoch in distinct_epochs]
+            distinct_epochs = list({observation.epoch for observation in qs})
+        else:
+            distinct_epochs = list({obj.obs.epoch for obj in qs})
+        distinct_epochs.sort()
+        return [(epoch, epoch) for epoch in distinct_epochs]
 
     def queryset(self, request, queryset):
         if self.value() is not None:
-            min_obsid = int(self.value[4:])*86400 + 1335398418
-            max_obsid = (int(self.value[4:]) + 1)*86400 + 1335398418 - 1
+            min_obsid = int(self.value()[5:])*86400 + 1335398418
+            max_obsid = (int(self.value()[5:]) + 1)*86400 + 1335398418 - 1
             return queryset.filter(obs__gte=min_obsid, obs__lt=max_obsid)
         else:
             return queryset
+
+# Year filter
+class YearListFilter(admin.SimpleListFilter):
+    title = "observation year"
+    parameter_name = "year"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("2022", "2022"),
+            ("2024", "2024"),
+        ]
+
+    def queryset(self, request, queryset):
+        if self.value() == '2022':
+            return queryset.filter(obs__gte=1325030418, obs__lte=1356566417)
+        elif self.value() == '2024':
+            return queryset.filter(obs__gte=1388102418, obs__lte=1419724817)
 
 # Register your models here.
 @admin.register(AcaciaFile)
@@ -46,7 +64,7 @@ class MosaicAdmin(admin.ModelAdmin):
 @admin.register(Observation)
 class ObservationAdmin(admin.ModelAdmin):
     list_display = ['obs', 'projectid', 'epoch', 'cal_obs', 'status']
-    list_filter = [EpochListFilter]
+    list_filter = [YearListFilter, EpochListFilter]
 
 @admin.register(PipelineStep)
 class PipelineStepAdmin(admin.ModelAdmin):
@@ -55,7 +73,7 @@ class PipelineStepAdmin(admin.ModelAdmin):
 @admin.register(Processing)
 class ProcessingAdmin(admin.ModelAdmin):
     list_display = ['job_id', 'obs_id', 'user', 'task', 'submission_time', 'status']
-    list_filter = ['user']
+    list_filter = ['user', YearListFilter, EpochListFilter]
 
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
