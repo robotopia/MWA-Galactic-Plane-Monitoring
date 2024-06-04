@@ -54,6 +54,21 @@ class CalApparent(models.Model):
         unique_together = (('obs', 'source'),)
 
 
+class EpochOverview(models.Model):
+    # This model points to a database VIEW
+    job_id = models.IntegerField(primary_key=True)
+    obs = models.ForeignKey('Observation', models.DO_NOTHING, related_name="epoch_overviews")
+    epoch = models.CharField(max_length=9)
+    user = models.TextField(blank=True, null=True)
+    task = models.TextField(blank=True, null=True)
+    submission_time = models.IntegerField(blank=True, null=True)
+    status = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'epoch_overview'
+        ordering = ['obs', 'user', 'task']
+
 class Mosaic(models.Model):
     mos_id = models.AutoField(primary_key=True)
     obs = models.ForeignKey('Observation', models.DO_NOTHING, blank=True, null=True)
@@ -134,7 +149,7 @@ class Processing(models.Model):
     user = models.TextField(blank=True, null=True)
     start_time = models.IntegerField(blank=True, null=True)
     end_time = models.IntegerField(blank=True, null=True)
-    obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True)
+    obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='processings')
     status = models.TextField(blank=True, null=True)
     batch_file = models.TextField(blank=True, null=True)
     stderr = models.TextField(blank=True, null=True)

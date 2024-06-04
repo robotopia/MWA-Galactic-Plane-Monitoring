@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{ epoch }}</title>
+  </head>
+  <body>
+    <div>
+      Legend:
+      <span class="queued legend">Queued</span>
+      <span class="started legend">Started</span>
+      <span class="finished legend">Finished</span>
+      <span class="failed legend">Failed</span>
+    </div>
+    <table>
+      <tr>
+        <th>Obs ID</th>
+        <th>Cal obs</th>
+        <th>download</th>
+        <th>autoflag</th>
+        <th>autocal</th>
+        <th>applycal</th>
+        <th>uvflag</th>
+        <th>uvsub</th>
+        <th>image</th>
+        <th>calcleakage</th>
+        <th>postimage</th>
+        <th>transient</th>
+      </tr>
+      {% for obs, tasks in overviews.items %}
+      <tr>
+        <td>{{ obs }}</td>
+        <td>{{ obs.cal_obs }}</td>
+        <td class="{{ tasks.download }}"></td>
+        <td class="{{ tasks.flag }}"></td>
+        <td class="{{ tasks.calibrate }}"></td>
+        <td class="{{ tasks.apply_cal }}"></td>
+        <td class="{{ tasks.uvflag }}"></td>
+        <td class="{{ tasks.uvsubtract }}"></td>
+        <td class="{{ tasks.image }}"></td>
+        <td class="{{ tasks.calcleakage }}"></td>
+        <td class="{{ tasks.postimage }}"></td>
+        <td class="{{ tasks.transient }}"></td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>
+<style>
+.legend {
+  text-align: center;
+  padding: 2px;
+}
+.queued {
+  background-color: #00a;
+  color: #eee;
+}
+.started {
+  background-color: #880;
+}
+.finished {
+  background-color: #080;
+}
+.failed {
+  background-color: #c00;
+  color: #eee;
+}
+td {
+  padding: 5px;
+}
+th {
+  background-color: #448;
+  color: #eee;
+  padding: 5px;
+}
+</style>

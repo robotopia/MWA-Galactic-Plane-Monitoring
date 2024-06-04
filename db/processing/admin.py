@@ -64,13 +64,18 @@ class ApplyCalAdmin(admin.ModelAdmin):
 class CalApparentAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'source', 'appflux', 'infov']
 
+@admin.register(EpochOverview)
+class EpochOverviewAdmin(admin.ModelAdmin):
+    list_display = ['job_id', 'obs', 'epoch', 'user', 'task', 'submission_time', 'status']
+    list_filter = ['user', YearListFilter, 'task', 'status', 'epoch']
+
 @admin.register(Mosaic)
 class MosaicAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'user', 'job_id', 'status']
 
 @admin.register(Observation)
 class ObservationAdmin(admin.ModelAdmin):
-    list_display = ['obs', 'projectid', 'epoch', 'cal_obs', 'calibration', 'ra_pointing', 'dec_pointing']
+    list_display = ['obs', 'projectid', 'cal_obs', 'calibration', 'ra_pointing', 'dec_pointing']
     list_filter = ['calibration', YearListFilter, EpochListFilter]
 
 @admin.register(PipelineStep)
