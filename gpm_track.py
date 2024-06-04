@@ -211,9 +211,9 @@ def queue_job(
     cur.execute(
         """
                 INSERT INTO processing
-                (job_id, task_id, host_cluster, submission_time, obs_id, user, batch_file, stderr, stdout, task, status)
+                (job_id, task_id, host_cluster, submission_time, obs_id, user, batch_file, stderr, stdout, task, status, commit)
                 VALUES 
-                ( %s,%s,%s,%s,%s,%s,%s,%s,%s, %s, 'queued')
+                ( %s,%s,%s,%s,%s,%s,%s,%s,%s, %s, 'queued', %s)
                 """,
         (
             job_id,
@@ -226,6 +226,7 @@ def queue_job(
             stderr,
             stdout,
             task,
+            os.environ['GPMGITVERSION'],
         ),
     )
     conn.commit()
