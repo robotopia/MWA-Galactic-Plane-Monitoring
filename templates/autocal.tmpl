@@ -8,9 +8,6 @@ datadir=DATADIR
 fraction=FRACTION
 sthresh=STHRESH
 ion=IONOTEST # Perform ionospheric triage? (1 means yes, blank means no)
-metafits="${obsnum}.metafits"
-
-cd "${datadir}/${obsnum}" || exit
 
 # If obsnum is a file, then we are in an array job
 if [[ -f "${obsnum}" ]]
@@ -25,6 +22,10 @@ else
     taskid=1
     jobid=${SLURM_JOB_ID}
 fi
+
+metafits="${obsnum}.metafits"
+
+cd "${datadir}/${obsnum}" || exit
 
 echo "jobid: ${jobid}"
 echo "taskid: ${taskid}"
