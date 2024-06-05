@@ -191,7 +191,7 @@ then
     TIME="${time_request}"
     CLUSTERS="${GPMCOPYM}"
     OUTPUT="${GPMLOG}/giantsquid_download_${timestamp}.o%A-%j"
-    ERROR="${GPMLOG}/giantsquid_download_${timestamp}.e%A"
+    ERROR="${GPMLOG}/giantsquid_download_${timestamp}.e%A-%j"
     PARTITION="${GPMCOPYQ}"
     ACCOUNT="${GPMACCOUNT}"
     ARRAY="$(echo "$download_obsids" | xargs | tr ' ' ',')" # turn into whitespace-trimmed, comma-separated list

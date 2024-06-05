@@ -31,7 +31,10 @@ then
 fi
 
 # Submit the download request via giant-squid
-giant-squid download --keep-zip ${obsnum}
+if [[ -z $(ls ${obsnum}_*_ms.tar) ]]
+then
+    giant-squid download --keep-zip ${obsnum}
+fi
 tar -xf ${obsnum}_*_ms.tar
 grep -v birli_manifest.sha1sum birli_manifest.sha1sum | sha1sum -c
 
