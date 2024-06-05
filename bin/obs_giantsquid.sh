@@ -14,6 +14,8 @@ echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
   -T                : override the default SLURM time request  (${time_request})
   -f                : Force re-download (default is to ignore obsids
                       if the measurement set already exists).
+  -n N              : When downloading, limit number of simultaneous array jobs
+                      to N (default = 5)
   -o obsid_file     : the path to a file containing obsid(s) to process" 1>&2;
 }
 
@@ -22,9 +24,10 @@ pipeuser=${GPMUSER}
 depend=
 tst=
 force=
+sim_jobs=5
 
 # parse args and set options
-while getopts ':tT:hd:p:o:f' OPTION
+while getopts ':tT:hd:p:o:fn:' OPTION
 do
     case "$OPTION" in
     d)
@@ -37,6 +40,8 @@ do
         time_request="${OPTARG}" ;;
     f)
         force=1 ;;
+    n)
+        sim_jobs="${OPTARG}" ;;
     o)
         obsid_file=${OPTARG} ;;
     ? | : | h)
@@ -208,7 +213,7 @@ then
 #SBATCH --error=${ERROR}
 #SBATCH --partition=${PARTITION}
 #SBATCH --account=${ACCOUNT}
-#SBATCH --array=1-"$(echo "$download_obsids" | wc -w)"
+#SBATCH --array=1-"$(echo "$download_obsids" | wc -w)"%"${sim_jobs}"
 
 module load singularity/4.1.0-slurm
 
@@ -246,7 +251,7 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
         do
             if [ "${GPMTRACK}" = "track" ]
             then
-                ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
+                ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
                                 --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
             fi
             ((n+=1))

@@ -32,7 +32,7 @@ fi
 
 # Submit the download request via giant-squid
 giant-squid download --keep-zip ${obsnum}
-untar -xf ${obsnum}_*_ms.tar
+tar -xf ${obsnum}_*_ms.tar
 sha1sum -c birli_manifest.sha1sum
 
 # Check if the download was successful
@@ -41,6 +41,9 @@ then
     track_task.py fail --jobid="${SLURM_JOBID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
     exit 1
 fi
+
+# The tar file has been successfully extracted, so remove it
+rm ${obsnum}_*_ms.tar
 
 track_task.py finish --jobid="${SLURM_JOBID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
 
