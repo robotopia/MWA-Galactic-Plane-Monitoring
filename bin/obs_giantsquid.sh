@@ -247,7 +247,7 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
 
         # record submission
         n=1
-        for obsid in $obsids
+        for obsid in $download_obsids
         do
             if [ "${GPMTRACK}" = "track" ]
             then
