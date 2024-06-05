@@ -194,7 +194,7 @@ then
     # Override ACCOUNT if GPMCOPYA is not empty
     if [[ ! -z $GPMCOPYA ]]
     then
-        ACCOUNT="--account=${GPMCOPYA}"
+        ACCOUNT="${GPMCOPYA}"
     fi
 
     echo "#!/bin/bash
@@ -252,9 +252,9 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
             ((n+=1))
         done
 
-        echo "Submitted ${script} as ${jobid} . Follow progress here:"
-        echo "${output}"
-        echo "${error}"
+        echo "Submitted ${script} as ${jobid}. Follow progress here:"
+        echo "STDOUT > ${output}"
+        echo "STDERR > ${error}"
 
     fi
 else
