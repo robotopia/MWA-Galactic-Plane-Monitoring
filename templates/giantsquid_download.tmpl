@@ -33,7 +33,7 @@ fi
 # Submit the download request via giant-squid
 giant-squid download --keep-zip ${obsnum}
 tar -xf ${obsnum}_*_ms.tar
-#sha1sum -c birli_manifest.sha1sum # Temporarily disable checksum on account of manifest-checksum-not-matching-itself bug
+grep -v birli_manifest.sha1sum birli_manifest.sha1sum | sha1sum -c
 
 # Check if the download was successful
 if [[ $? -ne 0 ]] # i.e. if it failed
