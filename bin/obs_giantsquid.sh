@@ -242,8 +242,8 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
         jobid=${jobid[3]}
 
         # rename the err/output files as we now know the jobid
-        error="${error//%A/${jobid[0]}}"
-        output="${output//%A/${jobid[0]}}"
+        errors="${ERROR//%A/${jobid[0]}}"
+        outputs="${OUTPUT//%A/${jobid[0]}}"
 
         # record submission
         n=1
@@ -251,15 +251,18 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
         do
             if [ "${GPMTRACK}" = "track" ]
             then
-                ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
-                                --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+                # rename the err/output files as we now know the jobid
+                error="${errors//%j/${n}}"
+                output="${outputs//%j/${n}}"
+
+                ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
             fi
             ((n+=1))
         done
 
         echo "Submitted ${script} as ${jobid}. Follow progress here:"
-        echo "STDOUT > ${output}"
-        echo "STDERR > ${error}"
+        echo "STDOUT: ${outputs}"
+        echo "STDERR: ${errors}"
 
     fi
 else
