@@ -10,6 +10,8 @@ sthresh=STHRESH
 ion=IONOTEST # Perform ionospheric triage? (1 means yes, blank means no)
 metafits="${obsnum}.metafits"
 
+cd "${datadir}/${obsnum}" || exit
+
 # If obsnum is a file, then we are in an array job
 if [[ -f "${obsnum}" ]]
 then
@@ -68,8 +70,6 @@ MWAPATH="${GPMMWAPB}"
 
 # start
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
-
-cd "${datadir}/${obsnum}" || exit
 
 if [[ ! -e ${metafits} ]] || [[ ! -s ${metafits} ]]
 then
