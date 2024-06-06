@@ -14,6 +14,8 @@ echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
   -T                : override the default SLURM time request  (${time_request})
   -f                : Force re-download (default is to ignore obsids
                       if the measurement set already exists).
+  -n N              : When downloading, limit number of simultaneous array jobs
+                      to N (default = 5)
   -o obsid_file     : the path to a file containing obsid(s) to process" 1>&2;
 }
 
@@ -22,9 +24,10 @@ pipeuser=${GPMUSER}
 depend=
 tst=
 force=
+sim_jobs=5
 
 # parse args and set options
-while getopts ':tT:hd:p:o:f' OPTION
+while getopts ':tT:hd:p:o:fn:' OPTION
 do
     case "$OPTION" in
     d)
@@ -37,6 +40,8 @@ do
         time_request="${OPTARG}" ;;
     f)
         force=1 ;;
+    n)
+        sim_jobs="${OPTARG}" ;;
     o)
         obsid_file=${OPTARG} ;;
     ? | : | h)
@@ -186,7 +191,7 @@ then
     TIME="${time_request}"
     CLUSTERS="${GPMCOPYM}"
     OUTPUT="${GPMLOG}/giantsquid_download_${timestamp}.o%A-%j"
-    ERROR="${GPMLOG}/giantsquid_download_${timestamp}.e%A"
+    ERROR="${GPMLOG}/giantsquid_download_${timestamp}.e%A-%j"
     PARTITION="${GPMCOPYQ}"
     ACCOUNT="${GPMACCOUNT}"
     ARRAY="$(echo "$download_obsids" | xargs | tr ' ' ',')" # turn into whitespace-trimmed, comma-separated list
@@ -208,7 +213,7 @@ then
 #SBATCH --error=${ERROR}
 #SBATCH --partition=${PARTITION}
 #SBATCH --account=${ACCOUNT}
-#SBATCH --array=1-"$(echo "$download_obsids" | wc -w)"
+#SBATCH --array=1-"$(echo "$download_obsids" | wc -w)"%"${sim_jobs}"
 
 module load singularity/4.1.0-slurm
 
@@ -237,24 +242,27 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
         jobid=${jobid[3]}
 
         # rename the err/output files as we now know the jobid
-        error="${error//%A/${jobid[0]}}"
-        output="${output//%A/${jobid[0]}}"
+        errors="${ERROR//%A/${jobid[0]}}"
+        outputs="${OUTPUT//%A/${jobid[0]}}"
 
         # record submission
         n=1
-        for obsid in $obsids
+        for obsid in $download_obsids
         do
             if [ "${GPMTRACK}" = "track" ]
             then
-                ${GPMCONTAINER} track_task.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
-                                --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+                # rename the err/output files as we now know the jobid
+                error="${errors//%j/${n}}"
+                output="${outputs//%j/${n}}"
+
+                ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
             fi
             ((n+=1))
         done
 
         echo "Submitted ${script} as ${jobid}. Follow progress here:"
-        echo "STDOUT > ${output}"
-        echo "STDERR > ${error}"
+        echo "STDOUT: ${outputs}"
+        echo "STDERR: ${errors}"
 
     fi
 else
