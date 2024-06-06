@@ -16,9 +16,9 @@ class EpochListFilter(admin.SimpleListFilter):
             qs = qs.filter(obs__gte=1388102418, obs__lte=1419724817)
 
         if qs.model.__name__ == 'Observation':
-            distinct_epochs = list({observation.epoch for observation in qs})
+            distinct_epochs = list({observation.epoch.epoch for observation in qs})
         else:
-            distinct_epochs = list({obj.obs.epoch for obj in qs})
+            distinct_epochs = list({obj.obs.epoch.epoch for obj in qs})
         distinct_epochs.sort()
         return [(epoch, epoch) for epoch in distinct_epochs]
 

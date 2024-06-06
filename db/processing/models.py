@@ -59,6 +59,9 @@ class Epoch(models.Model):
     epoch = models.CharField(max_length=9)
     approx_datetime = models.DateTimeField()
 
+    def __str__(self) -> str:
+        return self.epoch
+
     class Meta:
         managed = False
         db_table = 'epoch'
