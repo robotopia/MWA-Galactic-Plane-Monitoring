@@ -64,10 +64,17 @@ class ApplyCalAdmin(admin.ModelAdmin):
 class CalApparentAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'source', 'appflux', 'infov']
 
+@admin.register(Epoch)
+class EpochAdmin(admin.ModelAdmin):
+    list_display = ['obs', 'epoch', 'approx_datetime']
+    list_filter = ['epoch']
+    date_hierarchy = 'approx_datetime'
+
 @admin.register(EpochOverview)
 class EpochOverviewAdmin(admin.ModelAdmin):
     list_display = ['job_id', 'obs', 'epoch', 'user', 'task', 'submission_time', 'status']
     list_filter = ['user', YearListFilter, 'task', 'status', 'epoch']
+    date_hierarchy = 'submission_time'
 
 @admin.register(Mosaic)
 class MosaicAdmin(admin.ModelAdmin):

@@ -54,6 +54,16 @@ class CalApparent(models.Model):
         unique_together = (('obs', 'source'),)
 
 
+class Epoch(models.Model):
+    obs = models.OneToOneField('Observation', models.DO_NOTHING, primary_key=True)
+    epoch = models.CharField(max_length=9)
+    approx_datetime = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'epoch'
+
+
 class EpochOverview(models.Model):
     # This model points to a database VIEW
     job_id = models.IntegerField(primary_key=True)
@@ -62,7 +72,7 @@ class EpochOverview(models.Model):
     epoch = models.CharField(max_length=9)
     user = models.TextField(blank=True, null=True)
     task = models.TextField(blank=True, null=True)
-    submission_time = models.IntegerField(blank=True, null=True)
+    submission_time = models.DateTimeField(blank=True, null=True)
     status = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -120,9 +130,9 @@ class Observation(models.Model):
     def __str__(self) -> str:
         return f"{self.obs}"
 
-    @property
-    def epoch(self):
-        return f"Epoch{(self.obs - 1335398418)//86400:04d}"
+    #@property
+    #def epoch(self):
+    #    return f"Epoch{(self.obs - 1335398418)//86400:04d}"
 
     class Meta:
         managed = False
