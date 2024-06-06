@@ -12,6 +12,7 @@
       <span class="finished legend">Finished</span>
       <span class="failed legend">Failed</span>
     </div>
+    <p>Times shows are <b>submission times</b>.</p>
     <table>
       <tr>
         <th>Obs ID</th>
@@ -28,19 +29,40 @@
         <th>transient</th>
       </tr>
       {% for obs, tasks in overviews.items %}
-      <tr>
+      <tr class="epoch-overview-row">
         <td>{{ obs }}</td>
         <td>{{ obs.cal_obs }}</td>
-        <td class="{{ tasks.download.status }}"></td>
-        <td class="{{ tasks.flag.status }}"></td>
-        <td class="{{ tasks.calibrate.status }}"></td>
-        <td class="{{ tasks.apply_cal.status }}">{{ tasks.apply_cal.cal_obs }}</td>
-        <td class="{{ tasks.uvflag.status }}"></td>
-        <td class="{{ tasks.uvsubtract.status }}"></td>
-        <td class="{{ tasks.image.status }}"></td>
-        <td class="{{ tasks.calcleakage.status }}"></td>
-        <td class="{{ tasks.postimage.status }}"></td>
-        <td class="{{ tasks.transient.status }}"></td>
+        <td class="{{ tasks.download.status }}">
+          <span class="datetime">{{ tasks.download.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.flag.status }}">
+          <span class="datetime">{{ tasks.flag.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.calibrate.status }}">
+          <span class="datetime">{{ tasks.calibrate.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.apply_cal.status }}">
+          {{ tasks.apply_cal.cal_obs }}<br>
+          <span class="datetime">{{ tasks.apply_cal.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.uvflag.status }}">
+          <span class="datetime">{{ tasks.uvflag.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.uvsubtract.status }}">
+          <span class="datetime">{{ tasks.uvsubtract.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.image.status }}">
+          <span class="datetime">{{ tasks.image.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.calcleakage.status }}">
+          <span class="datetime">{{ tasks.calcleakage.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.postimage.status }}">
+          <span class="datetime">{{ tasks.postimage.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.transient.status }}">
+          <span class="datetime">{{ tasks.transient.date|date:'Y-m-d H:i' }}</span>
+        </td>
       </tr>
       {% endfor %}
     </table>
@@ -72,5 +94,8 @@ th {
   background-color: #448;
   color: #eee;
   padding: 5px;
+}
+.epoch-overview-row .datetime {
+  font-size: small;
 }
 </style>
