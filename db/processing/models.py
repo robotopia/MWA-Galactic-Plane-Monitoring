@@ -58,6 +58,7 @@ class EpochOverview(models.Model):
     # This model points to a database VIEW
     job_id = models.IntegerField(primary_key=True)
     obs = models.ForeignKey('Observation', models.DO_NOTHING, related_name="epoch_overviews")
+    cal_obs = models.ForeignKey('Observation', models.DO_NOTHING, blank=True, null=True, related_name="cal_epoch_overviews")
     epoch = models.CharField(max_length=9)
     user = models.TextField(blank=True, null=True)
     task = models.TextField(blank=True, null=True)
@@ -150,6 +151,7 @@ class Processing(models.Model):
     start_time = models.IntegerField(blank=True, null=True)
     end_time = models.IntegerField(blank=True, null=True)
     obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='processings')
+    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_processings')
     status = models.TextField(blank=True, null=True)
     batch_file = models.TextField(blank=True, null=True)
     stderr = models.TextField(blank=True, null=True)

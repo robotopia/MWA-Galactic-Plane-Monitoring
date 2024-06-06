@@ -15,7 +15,7 @@
     <table>
       <tr>
         <th>Obs ID</th>
-        <th>Cal obs</th>
+        <th>Assigned cal obs</th>
         <th>download</th>
         <th>autoflag</th>
         <th>autocal</th>
@@ -31,16 +31,16 @@
       <tr>
         <td>{{ obs }}</td>
         <td>{{ obs.cal_obs }}</td>
-        <td class="{{ tasks.download }}"></td>
-        <td class="{{ tasks.flag }}"></td>
-        <td class="{{ tasks.calibrate }}"></td>
-        <td class="{{ tasks.apply_cal }}"></td>
-        <td class="{{ tasks.uvflag }}"></td>
-        <td class="{{ tasks.uvsubtract }}"></td>
-        <td class="{{ tasks.image }}"></td>
-        <td class="{{ tasks.calcleakage }}"></td>
-        <td class="{{ tasks.postimage }}"></td>
-        <td class="{{ tasks.transient }}"></td>
+        <td class="{{ tasks.download.status }}"></td>
+        <td class="{{ tasks.flag.status }}"></td>
+        <td class="{{ tasks.calibrate.status }}"></td>
+        <td class="{{ tasks.apply_cal.status }}">{{ tasks.apply_cal.cal_obs }}</td>
+        <td class="{{ tasks.uvflag.status }}"></td>
+        <td class="{{ tasks.uvsubtract.status }}"></td>
+        <td class="{{ tasks.image.status }}"></td>
+        <td class="{{ tasks.calcleakage.status }}"></td>
+        <td class="{{ tasks.postimage.status }}"></td>
+        <td class="{{ tasks.transient.status }}"></td>
       </tr>
       {% endfor %}
     </table>
