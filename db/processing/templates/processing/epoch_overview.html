@@ -11,6 +11,7 @@
       <span class="started legend">Started</span>
       <span class="finished legend">Finished</span>
       <span class="failed legend">Failed</span>
+      <span class="calibration legend">Calibration</span>
     </div>
     <p>Times shows are <b>submission times (UTC)</b>.</p>
     <table>
@@ -30,7 +31,7 @@
       </tr>
       {% for obs, tasks in overviews.items %}
       <tr class="epoch-overview-row">
-        <td>{{ obs }}</td>
+        <td {% if obs.calibration %}class="calibration"{% endif %}>{{ obs }}</td>
         <td>{{ obs.cal_obs }}</td>
         <td class="{{ tasks.download.status }}">
           <span class="datetime">{{ tasks.download.date|date:'Y-m-d H:i' }}</span>
@@ -86,6 +87,9 @@
 .failed {
   background-color: #c00;
   color: #eee;
+}
+.calibration {
+  background-color: #c80;
 }
 td {
   padding: 5px;
