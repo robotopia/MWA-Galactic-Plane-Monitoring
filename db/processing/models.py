@@ -80,6 +80,8 @@ class EpochOverview(models.Model):
     task = models.TextField(blank=True, null=True)
     submission_time = models.DateTimeField(blank=True, null=True)
     status = models.TextField(blank=True, null=True)
+    cal_usable = models.BooleanField(blank=True, null=True)
+    cal_notes = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False

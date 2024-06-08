@@ -28,6 +28,7 @@
         <th>calcleakage</th>
         <th>postimage</th>
         <th>transient</th>
+        <th>Notes</th>
       </tr>
       {% for obs, tasks in overviews.items %}
       <tr class="epoch-overview-row">
@@ -54,6 +55,15 @@
         </td>
         <td class="{{ tasks.image.status }}">
           <span class="datetime">{{ tasks.image.date|date:'Y-m-d H:i' }}</span>
+          {% if tasks.apply_cal.cal_obs %}
+          {% if tasks.apply_cal.cal_usable %}
+          <div class="qa cal-usable">&#x2713;</div>
+          {% elif tasks.apply_cal.cal_usable == False %}
+          <div class="qa cal-unusable">&#x274C;</div>
+          {% elif tasks.apply_cal.cal_notes != '' %}
+          <div class="qa cal-unsure">?</div>
+          {% endif %}
+          {% endif %}
         </td>
         <td class="{{ tasks.calcleakage.status }}">
           <span class="datetime">{{ tasks.calcleakage.date|date:'Y-m-d H:i' }}</span>
@@ -63,6 +73,9 @@
         </td>
         <td class="{{ tasks.transient.status }}">
           <span class="datetime">{{ tasks.transient.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td>
+          {{ tasks.apply_cal.cal_notes }}
         </td>
       </tr>
       {% endfor %}
@@ -101,5 +114,25 @@ th {
 }
 .epoch-overview-row .datetime {
   font-size: small;
+}
+.qa {
+  background-color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  text-align: center;
+  font-weight: 900;
+  font-family: Arial, Helvetica, sans-serif;
+  display: inline-block;
+  cursor: default;
+}
+.cal-usable {
+  color: #080;
+}
+.cal-unusable {
+  color: #c00;
+}
+.cal-unsure {
+  color: #c80;
 }
 </style>
