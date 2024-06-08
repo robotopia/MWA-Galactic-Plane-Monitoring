@@ -81,6 +81,6 @@ echo
 
 echo "----------------------------------"
 echo -n "Retrieving observations to be processed within the last ${NHOURS} hours... "
-TO_PROCESS=$(gpmdb recent_obs --nhours=${NHOURS})
+TO_PROCESS=$(${gpmdb} recent_obs --nhours=${NHOURS})
 NUM_TO_PROCESS=$(echo "${TO_PROCESS}" | wc -w)
 echo "Found ${NUM_TO_PROCESS}"

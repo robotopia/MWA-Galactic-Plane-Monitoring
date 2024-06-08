@@ -46,11 +46,11 @@ def get_receiver_slot_order(metafits):
         rec_slots = set(tiles[tiles['Rx'] == receiver]['Slot'])
         for slot in sorted(rec_slots):
             # tiles with this rec, slot
-            ant = tiles[(tiles['Rx'] == receiver) & (tiles['Slot'] == slot)]['antenna']
-            if not len(ant) == 1:
-                print(ant)
+            mask = (tiles['Rx'] == receiver) & (tiles['Slot'] == slot)
+            if not sum(mask) == 1:
                 raise RuntimeError("Rx %d Slot %d does not map to a single antenna" % (receiver, slot))
-            rec_slot_dict[receiver][slot] = ant[0]
+            ant = (tiles[mask]['antenna'][0], tiles[mask]['tilename'][0])
+            rec_slot_dict[receiver][slot] = ant
     return rec_slot_dict
 
 
@@ -72,7 +72,7 @@ def nanaverage(a, axis=None, weights=None):
     return np.nansum(a*weights, axis=axis)/np.nansum(weights, axis=axis)
 
 
-def plot(ao, plot_filename, refant=None, n_rows=8, plot_title="", amp_max=None, format="png", outdir=None, marker=',', markersize=2, verbose=0, metafits=None):
+def plot(ao, plot_filename, refant=None, n_cols=16, plot_title="", amp_max=None, format="png", outdir=None, marker=',', markersize=2, verbose=0, metafits=None):
     """
     plot aocal
     """
@@ -82,7 +82,7 @@ def plot(ao, plot_filename, refant=None, n_rows=8, plot_title="", amp_max=None, 
     elif verbose > 1:
         logging.basicConfig(level=logging.DEBUG)
 
-    n_cols = (ao.n_ant - 1)//n_rows + 1
+    n_rows = (ao.n_ant - 1)//n_cols + 1
     print(f'{ao.n_ant = }, {n_rows = }, {n_cols = }')
     gs = gridspec.GridSpec(n_rows, n_cols)
     gs.update(hspace=0.0, wspace=0.0)
@@ -117,8 +117,8 @@ def plot(ao, plot_filename, refant=None, n_rows=8, plot_title="", amp_max=None, 
 
     for timestep in range(ao.n_int):
 
-        phsfig = pylab.figure(figsize=(24.0, 13.5))
-        ampfig = pylab.figure(figsize=(24.0, 13.5))
+        phsfig = pylab.figure(figsize=(24.0, 13.5*n_rows/8))
+        ampfig = pylab.figure(figsize=(24.0, 13.5*n_rows/8))
         logging.debug("vertical_index, horizontal_index")
         for a, antenna in enumerate(ant_iter):
             vertical_index = a // n_cols
@@ -131,19 +131,19 @@ def plot(ao, plot_filename, refant=None, n_rows=8, plot_title="", amp_max=None, 
             # Amplitude plot
             ax1 = ampfig.add_subplot(gs[vertical_index, horizontal_index])
 
-            ax.text(0.05, 0.05, antenna,
+            ax.text(0.05, 0.05, f"{antenna[0]}: {antenna[1]}",
                     horizontalalignment='left',
                     verticalalignment='bottom',
                     transform=ax.transAxes)
-            ax1.text(0.05, 0.05, antenna,
+            ax1.text(0.05, 0.05, f"{antenna[0]}: {antenna[1]}",
                      horizontalalignment='left',
                      verticalalignment='bottom',
                      transform=ax1.transAxes)
 
             for pol in range(ao.n_pol):
                 polstr = POLS[pol]
-                amps = np.abs(ao[timestep, antenna, :, pol])
-                angles= np.angle(ao[timestep, antenna, :, pol], deg=True)
+                amps = np.abs(ao[timestep, antenna[0], :, pol])
+                angles= np.angle(ao[timestep, antenna[0], :, pol], deg=True)
 
                 # Phase plot
                 ax.plot(angles, color=POL_COLOR[polstr], zorder=POL_ZORDER[polstr], linestyle='None', marker=marker, markersize=markersize)
@@ -179,6 +179,8 @@ def plot(ao, plot_filename, refant=None, n_rows=8, plot_title="", amp_max=None, 
             int_str = "_t%04d" % timestep
         else:
             int_str = ""
+        ampfig.tight_layout()
+        phsfig.tight_layout()
         ampfig.savefig("%s%s_amp.%s" % (plot_filename, int_str, format))
         phsfig.savefig("%s%s_phase.%s" % (plot_filename, int_str, format))
 
