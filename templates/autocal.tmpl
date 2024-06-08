@@ -143,7 +143,7 @@ then
             "${solutions}"
     
     echo "Ionospheric calibration finished. Creating plots and statistics. "
-    ${GPMBASE}/gpm/bin/aocal_plot.py --refant="${refant}" --amp_max=2 "${solutions}"
+    ${GPMBASE}/gpm/bin/aocal_plot.py --refant="${refant}" --amp_max=2 -m "${metafits}" "${solutions}"
     aocal_diff.py --metafits="${metafits}" --names "${solutions}" --refant="${refant}"
     iono_update.py --ionocsv "${obsnum}_ionodiff.csv"
 fi
@@ -170,7 +170,7 @@ aocal_phaseref.py "${solutions}" "${solutions%.bin}_ref.bin" "${refant}" --xy -2
 
 # plot calibration solutions
 # Using absolute path to make sure the previous version built into the container directly from the original repo is not used
-${GPMBASE}/gpm/bin/aocal_plot.py --refant="${refant}" --amp_max=2 "${solutions%.bin}_ref.bin"
+${GPMBASE}/gpm/bin/aocal_plot.py --refant="${refant}" --amp_max=2 -m "${metafits}" "${solutions%.bin}_ref.bin"
 test_fail $?
 
 # Test to see if the calibration solution meets minimum quality control. At the moment
