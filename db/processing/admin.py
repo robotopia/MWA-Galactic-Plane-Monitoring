@@ -59,6 +59,7 @@ class AntennaFlagAdmin(admin.ModelAdmin):
 @admin.register(ApplyCal)
 class ApplyCalAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'cal_obs', 'usable']
+    autocomplete_fields = ['obs', 'cal_obs']
 
 @admin.register(CalApparent)
 class CalApparentAdmin(admin.ModelAdmin):
@@ -84,6 +85,7 @@ class MosaicAdmin(admin.ModelAdmin):
 class ObservationAdmin(admin.ModelAdmin):
     list_display = ['obs', 'projectid', 'cal_obs', 'calibration', 'ra_pointing', 'dec_pointing']
     list_filter = ['calibration', YearListFilter, EpochListFilter]
+    search_fields = ['obs']
 
 @admin.register(PipelineStep)
 class PipelineStepAdmin(admin.ModelAdmin):

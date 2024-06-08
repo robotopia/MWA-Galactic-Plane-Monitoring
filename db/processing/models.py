@@ -34,7 +34,10 @@ class ApplyCal(models.Model):
     obs = models.ForeignKey('Observation', models.DO_NOTHING)
     cal_obs = models.ForeignKey('Observation', models.DO_NOTHING, related_name='applycal_cal_obs_set')
     usable = models.BooleanField(blank=True, null=True)
-    notes = models.CharField(max_length=4096, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self) -> str:
+        return f"obs: {self.obs}, cal: {self.cal_obs}"
 
     class Meta:
         managed = False
