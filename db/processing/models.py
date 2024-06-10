@@ -43,7 +43,7 @@ class ApplyCal(models.Model):
         managed = False
         db_table = 'apply_cal'
         unique_together = (('obs', 'cal_obs'),)
-
+        ordering = ['obs', 'cal_obs']
 
 class CalApparent(models.Model):
     obs = models.OneToOneField('Observation', models.DO_NOTHING, primary_key=True)  # The composite primary key (obs_id, source) found, that is not supported. The first column is selected.
