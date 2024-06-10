@@ -106,6 +106,12 @@ multiscale="-multiscale -mgain 0.85 -multiscale-gain 0.15 -multiscale-scale-bias
 current=$(chgcentre "${obsnum}.ms") 
 coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
 
+# Remove any lingering beam files. If obs_image was run previously, and if, e.g.,
+# it timed out while the beam files were being generated, subsequent runs will
+# fail because this run won't try to recreate the beam files, which will be corrupted.
+# Ensure this doesn't happen by force-removing existing beam files
+rm -f *beam*fits
+
 if [[ $current == *"shift"* ]] 
 then
     echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."

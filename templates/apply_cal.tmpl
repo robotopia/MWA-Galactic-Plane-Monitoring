@@ -1,8 +1,8 @@
 #! /bin/bash -l
+set -x
 
 pipeuser=PIPEUSER
 obsnum=OBSNUM
-calfile=CALFILE
 
 # If obsnum is a file, then we are in an array job
 if [[ -f ${obsnum} ]]
@@ -35,9 +35,11 @@ debug=DEBUG
 # apply calibration
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
-cd "${base}/${obsnum}" || exit
+calfile="$(${GPMBASE}/bin/aux_getcal.sh $obsnum)"
+test_fail $?
+echo "According to aux_getcal.sh, the calibration file is \"${calfile}\""
 
-echo "Calibration file is ${calfile}"
+cd "${base}/${obsnum}" || exit
 
 # If in debugging mode, apply to the CORRECTED_DATA column
 if [[ ! -z $debug ]]

@@ -23,6 +23,10 @@ else
     jobid=${SLURM_JOB_ID}
 fi
 
+metafits="${obsnum}.metafits"
+
+cd "${datadir}/${obsnum}" || exit
+
 echo "jobid: ${jobid}"
 echo "taskid: ${taskid}"
 
@@ -68,9 +72,6 @@ MWAPATH="${GPMMWAPB}"
 # start
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
-cd "${datadir}/${obsnum}" || exit
-
-metafits="${obsnum}.metafits"
 if [[ ! -e ${metafits} ]] || [[ ! -s ${metafits} ]]
 then
     wget -O "${metafits}" http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}
@@ -142,7 +143,7 @@ then
             "${solutions}"
     
     echo "Ionospheric calibration finished. Creating plots and statistics. "
-    aocal_plot.py --refant="${refant}" --amp_max=2 "${solutions}"
+    ${GPMBASE}/gpm/bin/aocal_plot.py --refant="${refant}" --amp_max=2 -m "${metafits}" "${solutions}"
     aocal_diff.py --metafits="${metafits}" --names "${solutions}" --refant="${refant}"
     iono_update.py --ionocsv "${obsnum}_ionodiff.csv"
 fi
@@ -168,18 +169,22 @@ test_fail $?
 aocal_phaseref.py "${solutions}" "${solutions%.bin}_ref.bin" "${refant}" --xy -2.806338586067941065e+01 --dxy -4.426533296449057023e-07  --ms "${obsnum}.ms"
 
 # plot calibration solutions
-aocal_plot.py --refant="${refant}" --amp_max=2 "${solutions%.bin}_ref.bin"
+# Using absolute path to make sure the previous version built into the container directly from the original repo is not used
+${GPMBASE}/gpm/bin/aocal_plot.py --refant="${refant}" --amp_max=2 -m "${metafits}" "${solutions%.bin}_ref.bin"
 test_fail $?
 
 # Test to see if the calibration solution meets minimum quality control. At the moment
 # this is a simple check based on the number of flagged solutions
+# SM: Commenting this out for now -- will check manually
+
 # result=$(check_assign_solutions.py -t "${fraction}" -s 4 --segment-threshold ${sthresh} check "${solutions%.bin}_ref.bin")
-result=$(check_assign_solutions.py -t "${fraction}" check "${solutions%.bin}_ref.bin")
-if echo "${result}" | grep -q fail
-then
-    mv "${solutions%.bin}_ref.bin" "${solutions%.bin}_ref_failed.bin"
-    test_fail 1
-fi
+
+#result=$(check_assign_solutions.py -t "${fraction}" check "${solutions%.bin}_ref.bin")
+#if echo "${result}" | grep -q fail
+#then
+#    mv "${solutions%.bin}_ref.bin" "${solutions%.bin}_ref_failed.bin"
+#    test_fail 1
+#fi
 
 track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
 

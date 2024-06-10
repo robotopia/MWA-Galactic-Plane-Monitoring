@@ -9,7 +9,8 @@ import json
 import logging
 import argparse
 import datetime
-
+from astropy.time import Time
+import astropy.units as u
 
 import mysql.connector as mysql
 import numpy as np
@@ -44,6 +45,8 @@ DIRECTIVES = (
     "obs_processing",
     "epoch_processing",
     "calibrations",
+    "last_obs",
+    "recent_obs",
 )
 
 
@@ -208,9 +211,9 @@ def queue_job(
     cur.execute(
         """
                 INSERT INTO processing
-                (job_id, task_id, host_cluster, submission_time, obs_id, user, batch_file, stderr, stdout, task, status)
+                (job_id, task_id, host_cluster, submission_time, obs_id, user, batch_file, stderr, stdout, task, status, commit)
                 VALUES 
-                ( %s,%s,%s,%s,%s,%s,%s,%s,%s, %s, 'queued')
+                ( %s,%s,%s,%s,%s,%s,%s,%s,%s, %s, 'queued', %s)
                 """,
         (
             job_id,
@@ -223,6 +226,7 @@ def queue_job(
             stderr,
             stdout,
             task,
+            os.environ['GPMGITVERSION'],
         ),
     )
     conn.commit()
@@ -573,6 +577,45 @@ def epoch_processing(epoch):
     print('\n'.join([f"{row[0]}   {row[1]}   {datetime.datetime.fromtimestamp(row[2])}   {row[3]:15}   {row[4]:9} {row[5]:10}" for row in res]))
     conn.close()
 
+def get_last_obs():
+    """
+    A select function that will get the most recent observation (i.e. the highest obs_id)
+    from the database, and prints it to stdout
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("SELECT obs_id FROM observation ORDER BY obs_id DESC LIMIT 1;")
+    res = cur.fetchone()
+    print(res[0])
+    conn.close()
+
+def recent_observations(nhours):
+    """
+    A select function that will get the most recent observation (i.e. the highest obs_id)
+    from the database, and prints it to stdout
+    """
+
+    # Get the current time and subtract the number of hours
+    nt = Time.now()
+    pt = nt - nhours*u.hr
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+                SELECT obs_id FROM observation
+                  WHERE obs_id >= %s AND
+                        obs_id <= %s AND
+                        calibration = FALSE
+                  ORDER BY obs_id;
+                """,
+                (str(pt.gps), str(nt.gps),)
+               )
+    res = cur.fetchall()
+    if len(res) > 0:
+        print('\n'.join([str(r[0]) for r in res]))
+    conn.close()
 
 def calibrations():
     """A select function that will return the list of all obsids of calibrator observations.
@@ -670,6 +713,7 @@ if __name__ == "__main__":
     ps.add_argument("--submission_time", type=int, help="submission time", default=None)
     ps.add_argument("--start_time", type=int, help="job start time", default=None)
     ps.add_argument("--finish_time", type=int, help="job finish time", default=None)
+    ps.add_argument("--nhours", type=int, help="Only consider the last NHOURS hours (only applies to directive recent_obs)", default=24)
     ps.add_argument("--batch_file", type=str, help="batch file name", default=None)
     ps.add_argument("--obs_id", type=int, help="observation id", default=None)
     ps.add_argument(
@@ -811,6 +855,13 @@ if __name__ == "__main__":
 
     elif args.directive.lower() == "calibrations":
         calibrations()
+
+    elif args.directive.lower() == "last_obs":
+        get_last_obs()
+
+    elif args.directive.lower() == "recent_obs":
+        require(args, ["nhours"])
+        recent_observations(args.nhours)
 
     else:
         print(

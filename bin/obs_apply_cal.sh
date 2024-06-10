@@ -18,21 +18,17 @@ pipeuser="${GPMUSER}"
 
 #initial variables
 dep=
-calfile=
 tst=
 account=
 debug=
 
 # parse args and set options
-while getopts ':tzd:a:c:p:v' OPTION
+while getopts ':tzd:a:p:v' OPTION
 do
     case "$OPTION" in
     d)
         dep=${OPTARG}
         ;;
-	c)
-	    calfile=${OPTARG}
-	    ;;
     p)
         project=${OPTARG}
         ;;
@@ -59,13 +55,6 @@ obsid=$1
 if [[ -z ${obsid} ]]
 then
     usage
-fi
-
-# Get the associated calfile
-calfile="$(aux_getcal.sh $obsid)"
-if [[ $? != 0 ]]
-then
-    exit 1
 fi
 
 
@@ -98,20 +87,12 @@ fi
 queue="-p ${GPMSTANDARDQ}"
 base="${GPMSCRATCH}/${project}"
 
-if [[ ! -f "$calfile" ]]
-then
-    echo "Could not find calibrator file"
-    echo "looked for $calfile"
-    exit 1
-fi
-
 
 script="${GPMSCRIPT}/apply_cal_${obsid}.sh"
 
 cat "${GPMBASE}/templates/apply_cal.tmpl" | sed -e "s:OBSNUM:${obsid}:g" \
                                        -e "s:BASEDIR:${base}:g" \
                                        -e "s:DEBUG:${debug}:g" \
-                                       -e "s:CALFILE:${calfile}:g" \
                                        -e "s:PIPEUSER:${pipeuser}:g"  > ${script}
 
 chmod 755 "${script}"
@@ -135,7 +116,7 @@ then
     GPMNCPULINE="--ntasks-per-node=1"
 fi
 
-sub="sbatch --begin=now+1minutes  --export=ALL ${account} --time=02:00:00 --mem=24G -M ${GPMCOMPUTER} --output=${output} --error=${error} "
+sub="sbatch --export=ALL ${account} --time=02:00:00 --mem=24G -M ${GPMCOMPUTER} --output=${output} --error=${error} "
 sub="${sub}  ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 
 if [[ ! -z ${tst} ]]
@@ -168,7 +149,7 @@ for taskid in $(seq ${numfiles})
     if [ "${GPMTRACK}" = "track" ]
     then
         # record submission
-        ${GPMCONTAINER} track_task.py queue --jobid=${jobid} --taskid=${taskid} --task='apply_cal' --submission_time=`date +%s` --batch_file=${script} \
+        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid=${jobid} --taskid=${taskid} --task='apply_cal' --submission_time=`date +%s` --batch_file=${script} \
                             --obs_id=${obs} --stderr=${obserror} --stdout=${obsoutput}
     fi
 

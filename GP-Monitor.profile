@@ -18,12 +18,16 @@ cluster="garrawarla"            # System-wide name of cluster, e.g. "garrawarla"
 export GPMUSER=$(whoami)         # User name of the operator running the pipeline. This is here to generate user-specific filenames and paths. 
                                 # It is recommend to use the login account name, although in principal this is not critical and other approaches
                                 # could be adopted
-export GPMVERSION='3.1.0'        # Version number of the pipeline. This should not be changed. Currently it is defined here but not used.  
 export GPMACCOUNT=               # The SLURM account jobs will be run under. e.g. 'pawsey0272'. Empty will not pass through a 
                                 # corresponding --account=${GPMACCOUNT} to the slurm submission. Only relevant if SLURM is tracking time usage 
 export GPMBASE="/not/actual/path" # Path to base of GPM Pipeline where the repository was 'git clone' into including the name of the repository foldername, e.g. "/astro/mwasci/tgalvin/GPM-pipeline" 
 export GPMSCRATCH="/scratch"     # Path to your scratch space used for processing on the HPC environment, e.g. /scratch
                                 # Within pawsey this is /astro/mwas/${GPMUSER}
+export GPMVERSION='3.1.0'        # Version number of the pipeline. This should not be changed. Currently it is defined here but not used.  
+export GPMGITVERSION=$(git --git-dir=${GPMBASE}/.git rev-parse HEAD) # Get the precise git commit that we're currently on (and therefore using)
+echo "Version: ${GPMVERSION}"
+echo "Git commit: ${GPMGITVERSION}"
+
 export GPMHOME="${GPMSCRATCH}"    # HOME space for some tasks. In some system configurations singularity can not mount $HOME, but applications (e.g. CASA, python) would like 
                                 # one to be available to cache folders. This does not have to be an actual $HOME directory, just a folder with read and write access. 
                                 # Suggestion is the same path as the scratch space, e.g. $GPMSCRATCH. Although if the HPC is configured correctly it could be set to HOME. 

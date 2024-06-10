@@ -1,0 +1,138 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{ epoch }}</title>
+  </head>
+  <body>
+    <div>
+      Legend:
+      <span class="queued legend">Queued</span>
+      <span class="started legend">Started</span>
+      <span class="finished legend">Finished</span>
+      <span class="failed legend">Failed</span>
+      <span class="calibration legend">Calibration</span>
+    </div>
+    <p>Times shows are <b>submission times (UTC)</b>.</p>
+    <table>
+      <tr>
+        <th>Obs ID</th>
+        <th>Assigned cal obs</th>
+        <th>download</th>
+        <th>autoflag</th>
+        <th>autocal</th>
+        <th>applycal</th>
+        <th>uvflag</th>
+        <th>uvsub</th>
+        <th>image</th>
+        <th>calcleakage</th>
+        <th>postimage</th>
+        <th>transient</th>
+        <th>Notes</th>
+      </tr>
+      {% for obs, tasks in overviews.items %}
+      <tr class="epoch-overview-row">
+        <td {% if obs.calibration %}class="calibration"{% endif %}>{{ obs }}</td>
+        <td>{{ obs.cal_obs }}</td>
+        <td class="{{ tasks.download.status }}">
+          <span class="datetime">{{ tasks.download.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.flag.status }}">
+          <span class="datetime">{{ tasks.flag.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.calibrate.status }}">
+          <span class="datetime">{{ tasks.calibrate.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.apply_cal.status }}">
+          {{ tasks.apply_cal.cal_obs }}<br>
+          <span class="datetime">{{ tasks.apply_cal.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.uvflag.status }}">
+          <span class="datetime">{{ tasks.uvflag.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.uvsubtract.status }}">
+          <span class="datetime">{{ tasks.uvsubtract.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.image.status }}">
+          <span class="datetime">{{ tasks.image.date|date:'Y-m-d H:i' }}</span>
+          {% if tasks.apply_cal.cal_obs %}
+          {% if tasks.apply_cal.cal_usable %}
+          <div class="qa cal-usable">&#x2713;</div>
+          {% elif tasks.apply_cal.cal_usable == False %}
+          <div class="qa cal-unusable">&#x274C;</div>
+          {% elif tasks.apply_cal.cal_notes != '' %}
+          <div class="qa cal-unsure">?</div>
+          {% endif %}
+          {% endif %}
+        </td>
+        <td class="{{ tasks.calcleakage.status }}">
+          <span class="datetime">{{ tasks.calcleakage.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.postimage.status }}">
+          <span class="datetime">{{ tasks.postimage.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.transient.status }}">
+          <span class="datetime">{{ tasks.transient.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td>
+          {{ tasks.apply_cal.cal_notes }}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>
+<style>
+.legend {
+  text-align: center;
+  padding: 2px;
+}
+.queued {
+  background-color: #00a;
+  color: #eee;
+}
+.started {
+  background-color: #880;
+}
+.finished {
+  background-color: #080;
+}
+.failed {
+  background-color: #c00;
+  color: #eee;
+}
+.calibration {
+  background-color: #c80;
+}
+td {
+  padding: 5px;
+}
+th {
+  background-color: #448;
+  color: #eee;
+  padding: 5px;
+}
+.epoch-overview-row .datetime {
+  font-size: small;
+}
+.qa {
+  background-color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  text-align: center;
+  font-weight: 900;
+  font-family: Arial, Helvetica, sans-serif;
+  display: inline-block;
+  cursor: default;
+}
+.cal-usable {
+  color: #080;
+}
+.cal-unusable {
+  color: #c00;
+}
+.cal-unsure {
+  color: #c80;
+}
+</style>
