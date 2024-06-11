@@ -128,7 +128,7 @@ if [[ ! -e "${obsnum}_transient-t0020-image.fits" ]]
 then
     wsclean -name "${obsnum}_transient" \
     -gridder wgridder \
-    -shift ${coord} \
+    -shift ${coords} \
     -subtract-model \
     -abs-mem ${GPMMEMORY} \
     -nwlayers ${GPMNCPUS} \
