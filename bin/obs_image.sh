@@ -2,7 +2,7 @@
 
 usage()
 {
-echo "obs_image.sh [-d dep] [-p project] [-a account] [-z] [-t] obsnum
+echo "obs_image.sh [-d dep] [-p project] [-z] [-t] obsnum
   -d dep     : job number for dependency (afterok)
   -p project : project, (must be specified, no default)
   -z         : Debugging mode: image the CORRECTED_DATA column
@@ -21,14 +21,11 @@ dep=
 tst=
 debug=
 # parse args and set options
-while getopts ':tzd:a:p:' OPTION
+while getopts ':tzd:p:' OPTION
 do
     case "$OPTION" in
-	d)
-	    dep=${OPTARG}
-	    ;;
-    a)
-        account=${OPTARG}
+    d)
+        dep=${OPTARG}
         ;;
     p)
         project=${OPTARG}
@@ -69,11 +66,6 @@ then
     fi
 fi
 
-if [[ ! -z ${GPMACCOUNT} ]]
-then
-    account="--account=${GPMACCOUNT}"
-fi
-
 # Establish job array options
 if [[ -f ${obsnum} ]]
 then
@@ -104,12 +96,36 @@ fi
 chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
-echo '#!/bin/bash' > ${script}.sbatch
-echo "export OPENBLAS_NUM_THREADS=1" >> ${script}.sbatch
-echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
+sbatch_script=${script}.sbatch
+echo "#!/bin/bash
 
-sub="sbatch --begin=now --export=ALL  --time=10:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
+#SBATCH --export=ALL
+#SBATCH --time=10:00:00
+#SBATCH --mem=${GPMABSMEMORY}G
+#SBATCH --clusters=${GPMCOMPUTER}
+#SBATCH --output=${output}
+#SBATCH --error=${error}
+#SBATCH ${GPMNCPULINE}
+#SBATCH --account=${GPMACCOUNT}
+#SBATCH --partition=${GPMSTANDARDQ}
+" > ${sbatch_script}
+
+if [ ! -z ${GPMTASKLINE} ]
+then
+    echo "#SBATCH ${GPMTASKLINE}" >> ${sbatch_script}
+fi
+
+if [ ! -z ${jobarray} ]
+then
+    echo "#SBATCH ${jobarray}" >> ${sbatch_script}
+fi
+
+echo "
+export OPENBLAS_NUM_THREADS=1
+singularity run ${GPMCONTAINER} ${script}
+" >> ${sbatch_script}
+
+sub="${sub} ${depend} ${sbatch_script}"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
