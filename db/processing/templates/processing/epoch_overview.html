@@ -32,7 +32,7 @@
       </tr>
       {% for obs, tasks in overviews.items %}
       <tr class="epoch-overview-row">
-        <td {% if obs.calibration %}class="calibration"{% endif %}>{{ obs }}</td>
+        <td class="selectable{% if obs.calibration %} calibration{% endif %}">{{ obs }}</td>
         <td>{{ obs.cal_obs }}</td>
         <td class="{{ tasks.download.status }}">
           <span class="datetime">{{ tasks.download.date|date:'Y-m-d H:i' }}</span>
@@ -106,6 +106,14 @@
 }
 td {
   padding: 5px;
+}
+td:not(.selectable) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 th {
   background-color: #448;
