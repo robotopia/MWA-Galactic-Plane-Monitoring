@@ -124,9 +124,7 @@ then
 fi
 
 echo "
-module load ${GPMSINGMOD}
-
-export OPENBLAS_NUM_THREADS=1
+source ${GPMPROFILE}
 
 singularity run ${GPMCONTAINER} ${script}
 " >> ${sbatch_script}
