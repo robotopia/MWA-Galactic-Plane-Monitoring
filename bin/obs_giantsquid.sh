@@ -105,8 +105,8 @@ else
     done
 fi
 
-# Get the list of ASVO jobs
-asvo_json=$(singularity exec $GPMCONTAINER giant-squid list ${obsids} --json)
+#Get the list of ASVO jobs
+asvo_json=$(singularity exec $GPMCONTAINER giant-squid list ${obsids} --json $obsid --states ready --states processing --states queued)
 
 # Tast #2: separate the list into three sublists:
 #   1. State = Ready                     -->  Submit download job
@@ -120,7 +120,8 @@ for obsid in $obsids
 do
     # Get the ASVO job state
     states=($(echo "$asvo_json" | singularity exec $GPMCONTAINER jq -r ".[]| select( .obsid == ${obsid} ).jobState")) # use an array in case there are more than one
-    state=${states[0]} # Just grab the first state
+	    #state=($(echo "$states")    
+state=${states[0]} # Just grab the first state
 
     if [[ $state == "Ready" ]]
     then
