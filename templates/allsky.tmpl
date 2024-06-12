@@ -143,6 +143,7 @@ wsclean \
         -weight briggs ${robust} \
         -pol I \
         -join-channels \
+        -channels-out 1 \
         -fit-spectral-pol 2 \
         -data-column ${datacolumn} \
         "${obsnum}.ms" | tee wsclean.log
