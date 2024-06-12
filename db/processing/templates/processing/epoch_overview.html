@@ -28,6 +28,7 @@
         <th>calcleakage</th>
         <th>postimage</th>
         <th>transient</th>
+        <th>acacia</th>
         <th>Notes</th>
       </tr>
       {% for obs, tasks in overviews.items %}
@@ -73,6 +74,9 @@
         </td>
         <td class="{{ tasks.transient.status }}">
           <span class="datetime">{{ tasks.transient.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.acacia.status }}">
+          <span class="datetime">{{ tasks.acacia.date|date:'Y-m-d H:i' }}</span>
         </td>
         <td>
           {{ tasks.apply_cal.cal_notes }}
