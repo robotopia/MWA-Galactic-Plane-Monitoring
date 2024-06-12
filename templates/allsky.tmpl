@@ -128,13 +128,10 @@ fi
 set -o pipefail
 # Deep clean (for pipeline)
 wsclean \
-        -gridder wgridder \
         -shift ${coords} \
         -abs-mem ${GPMMEMORY} \
         -nmiter 1 \
         -niter 0 \
-        -reuse-primary-beam \
-        -apply-primary-beam \
         -auto-mask ${msigma} \
         -auto-threshold ${tsigma} \
         -name ${obsnum}_allsky \
