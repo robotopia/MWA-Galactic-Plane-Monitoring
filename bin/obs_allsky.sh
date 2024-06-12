@@ -2,7 +2,7 @@
 
 usage()
 {
-echo "obs_image.sh [-d dep] [-p project] [-z] [-t] obsnum
+echo "obs_allsky.sh [-d dep] [-p project] [-z] [-t] obsnum
   -d dep     : job number for dependency (afterok)
   -p project : project, (must be specified, no default)
   -z         : Debugging mode: image the CORRECTED_DATA column
@@ -78,14 +78,14 @@ fi
 
 # start the real program
 
-script="${GPMSCRIPT}/image_${obsnum}.sh"
-cat "${GPMBASE}/templates/image.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
+script="${GPMSCRIPT}/allsky_${obsnum}.sh"
+cat "${GPMBASE}/templates/allsky.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                  -e "s:BASEDIR:${base}:g" \
                                  -e "s:DEBUG:${debug}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
-output="${GPMLOG}/image_${obsnum}.o%A"
-error="${GPMLOG}/image_${obsnum}.e%A"
+output="${GPMLOG}/allsky_${obsnum}.o%A"
+error="${GPMLOG}/allsky_${obsnum}.e%A"
 
 if [[ -f ${obsnum} ]]
 then
@@ -164,7 +164,7 @@ for taskid in $(seq ${numfiles})
     if [ "${GPMTRACK}" = "track" ]
     then
         # record submission
-        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid}" --taskid="${taskid}" --task='image' --submission_time="$(date +%s)" \
+        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid}" --taskid="${taskid}" --task='allsky' --submission_time="$(date +%s)" \
                             --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
     fi
 

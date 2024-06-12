@@ -4,7 +4,8 @@ echo "Loading the Galactic Plane Monitoring profile"
 
 # Any system module file should be loaded here. Aside from singularity and slurm there are
 # no additional modules that are expected to be needed
-module load singularity
+export GPMSINGMOD=singularity/[module version]
+module load $GPMSINGMOD
 
 # Before running obs_*.sh scripts ensure the completed configuration file has been sourced. 
 # As a convention when specifying paths below, please ensure that they do not end with a trailing '/', as
