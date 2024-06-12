@@ -103,7 +103,7 @@ echo "#!/bin/bash
 # Git commit: ${GPMGITVERSION}
 
 #SBATCH --export=ALL
-#SBATCH --time=10:00:00
+#SBATCH --time=05:00:00
 #SBATCH --mem=${GPMABSMEMORY}G
 #SBATCH --clusters=${GPMCOMPUTER}
 #SBATCH --output=${output}
