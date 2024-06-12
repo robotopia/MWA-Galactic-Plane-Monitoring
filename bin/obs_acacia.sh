@@ -104,10 +104,11 @@ then
     echo "#SBATCH ${jobarray}" >> ${sbatch_script}
 fi
 
+RCLONE_MODULE="$(module -t --default -r avail "^rclone$" 2>&1 | grep -v ':' | head -1)"
+
 echo "
 source ${GPMPROFILE}
 
-RCLONE_MODULE=$(module -t --default -r avail "^rclone$" 2>&1 | grep -v ':' | head -1)
 module load ${RCLONE_MODULE}
 
 ${script}

@@ -35,14 +35,12 @@ then
 fi
 }
 
-datadir=DATADIR
 epoch="$(${container} ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
 
 # start
 ${container} track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
-cd "${datadir}/${obsnum}" || exit
-
+cd "${GPMSCRATCH}/${epoch}/${obsnum}" || exit
 
 #-----------------
 #Defining variables that will hold the names related to your access, buckets and objects to be stored in Acacia
