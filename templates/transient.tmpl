@@ -128,7 +128,7 @@ if [[ ! -e "${obsnum}_transient-t0020-image.fits" ]]
 then
     wsclean -name "${obsnum}_transient" \
     -gridder wgridder \
-    -shift ${coord} \
+    -shift ${coords} \
     -subtract-model \
     -abs-mem ${GPMMEMORY} \
     -nwlayers ${GPMNCPUS} \
@@ -149,6 +149,9 @@ then
     "${obsnum}.ms"
     
 fi
+
+test_fail $?
+
 # Then you need to source-find the data... BANE would be expensive to run more than once, so just do it... once
 # This keeps failing for some reason, and it's no longer part of the default processing, so skip it
 #BANE --noclobber --cores ${GPMNCPUS} --compress "${obsnum}_transient-t0020-image.fits"
@@ -194,9 +197,13 @@ fi
 # Make a cube and a standard deviation image
 make_time_cube.py ${obsnum}_transient
 
+test_fail $?
+
 n=`ls "${obsnum}"_transient-t????-image.fits | wc -l`
 # Dump the image and model files into a hdf5 container
 make_imstack.py --start 0 --suffixes image -n $n "${obsnum}_transient" 
+
+test_fail $?
 
 # Save the flags
 ms="${obsnum}.ms"
