@@ -4,7 +4,8 @@ echo "Loading the Galactic Plane Monitoring profile"
 
 # Any system module file should be loaded here. Aside from singularity and slurm there are
 # no additional modules that are expected to be needed
-export GPMSINGMOD=singularity/[module version]
+# But see 'acacia' script which needs rclone
+export GPMSINGMOD=$(module -t --default -r avail "^singularity$" 2>&1 | grep -v ':' | head -1)
 module load $GPMSINGMOD
 
 # Before running obs_*.sh scripts ensure the completed configuration file has been sourced. 

@@ -8,6 +8,8 @@ pipeuser=PIPEUSER
 obsnum=OBSNUM
 debug=DEBUG
 
+container="singularity exec ${GPMCONTAINER}"
+
 # If obsnum is a file, then we are in an array job
 if [[ -f "${obsnum}" ]]
 then
@@ -28,16 +30,16 @@ echo "taskid: ${taskid}"
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    ${container} track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
 
 datadir=DATADIR
-epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+epoch="$(${container} ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
 
 # start
-track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+${container} track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 cd "${datadir}/${obsnum}" || exit
 
@@ -162,4 +164,4 @@ fi
 #Successfully finished
 echo "Done"
 
-track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+${container} track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
