@@ -94,7 +94,7 @@ class PipelineStepAdmin(admin.ModelAdmin):
 @admin.register(Processing)
 class ProcessingAdmin(admin.ModelAdmin):
     list_display = ['job_id', 'obs_id', 'user', 'task', 'submission_time', 'status']
-    list_filter = ['user', YearListFilter, EpochListFilter]
+    list_filter = ['user', 'task', YearListFilter, EpochListFilter]
 
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
