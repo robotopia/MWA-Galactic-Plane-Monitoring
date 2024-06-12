@@ -125,7 +125,7 @@ export OPENBLAS_NUM_THREADS=1
 singularity run ${GPMCONTAINER} ${script}
 " >> ${sbatch_script}
 
-sub="${sub} ${depend} ${sbatch_script}"
+sub="sbatch ${depend} ${sbatch_script}"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
