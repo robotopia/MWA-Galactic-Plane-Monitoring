@@ -142,9 +142,6 @@ wsclean \
         -scale ${scale:0:8} \
         -weight briggs ${robust} \
         -pol I \
-        -join-channels \
-        -channels-out 1 \
-        -fit-spectral-pol 2 \
         -data-column ${datacolumn} \
         "${obsnum}.ms" | tee wsclean.log
 # Outputs have the generic format:
