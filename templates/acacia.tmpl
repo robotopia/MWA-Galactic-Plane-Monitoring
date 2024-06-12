@@ -1,0 +1,165 @@
+#! /bin/bash -l
+
+# A template script to transfer (tar'ed) files to Acacia for warm storage.
+
+set -x
+
+pipeuser=PIPEUSER
+obsnum=OBSNUM
+debug=DEBUG
+
+# If obsnum is a file, then we are in an array job
+if [[ -f "${obsnum}" ]]
+then
+    taskid=${SLURM_ARRAY_TASK_ID}
+    jobid=${SLURM_ARRAY_JOB_ID}
+
+    echo "obsfile ${obsnum}"
+    obsnum=$(sed -n -e "${SLURM_ARRAY_TASK_ID}"p "${obsnum}")
+    echo "uvsubtract obsid ${obsnum}"
+else
+    taskid=1
+    jobid=${SLURM_JOB_ID}
+fi
+
+echo "jobid: ${jobid}"
+echo "taskid: ${taskid}"
+
+function test_fail {
+if [[ $1 != 0 ]]
+then
+    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    exit "$1"
+fi
+}
+
+datadir=DATADIR
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+
+# start
+track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+
+cd "${datadir}/${obsnum}" || exit
+
+
+#-----------------
+#Defining variables that will hold the names related to your access, buckets and objects to be stored in Acacia
+profileName=mwasci
+bucketName=gpm2024
+prefixPath=${epoch}
+fullPathInAcacia="${profileName}:${bucketName}/${prefixPath}" #Note the colon(:) when using rclone
+
+#Local storage variables
+workingDir="$(pwd)"
+echo "workingDir=${workingDir}"
+
+#-----------------
+#Check if Acacia definitions make sense, and if you can transfer objects into the desired bucket
+echo "Checking that the profile exists"
+rclone config show | grep "${profileName}" > /dev/null; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "The given profileName=$profileName seems not to exist in the user configuration of rclone"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+echo "Checking the bucket exists and that you have writing access"
+rclone lsd "${profileName}:${bucketName}" > /dev/null; exitcode=$? #Note the colon(:) when using rclone
+if [ $exitcode -ne 0 ]; then
+   echo "The bucket intended to receive the data does not exist: ${profileName}:${bucketName}"
+   echo "Trying to create it"
+   rclone mkdir "${profileName}:${bucketName}"; exitcode=$?
+   if [ $exitcode -ne 0 ]; then
+      echo "Creation of bucket failed"
+      echo "The bucket name or the profile name may be wrong: ${profileName}:${bucketName}"
+      echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+      test_fail 1
+   fi
+fi
+echo "Checking if a test file can be trasferred into the desired full path in Acacia"
+testFile=test_file_${jobid}-${taskid}.txt
+echo "File for test" > "${testFile}"
+rclone copy "${testFile}" "${fullPathInAcacia}/"; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "The test file $testFile cannot be transferred into ${fullPathInAcacia}"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+echo "Checking if the test file can be listed in Acacia"
+listResult=$(rclone lsl "${fullPathInAcacia}/${testFile}")
+if [ -z "$listResult" ]; then
+   echo "Problems occurred during the listing of the test file ${testFile} in ${fullPathInAcacia}"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+echo "Removing test file from Acacia"
+rclone delete "${fullPathInAcacia}/${testFile}"; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "The test file $testFile cannot be removed from ${fullPathInAcacia}"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+rm $testFile
+
+#----------------
+#Defining the working dir and cd into it
+echo "Checking that the working directory exists"
+if ! [ -d $workingDir ]; then
+   echo "The working directory $workingDir does not exist"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+else
+   cd $workingDir
+fi
+
+#----------------
+#Defining what to tar and the name and place of the tarfile
+whatToTar=( * ) #These are inside the working dir
+tarFileName=${obsnum}.tar.gz
+auxiliaryDirForTars="$MYSCRATCH/tars"
+echo "Checking that the auxiliary directory exists"
+if ! [ -d $auxiliaryDirForTars ]; then
+   echo "Trying to create the auxiliary directory as it does not exist"
+   mkdir -p $auxiliaryDirForTars; exitcode=$?
+   if [ $exitcode -ne 0 ]; then
+      echo "The auxiliary directory $auxiliaryDirForTars does not exist and can't be created"
+      echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+      test_fail 1
+   fi
+fi
+
+#----------------
+#Taring the indicated files and directories
+srun tar -cvzf "${auxiliaryDirForTars}/${tarFileName}" "${whatToTar[@]}"; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "Something went wrong when taring:"
+   echo "tarFileName=${tarFileName}"
+   echo "whatToTar=( ${whatToTar[@]} )"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+
+#-----------------
+#Perform the transfer of the tar file into the working directory and check for the transfer
+echo "Performing the transfer ... "
+#srun rclone copy "${auxiliaryDirForTars}/${tarFileName}" "${fullPathInAcacia}/"; exitcode=$?
+echo "rclone copy ${workingDir}/${tarFileName} ${fullPathInAcacia}/"
+srun rclone copy --s3-chunk-size 600M "${workingDir}/${tarFileName}" "${fullPathInAcacia}/"; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "Problems occurred during the transfer of file ${tarFileName}"
+   echo "Check that the file exists in ${workingDir}"
+   echo "And that nothing is wrong with the fullPathInAcacia: ${fullPathInAcacia}/"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+else
+   #echo "Removing the tar file from scratch as it was successfully transferred into Acacia"
+   echo "Final place in Acacia: ${fullPathInAcacia}/${tarFileName}"
+   #rm "${auxiliaryDirForTars}/${tarFileName}" #Comment this line when debugging workflow
+fi
+#---------------
+# Final checks ...
+
+#---------------
+#Successfully finished
+echo "Done"
+
+track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
