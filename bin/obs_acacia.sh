@@ -90,7 +90,7 @@ echo "#!/bin/bash
 # Git commit: ${GPMGITVERSION}
 
 #SBATCH --export=ALL
-#SBATCH --time=02:00:00
+#SBATCH --time=00:45:00
 #SBATCH --clusters=${GPMCOMPUTER}
 #SBATCH --output=${output}
 #SBATCH --error=${error}

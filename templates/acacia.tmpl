@@ -113,7 +113,7 @@ fi
 
 #----------------
 #Defining what to tar and the name and place of the tarfile
-whatToTar=( * ) #These are inside the working dir
+whatToTar=( ${obsnum}_deep-*-[IV]-image*fits ${obsnum}_deep-*-[IV]-model*fits ${obsnum}_transient* ${obsnum}.metafits ${obsnum}_*.png ${obsnum}_local_gleam_solutions*.bin ${obsnum}_ionodiff.csv ) #These are inside the working dir
 tarFileName=${obsnum}.tar.gz
 auxiliaryDirForTars="$MYSCRATCH/tars"
 echo "Checking that the auxiliary directory exists"
@@ -141,9 +141,8 @@ fi
 #-----------------
 #Perform the transfer of the tar file into the working directory and check for the transfer
 echo "Performing the transfer ... "
-#srun rclone copy "${auxiliaryDirForTars}/${tarFileName}" "${fullPathInAcacia}/"; exitcode=$?
-echo "rclone copy ${workingDir}/${tarFileName} ${fullPathInAcacia}/"
-srun rclone copy --s3-chunk-size 600M "${workingDir}/${tarFileName}" "${fullPathInAcacia}/"; exitcode=$?
+echo "rclone copy --s3-chunk-size 600M ${auxiliaryDirForTars}/${tarFileName} ${fullPathInAcacia}/"
+srun rclone copy --s3-chunk-size 600M "${auxiliaryDirForTars}/${tarFileName}" "${fullPathInAcacia}/"; exitcode=$?
 if [ $exitcode -ne 0 ]; then
    echo "Problems occurred during the transfer of file ${tarFileName}"
    echo "Check that the file exists in ${workingDir}"
