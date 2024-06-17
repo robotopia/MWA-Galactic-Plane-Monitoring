@@ -47,6 +47,7 @@ DIRECTIVES = (
     "calibrations",
     "last_obs",
     "recent_obs",
+    "obs_type",
 )
 
 
@@ -636,6 +637,30 @@ def calibrations():
     conn.close()
 
 
+def obs_type(obs_id):
+    """Prints either 'target' or 'calibration' depending on the type of observation.
+    If obs_id doesn't exist, prints nothing.
+
+    Args:
+        obs_id (int): observation id whose type is to be printed
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # Find out if a row with this obs_id and cal_id already exists
+    cur.execute("""
+            SELECT calibration FROM observation
+            WHERE obs_id = %s
+            """,
+            (obs_id,),
+            )
+
+    res = cur.fetchone()
+    if res is not None:
+        print('calibration' if res[0] == 1 else 'target')
+    conn.close()
+
+
 def ion_update(obs_id, ion_path):
     with open(ion_path, "rb") as in_file:
         arr = np.loadtxt(in_file, delimiter=",", skiprows=1)
@@ -855,6 +880,10 @@ if __name__ == "__main__":
 
     elif args.directive.lower() == "calibrations":
         calibrations()
+
+    elif args.directive.lower() == "obs_type":
+        require(args, ["obs_id"])
+        obs_type(args.obs_id)
 
     elif args.directive.lower() == "last_obs":
         get_last_obs()

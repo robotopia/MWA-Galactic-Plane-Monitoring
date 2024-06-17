@@ -71,6 +71,10 @@ if [[ -f ${obsnum} ]]
 then
     numfiles=$(wc -l "${obsnum}" | awk '{print $1}')
     jobarray="--array=1-${numfiles}"
+    if [ ! -z ${GPMMAXARRAYJOBS} ]
+    then
+        jobarray="${jobarray}%${GPMMAXARRAYJOBS}"
+    fi
 else
     numfiles=1
     jobarray=''
