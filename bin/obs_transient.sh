@@ -104,8 +104,6 @@ chmod 755 "${script}"
 echo '#!/bin/bash' > ${script}.sbatch
 echo "export OPENBLAS_NUM_THREADS=1" >> ${script}.sbatch
 echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
-# HACK to fix broken BANE
-#echo "singularity run /astro/mwasci/tgalvin/gleamx_testing_small.img ${script}" >> ${script}.sbatch
 
 sub="sbatch --begin=now+5minutes --export=ALL  --time=4:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
 sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"

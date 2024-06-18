@@ -102,9 +102,7 @@ chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
 echo '#!/bin/bash' > ${script}.sbatch
-#echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
-# HACK to fix broken BANE
-echo "singularity run /astro/mwasci/tgalvin/gleamx_testing_small.img ${script}" >> ${script}.sbatch
+echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
 
 sub="sbatch --begin=now+1minutes --export=ALL --time=8:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
 sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
