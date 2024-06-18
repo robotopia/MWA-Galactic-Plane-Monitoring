@@ -15,7 +15,7 @@ echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
   -f                : Force re-download (default is to ignore obsids
                       if the measurement set already exists).
   -n N              : When downloading, limit number of simultaneous array jobs
-                      to N (default = 5)
+                      to N (default = \$GPMMAXARRAYJOBS = $GPMMAXARRAYJOBS)
   -o obsid_file     : the path to a file containing obsid(s) to process" 1>&2;
 }
 
@@ -24,7 +24,7 @@ pipeuser=${GPMUSER}
 depend=
 tst=
 force=
-sim_jobs=5
+sim_jobs="$GPMMAXARRAYJOBS"
 
 # parse args and set options
 while getopts ':tT:hd:p:o:fn:' OPTION
