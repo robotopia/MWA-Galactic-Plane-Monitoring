@@ -39,7 +39,7 @@ export GPMCONTAINER="${GPMSCRATCH}/gleamx.img"  # Absolute path to the GPM singu
                                               # the container will be automatically downloaded alongside other data dependencies. 
 export OPENBLAS_NUM_THREADS=1   # This is needed for running (the latest version, >=v3.4) of wsclean
 
-export GPMMAXARRAYJOBS=10
+export GPMMAXARRAYJOBS=20
 
 # SLURM compute schedular information
 export GPMCOMPUTER=${cluster}    # Maintained for compatability. Describes the name of the cluster, e.g. "magnus". 
