@@ -54,7 +54,7 @@
         <td class="{{ tasks.uvsubtract.status }}">
           <span class="datetime">{{ tasks.uvsubtract.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.image.status }}">
+        <td class="image-cell {{ tasks.image.status }}" onClick="selectCell(this, {{ obs }}, {{ tasks.apply_cal.cal_obs }});">
           <span class="datetime">{{ tasks.image.date|date:'Y-m-d H:i' }}</span>
           {% if tasks.apply_cal.cal_obs %}
           {% if tasks.apply_cal.cal_usable %}
@@ -83,8 +83,73 @@
         </td>
       </tr>
       {% endfor %}
+      <!-- Context menu for QA = "quality assurance" -->
+      <div id="qa-context-menu" class="context-menu">
+        <div class="context-menuitem cal-usable" onclick='setQa("good");'>&#x2713;</div>
+        <div class="context-menuitem cal-unusable" onclick='setQa("bad");'>&#x274C;</div>
+        <div class="context-menuitem" onclick='setQa("none");'>Remove QA</div>
+      </div>
     </table>
   </body>
+  <script>
+    var selectedCell = {
+      element: null,
+      obsId: null,
+      calObsId: null
+    };
+
+    var qaContextMenu = document.getElementById("qa-context-menu");
+
+    // Deselect the selected cell, if there is any cell selected
+    function deselectCell() {
+      if (selectedCell.element !== null) {
+        selectedCell.element.classList.remove("selected-cell");
+        selectedCell.element = null;
+        selectedCell.obsId = null;
+        selectedCell.calObsId = null;
+        qaContextMenu.style.display = "none";
+      }
+    }
+
+    // Select the given cell
+    // But if it's already selected, deselect it
+    function selectCell(element, obsId, calObsId) {
+      if (element == selectedCell.element) {
+        deselectCell();
+
+        qaContextMenu.style.display = "none";
+      } else {
+        deselectCell();
+        element.classList.add("selected-cell");
+        selectedCell.element = element;
+        selectedCell.obsId = obsId;
+        selectedCell.calObsId = calObsId;
+
+        // Context menu for image cells
+        qaContextMenu.style.display = "inline-flex";
+        qaContextMenu.style.left = (element.offsetLeft + element.offsetWidth) + "px";
+        qaContextMenu.style.top = element.offsetTop + "px";
+      }
+    }
+
+    function setQa(quality) {
+      // quality can be {"good", "bad", "none"}
+
+      if (quality === "good") {
+      } else if (quality === "bad") {
+
+      } else if (quality === "none") {
+
+      } else {
+        // Invalid function call; do nothing
+        return;
+      }
+
+      // Hide the context menu
+      deselectCell();
+    }
+
+  </script>
 </html>
 <style>
 .legend {
@@ -146,5 +211,27 @@ th {
 }
 .cal-unsure {
   color: #c80;
+}
+td.selected-cell {
+  border: 3px solid #800;
+  padding: 2px;
+}
+#qa-context-menu {
+  border: 1px solid black;
+}
+.context-menu {
+  border: 1px solid black;
+  display: none;
+  flex-direction: column;
+  position: absolute;
+}
+.context-menuitem {
+  padding: 5px;
+  background-color: white;
+  cursor: pointer;
+  user-select: none;
+}
+.context-menuitem:hover {
+  background-color: beige;
 }
 </style>
