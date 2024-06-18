@@ -1,4 +1,5 @@
 {% load static %}
+
 <!DOCTYPE html>
 <html>
   <head>
@@ -14,6 +15,12 @@
       <span class="calibration legend">Calibration</span>
     </div>
     <p>Times shows are <b>submission times (UTC)</b>.</p>
+    <!-- Context menu for QA = "quality assurance" -->
+    <div id="qa-context-menu" class="context-menu">
+      <div class="context-menuitem cal-usable" onclick='setQa("good");'>&#x2713;</div>
+      <div class="context-menuitem cal-unusable" onclick='setQa("bad");'>&#x274C;</div>
+      <div class="context-menuitem" onclick='setQa("none");'>Remove QA</div>
+    </div>
     <table>
       <tr>
         <th>Obs ID</th>
@@ -63,6 +70,8 @@
           <div class="qa cal-unusable">&#x274C;</div>
           {% elif tasks.apply_cal.cal_notes != '' %}
           <div class="qa cal-unsure">?</div>
+          {% else %}
+          <div class="qa"></div>
           {% endif %}
           {% endif %}
         </td>
@@ -83,12 +92,6 @@
         </td>
       </tr>
       {% endfor %}
-      <!-- Context menu for QA = "quality assurance" -->
-      <div id="qa-context-menu" class="context-menu">
-        <div class="context-menuitem cal-usable" onclick='setQa("good");'>&#x2713;</div>
-        <div class="context-menuitem cal-unusable" onclick='setQa("bad");'>&#x274C;</div>
-        <div class="context-menuitem" onclick='setQa("none");'>Remove QA</div>
-      </div>
     </table>
   </body>
   <script>
@@ -133,20 +136,56 @@
     }
 
     function setQa(quality) {
-      // quality can be {"good", "bad", "none"}
 
-      if (quality === "good") {
-      } else if (quality === "bad") {
-
-      } else if (quality === "none") {
-
-      } else {
-        // Invalid function call; do nothing
+      // quality can only be {"good", "bad", "none"}
+      if (quality !== "good" && quality !== "bad" && quality !== "none") {
         return;
       }
 
-      // Hide the context menu
-      deselectCell();
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', "{% url 'set_qa' %}");
+      xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+      xhr.setRequestHeader("Content-type", "application/json");
+
+      const data = {
+        obs: selectedCell.obsId,
+        calObs: selectedCell.calObsId,
+        quality: quality
+      };
+
+      xhr.onload = () => {
+        if (xhr.status != 200) {
+          return;
+        }
+
+        // Do other stuff here (= change symbol)
+        qaDiv = selectedCell.element.querySelector('.qa');
+
+        if (quality === "good") {
+          qaDiv.innerHTML = "&#x2713;";
+          qaDiv.element.classList.remove("cal-unusable cal-unsure");
+          qaDiv.element.classList.add("cal-usable");
+        } else if (quality === "bad") {
+          qaDiv.innerHTML = "&#x274C;";
+          qaDiv.element.classList.remove("cal-usable cal-unsure");
+          qaDiv.element.classList.add("cal-unusable");
+        } else if (quality === "none") {
+          qaDiv.innerHTML = "?";
+          qaDiv.element.classList.remove("cal-usable cal-unusable");
+          qaDiv.element.classList.add("cal-unsure");
+        }
+
+        // Hide the context menu
+        deselectCell();
+      }
+
+      console.log(data);
+      xhr.send(JSON.stringify(data));
+
+      // Set the symbol to be an hourglass
+      qaDiv = selectedCell.element.querySelector('.qa');
+      //console.log(qaDiv);
+      qaDiv.innerHTML = "&#8987;";
     }
 
   </script>
