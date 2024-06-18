@@ -37,8 +37,19 @@ def changeQaStateView(request):
     if obs is None or cal_obs is None:
         return HttpResponse(status=400)
 
-    print(data)
-    print(obs)
-    print(cal_obs)
+    # How we proceed depends on whether there is an existing row in the
+    # 'apply_cal' table for this obs-calobs pair
+    apply_cal = models.ApplyCal.objects.filter(obs=obs, cal_obs=cal_obs).first()
+    if apply_cal is None:
+        apply_cal = models.ApplyCal(obs=obs, cal_obs=cal_obs)
+
+    if data['quality'] == 'good':
+        apply_cal.usable = True
+    elif data['quality'] == 'bad':
+        apply_cal.usable = False
+    elif data['quality'] == 'none':
+        apply_cal.usable = None
+
+    apply_cal.save()
 
     return HttpResponse(status=200)
