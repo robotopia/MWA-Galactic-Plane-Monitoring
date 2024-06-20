@@ -133,7 +133,7 @@ do
         # move into place the new masked image
         rm "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" && mv "${obsnum}_deep-${subchan}-${pol}-image-pb_mask.fits" "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
 
-        BANE --cores ${GPMNCPUS} --compress --noclobber "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
+        BANE --cores 1 --compress --noclobber "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
         # TODO: Replace the redirection
         aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" > >(tee -a "${obsnum}_deep-${subchan}_aegean.log") 2> >(tee -a "${obsnum}_deep-${subchan}_aegean.log" >&2)
     fi
