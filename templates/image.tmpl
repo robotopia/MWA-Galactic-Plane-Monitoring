@@ -112,40 +112,40 @@ coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
 # Ensure this doesn't happen by force-removing existing beam files
 rm -f *beam*fits
 
-if [[ $current == *"shift"* ]] 
-then
-    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
-    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
-    chgcentre \
-            "${obsnum}.ms" \
-            ${coords}
-else 
-    echo "Detected that no shift is needed for this measurement set."
-fi
+#if [[ $current == *"shift"* ]] 
+#then
+#    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
+#    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
+#    chgcentre \
+#            "${obsnum}.ms" \
+#            ${coords}
+#else 
+#    echo "Detected that no shift is needed for this measurement set."
+#fi
 
 # Create a template image that has all the same properties as our eventual WSClean image
-if [[ ! -e "${obsnum}_template.fits" ]]
-then
-    wsclean \
-            -gridder wgridder \
-            -shift ${coords} \
-            -abs-mem ${GPMMEMORY} \
-            -mgain 1.0 \
-            -nmiter 1 \
-            -niter 0 \
-            -name ${obsnum}_template \
-            -size ${imsize} ${imsize} \
-            -scale ${scale:0:8} \
-            -pol XX \
-            -data-column ${datacolumn} \
-            -channel-range 4 5 \
-            -interval 4 5 \
-            -nwlayers ${GPMNCPUS} \
-            "${obsnum}.ms"
-
-    rm "${obsnum}_template-dirty.fits"
-    mv "${obsnum}_template-image.fits" "${obsnum}_template.fits"
-fi
+#if [[ ! -e "${obsnum}_template.fits" ]]
+#then
+#    wsclean \
+#            -gridder wgridder \
+#            -shift ${coords} \
+#            -abs-mem ${GPMMEMORY} \
+#            -mgain 1.0 \
+#            -nmiter 1 \
+#            -niter 0 \
+#            -name ${obsnum}_template \
+#            -size ${imsize} ${imsize} \
+#            -scale ${scale:0:8} \
+#            -pol XX \
+#            -data-column ${datacolumn} \
+#            -channel-range 4 5 \
+#            -interval 4 5 \
+#            -nwlayers ${GPMNCPUS} \
+#            "${obsnum}.ms"
+#
+#    rm "${obsnum}_template-dirty.fits"
+#    mv "${obsnum}_template-image.fits" "${obsnum}_template.fits"
+#fi
 
 ## Hardcoding John's PB script location for now
 ## Also hardcoding creating four sub-band beams
