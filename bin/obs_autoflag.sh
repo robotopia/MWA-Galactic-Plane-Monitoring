@@ -107,10 +107,21 @@ then
     exit 0
 fi
 
+
 # submit job
 jobid=($(${sub}))
 jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} Follow progress here:"
+
+# Add rows to the database 'processing' table that will track the progress of this submission
+#if [[ -f ${obsnum} ]]
+#then
+#    ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='flag' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+#    ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
+#else
+#
+#fi
+#gpmdb create_jobs --jobid="123456789" --task='download' --batch_file="test_batch_file" --obs_file="foo" --stderr="foo_%A.e%a" --stdout="foo_%A.o%a"
 
 for taskid in $(seq ${numfiles})
 do
