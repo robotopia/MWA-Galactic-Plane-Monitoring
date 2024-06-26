@@ -28,9 +28,8 @@ obs_manta.sh ...
 where the `...` represents whatever arguments that script requires.
 You can find the usage information for each script by running that script with `-h`, e.g. running `obs_manta.sh -h` generates the following output:
 ```
-obs_manta.sh [-p project] [-d depend] [-s timeres] [-k freqres] [-e edgeflag] [-t] obsid [obsid ...]
+gpm_pipe.sh [-d depend] [-s timeres] [-k freqres] [-e edgeflag] [-t] obsid_or_file
   -d depend         : job number for dependency (afterok)
-  -p project        : project, (must be specified, no default)
   -s timeres        : time resolution in sec. default = 2 s
   -k freqres        : freq resolution in KHz. default = 40 kHz
   -e edgeflag       : number of edge band channels flagged. default = 80
@@ -39,7 +38,7 @@ obs_manta.sh [-p project] [-d depend] [-s timeres] [-k freqres] [-e edgeflag] [-
                       and then return the submission command
   -f                : Force re-download (default is to quit with exit code 2
                       if the measurement set already exists).
-  obsid [obsid ...] : the obsid(s) to process
+  obsid_or_file     : the obsid to process OR a file containing obsids
 ```
 
 ### Running steps in sequence with dependencies

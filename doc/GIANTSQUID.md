@@ -12,9 +12,8 @@ obs_giantsquid.sh -p <epoch> -o <file_containing_obsids>
 
 The full usage is:
 ```
-obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
+obs_giantsquid.sh [-d depend] [-t] obsid [obsid ...]
   -d depend         : job number for dependency (afterok)
-  -p project        : project, (must be specified, no default)
   -t                : test. Don't submit job, just make the batch file
                       and then return the submission command
   -f                : Force re-download (default is to ignore obsids
