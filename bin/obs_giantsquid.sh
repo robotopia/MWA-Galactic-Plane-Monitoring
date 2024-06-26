@@ -241,28 +241,14 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
         jobid=($(${sub}))
         jobid=${jobid[3]}
 
-        # rename the err/output files as we now know the jobid
-        errors="${ERROR//%A/${jobid[0]}}"
-        outputs="${OUTPUT//%A/${jobid[0]}}"
-
-        # record submission
-        n=1
-        for obsid in $download_obsids
-        do
-            if [ "${GPMTRACK}" = "track" ]
-            then
-                # rename the err/output files as we now know the jobid
-                error="${errors//%j/${n}}"
-                output="${outputs//%j/${n}}"
-
-                ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
-            fi
-            ((n+=1))
-        done
-
         echo "Submitted ${script} as ${jobid}. Follow progress here:"
-        echo "STDOUT: ${outputs}"
-        echo "STDERR: ${errors}"
+
+        # Add rows to the database 'processing' table that will track the progress of this submission
+	${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='download' --batch_file="${script}" --obs_file=<(echo $download_obsids) --stderr="${error}" --stdout="${output}"
+        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
+
+        echo "STDOUTs: ${output}"
+        echo "STDERRs: ${error}"
 
     fi
 else
