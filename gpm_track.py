@@ -30,6 +30,7 @@ DIRECTIVES = (
     "create_job",
     "create_jobs",
     "queue",
+    "queue_jobs",
     "start",
     "finish",
     "fail",
@@ -239,7 +240,7 @@ def create_job(
 def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout, task):
 
     try:
-        obs_ids = np.loadtxt(obs_file)
+        obs_ids = np.loadtxt(obs_file, dtype=int)
     except:
         raise ValueError(f"Could not read file: {obs_file}")
 
@@ -253,8 +254,10 @@ def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout
     stderrs = [stderr.replace("%a", str(i+1)) for i in range(ntasks)] # "%a" -> task_id
 
     #                    v----- task_id starts at 1
-    values = [(job_id, i+1, host_cluster, obs_ids[i], user, batch_file,
-               stderrs[i], stdouts[i], task) for i in range(ntasks)]
+    values = [(job_id, i+1, host_cluster, int(obs_ids[i]), user, batch_file,
+               stderrs[i], stdouts[i], task, os.environ['GPMGITVERSION'])
+              for i in range(ntasks)]
+            
 
     conn = gpmdb_connect()
     cur = conn.cursor()
@@ -318,6 +321,19 @@ def queue_job(job_id, task_id, host_cluster, submission_time):
                    SET status='queued', submission_time=%s 
                    WHERE job_id =%s AND task_id=%s and host_cluster=%s""",
         (submission_time, job_id, task_id, host_cluster),
+    )
+    conn.commit()
+    conn.close()
+
+
+def queue_jobs(job_id, host_cluster, submission_time):
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE processing 
+                   SET status='queued', submission_time=%s 
+                   WHERE job_id =%s AND host_cluster=%s""",
+        (submission_time, job_id, host_cluster),
     )
     conn.commit()
     conn.close()
@@ -856,6 +872,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "queue":
         require(args, ["jobid", "taskid", "host_cluster", "submission_time"])
         queue_job(args.jobid, args.taskid, args.host_cluster, args.submission_time)
+
+    elif args.directive.lower() == "queue_jobs":
+        require(args, ["jobid", "host_cluster", "submission_time"])
+        queue_jobs(args.jobid, args.host_cluster, args.submission_time)
 
     elif args.directive.lower() == "obs_status":
         require(args, ["obs_id", "status"])
