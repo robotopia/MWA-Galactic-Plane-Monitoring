@@ -28,6 +28,7 @@ BASEURL = "http://ws.mwatelescope.org/metadata"
 OBS_STATUS = ("unprocessed", "checking" ,"downloaded", "calibrated", "imaged", "archived")
 DIRECTIVES = (
     "create_job",
+    "queue",
     "start",
     "finish",
     "fail",
@@ -268,6 +269,19 @@ def fail_job(job_id, task_id, host_cluster, time):
                    SET status='failed', end_time=%s 
                    WHERE job_id =%s AND task_id=%s and host_cluster=%s""",
         (time, job_id, task_id, host_cluster),
+    )
+    conn.commit()
+    conn.close()
+
+
+def queue_job(job_id, task_id, host_cluster, submission_time):
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE processing 
+                   SET status='queued', submission_time=%s 
+                   WHERE job_id =%s AND task_id=%s and host_cluster=%s""",
+        (submission_time, job_id, task_id, host_cluster),
     )
     conn.commit()
     conn.close()
@@ -817,6 +831,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "fail":
         require(args, ["jobid", "taskid", "host_cluster", "finish_time"])
         fail_job(args.jobid, args.taskid, args.host_cluster, args.finish_time)
+
+    elif args.directive.lower() == "queue":
+        require(args, ["jobid", "taskid", "host_cluster", "submission_time"])
+        queue_job(args.jobid, args.taskid, args.host_cluster, args.submission_time)
 
     elif args.directive.lower() == "obs_status":
         require(args, ["obs_id", "status"])
