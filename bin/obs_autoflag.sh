@@ -2,8 +2,7 @@
 
 usage()
 {
-echo "obs_autoflag.sh [-p project] [-a account] [-d dep] [-t] obsnum
-  -p project : project, no default
+echo "obs_autoflag.sh [-d dep] [-t] obsnum
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
@@ -24,9 +23,6 @@ do
 	d)
 	    dep=${OPTARG}
 	    ;;
-	p)
-	    project=${OPTARG}
-	    ;;
 	t)
 	    tst=1
 	    ;;
@@ -39,8 +35,8 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-# if obsid or project are empty then just pring help
-if [[ -z ${obsnum} ]] || [[ -z ${project} ]]
+# if obsid is empty then just ping help
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -61,7 +57,6 @@ else
 fi
 
 queue="-p ${GPMSTANDARDQ}"
-datadir="${GPMSCRATCH}/${project}"
 
 # set dependency
 if [[ ! -z ${dep} ]]
@@ -77,7 +72,6 @@ fi
 script="${GPMSCRIPT}/autoflag_${obsnum}.sh"
 
 cat "${GPMBASE}/templates/autoflag.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                     -e "s:DATADIR:${datadir}:g" \
                                      -e "s:HOST:${GPMCOMPUTER}:g" \
                                      -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
