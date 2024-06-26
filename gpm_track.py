@@ -27,7 +27,7 @@ BASEURL = "http://ws.mwatelescope.org/metadata"
 # gleam-x website data/ui models.
 OBS_STATUS = ("unprocessed", "checking" ,"downloaded", "calibrated", "imaged", "archived")
 DIRECTIVES = (
-    "queue",
+    "create_job",
     "start",
     "finish",
     "fail",
@@ -195,7 +195,7 @@ def check_imported_obs_id(obs_id):
     return found
 
 
-def queue_job(
+def create_job(
     job_id,
     task_id,
     host_cluster,
@@ -777,7 +777,7 @@ if __name__ == "__main__":
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    if args.directive.lower() == "queue":
+    if args.directive.lower() == "create_job":
         require(
             args,
             [
@@ -793,7 +793,7 @@ if __name__ == "__main__":
                 "task",
             ],
         )
-        queue_job(
+        create_job(
             args.jobid,
             args.taskid,
             args.host_cluster,

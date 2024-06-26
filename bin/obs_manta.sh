@@ -205,7 +205,7 @@ for obsid in $dllist
 do
     if [ "${GPMTRACK}" = "track" ]
     then
-        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
+        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" \
                         --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
     fi
     ((n+=1))

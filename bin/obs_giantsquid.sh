@@ -255,7 +255,7 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
                 error="${errors//%j/${n}}"
                 output="${outputs//%j/${n}}"
 
-                ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
+                ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
             fi
             ((n+=1))
         done
