@@ -28,6 +28,7 @@ BASEURL = "http://ws.mwatelescope.org/metadata"
 OBS_STATUS = ("unprocessed", "checking" ,"downloaded", "calibrated", "imaged", "archived")
 DIRECTIVES = (
     "create_job",
+    "create_jobs",
     "queue",
     "start",
     "finish",
@@ -230,6 +231,41 @@ def create_job(
             task,
             os.environ['GPMGITVERSION'],
         ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout, task):
+
+    try:
+        obs_ids = np.loadtxt(obs_file)
+    except:
+        raise ValueError(f"Could not read file: {obs_file}")
+
+    ntasks = len(obs_ids)
+
+    # Replace %A and %a with the appropriate numbers in the stdout and stderr filenames
+    stdout = stdout.replace("%A", str(job_id)) # "%A" -> job_id
+    stderr = stderr.replace("%A", str(job_id)) # "%A" -> job_id
+
+    stdouts = [stdout.replace("%a", str(i+1)) for i in range(ntasks)] # "%a" -> task_id
+    stderrs = [stderr.replace("%a", str(i+1)) for i in range(ntasks)] # "%a" -> task_id
+
+    #                    v----- task_id starts at 1
+    values = [(job_id, i+1, host_cluster, obs_ids[i], user, batch_file,
+               stderrs[i], stdouts[i], task) for i in range(ntasks)]
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+    cur.executemany(
+        """
+                INSERT INTO processing
+                (job_id, task_id, host_cluster, obs_id, user, batch_file, stderr, stdout, task, commit)
+                VALUES 
+                ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
+                """,
+        values,
     )
     conn.commit()
     conn.close()
@@ -755,6 +791,7 @@ if __name__ == "__main__":
     ps.add_argument("--nhours", type=int, help="Only consider the last NHOURS hours (only applies to directive recent_obs)", default=24)
     ps.add_argument("--batch_file", type=str, help="batch file name", default=None)
     ps.add_argument("--obs_id", type=int, help="observation id", default=None)
+    ps.add_argument("--obs_file", type=str, help="File containing Observation IDs", default=None)
     ps.add_argument(
         "--cal_id", type=int, help="observation id of calibration data", default=None
     )
@@ -792,33 +829,17 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
 
     if args.directive.lower() == "create_job":
-        require(
-            args,
-            [
-                "jobid",
-                "taskid",
-                "host_cluster",
-                "submission_time",
-                "obs_id",
-                "user",
-                "batch_file",
-                "stderr",
-                "stdout",
-                "task",
-            ],
-        )
-        create_job(
-            args.jobid,
-            args.taskid,
-            args.host_cluster,
-            args.submission_time,
-            args.obs_id,
-            args.user,
-            args.batch_file,
-            args.stderr,
-            args.stdout,
-            args.task,
-        )
+        require(args, ["jobid", "taskid", "host_cluster", "submission_time",
+                       "obs_id", "user", "batch_file", "stderr", "stdout", "task"])
+        create_job(args.jobid, args.taskid, args.host_cluster, args.submission_time,
+                   args.obs_id, args.user, args.batch_file, args.stderr, args.stdout,
+                   args.task)
+
+    if args.directive.lower() == "create_jobs":
+        require(args, ["jobid", "host_cluster", "obs_file", "user",
+                       "batch_file", "stderr", "stdout", "task"])
+        create_jobs(args.jobid, args.host_cluster, args.obs_file, args.user,
+                    args.batch_file, args.stderr, args.stdout, args.task)
 
     elif args.directive.lower() == "start":
         require(args, ["jobid", "taskid", "host_cluster", "start_time"])
