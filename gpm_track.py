@@ -242,7 +242,11 @@ def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout
     try:
         obs_ids = np.loadtxt(obs_file, dtype=int)
     except:
-        raise ValueError(f"Could not read file: {obs_file}")
+        logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
+        try:
+            obs_ids = [int(obs_file)]
+        except:
+            raise ValueError(f"Could not parse {obs_file} as an obs_id.")
 
     ntasks = len(obs_ids)
 
