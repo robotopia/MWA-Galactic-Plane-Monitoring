@@ -2,8 +2,7 @@
 
 usage()
 {
-echo "obs_apply_cal.sh [-p project] [-d dep] [-a account] [-z] [-t] obsid
-  -p project  : project, no default
+echo "obs_apply_cal.sh [-d dep] [-a account] [-z] [-t] obsid
   -d dep      : job number for dependency (afterok)
   -z          : Debugging mode: create a new CORRECTED_DATA column
                 instead of applying to the DATA column
@@ -23,14 +22,11 @@ account=
 debug=
 
 # parse args and set options
-while getopts ':tzd:a:p:v' OPTION
+while getopts ':tzd:a:v' OPTION
 do
     case "$OPTION" in
     d)
         dep=${OPTARG}
-        ;;
-    p)
-        project=${OPTARG}
         ;;
     z)
         debug=1
@@ -85,13 +81,11 @@ fi
 
 # Set directories
 queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/${project}"
 
 
 script="${GPMSCRIPT}/apply_cal_${obsid}.sh"
 
 cat "${GPMBASE}/templates/apply_cal.tmpl" | sed -e "s:OBSNUM:${obsid}:g" \
-                                       -e "s:BASEDIR:${base}:g" \
                                        -e "s:DEBUG:${debug}:g" \
                                        -e "s:PIPEUSER:${pipeuser}:g"  > ${script}
 

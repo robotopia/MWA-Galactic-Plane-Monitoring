@@ -21,7 +21,6 @@ fi
 echo "jobid: ${jobid}"
 echo "taskid: ${taskid}"
 
-datadir=DATADIR
 debug=DEBUG
 
 function test_fail {
@@ -34,7 +33,11 @@ fi
 
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
-cd "$datadir/${obsnum}" || exit 1
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit 1
+
 if [[ -z $debug ]]
 then
     ms_flag_by_uvdist.py "${obsnum}.ms" DATA -a

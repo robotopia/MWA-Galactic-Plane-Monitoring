@@ -33,6 +33,11 @@ function test_fail {
 
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit 1
+
 # Makes fits_warp parallelisation work on Zeus
 # export KMP_INIT_AT_FORK=false
 
@@ -50,10 +55,6 @@ separation=$(echo "60/3600" | bc -l)
 
 # Set exclusion for flux_warp internal exclusive crossmatch as ~ 3'
 exclusion=$(echo "180/3600" | bc -l)
-
-datadir=BASEDIR
-
-cd "${datadir}/${obsnum}" || exit 1
 
 metafits="${obsnum}.metafits"
 if [[ ! -e ${metafits} ]] || [[ ! -s ${metafits} ]]

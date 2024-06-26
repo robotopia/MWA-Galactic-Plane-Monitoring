@@ -2,9 +2,8 @@
 
 usage()
 {
-echo "obs_allsky.sh [-d dep] [-p project] [-z] [-t] obsnum
+echo "obs_allsky.sh [-d dep] [-z] [-t] obsnum
   -d dep     : job number for dependency (afterok)
-  -p project : project, (must be specified, no default)
   -z         : Debugging mode: image the CORRECTED_DATA column
                 instead of imaging the DATA column
   -t         : test. Don't submit job, just make the batch file
@@ -21,14 +20,11 @@ dep=
 tst=
 debug=
 # parse args and set options
-while getopts ':tzd:p:' OPTION
+while getopts ':tzd:' OPTION
 do
     case "$OPTION" in
     d)
         dep=${OPTARG}
-        ;;
-    p)
-        project=${OPTARG}
         ;;
     z)
         debug=1
@@ -46,12 +42,11 @@ shift  "$(($OPTIND -1))"
 obsnum=$1
 
 queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/$project"
 code="${GPMBASE}"
 
 # if obsid is empty then just print help
 
-if [[ -z ${obsnum} ]] || [[ -z $project ]] || [[ ! -d ${base} ]]
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -80,7 +75,6 @@ fi
 
 script="${GPMSCRIPT}/allsky_${obsnum}.sh"
 cat "${GPMBASE}/templates/allsky.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                 -e "s:BASEDIR:${base}:g" \
                                  -e "s:DEBUG:${debug}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 

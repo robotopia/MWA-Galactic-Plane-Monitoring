@@ -29,7 +29,6 @@ then
 fi
 }
 
-base=BASEDIR
 debug=DEBUG
 
 # apply calibration
@@ -39,7 +38,10 @@ calfile="$(${GPMBASE}/bin/aux_getcal.sh $obsnum)"
 test_fail $?
 echo "According to aux_getcal.sh, the calibration file is \"${calfile}\""
 
-cd "${base}/${obsnum}" || exit
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit
 
 # If in debugging mode, apply to the CORRECTED_DATA column
 if [[ ! -z $debug ]]

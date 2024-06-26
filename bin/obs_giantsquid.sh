@@ -6,9 +6,8 @@ time_request="02:00:00"
 
 usage()
 {
-echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
+echo "obs_giantsquid.sh [-d depend] [-t] obsid [obsid ...]
   -d depend         : job number for dependency (afterok)
-  -p project        : project, (must be specified, no default)
   -t                : test. Don't submit job, just make the batch file
                       and then return the submission command
   -T                : override the default SLURM time request  (${time_request})
@@ -27,13 +26,11 @@ force=
 sim_jobs="$GPMMAXARRAYJOBS"
 
 # parse args and set options
-while getopts ':tT:hd:p:o:fn:' OPTION
+while getopts ':tT:hd:o:fn:' OPTION
 do
     case "$OPTION" in
     d)
         depend="--dependency=afterok:${OPTARG}" ;;
-    p)
-        project=${OPTARG} ;;
     t)
         tst=1 ;;
     T)
@@ -65,16 +62,8 @@ then
     exit 0
 fi
 
-# If project is not specified then exit
-if [[ -z $project ]]
-then
-    echo "Project (-p) must be supplied"
-    usage
-    exit 1;
-fi
-
-# Use project in working directory
-base="${GPMSCRATCH}/${project}"
+# Make sure the scratch directory exists
+base="${GPMSCRATCH}"
 mkdir -p "$base"
 cd "${base}"
 
@@ -87,7 +76,9 @@ then
     filtered_obsids=
     for obsid in $obsids
     do
-        ms="$obsid/$obsid.ms"
+        epoch="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+
+        ms="$epoch/$obsid/$obsid.ms"
         if [[ ! -d $ms ]] # If the measurement set does NOT exist
         then
             filtered_obsids="$filtered_obsids $obsid"
@@ -100,7 +91,8 @@ else
     echo "Force option chosen. DANGER! Existing measurement sets will now be deleted!!"
     for obsid in $obsids
     do
-        cd "${base}/${obsid}"
+        epoch="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+        cd "${base}/$epoch/${obsid}"
         rm -rf "$obsid.ms"
     done
 fi

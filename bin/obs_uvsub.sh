@@ -5,7 +5,6 @@
 usage()
 {
 echo "obs_uvsub.sh [-d dep] [-a account] [-t] obsnum
-  -p project : project, no default
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
@@ -22,7 +21,7 @@ tst=
 debug=
 
 # parse args and set options
-while getopts ':ta:d:p:z' OPTION
+while getopts ':ta:d:z' OPTION
 do
     case "$OPTION" in
 	d)
@@ -31,9 +30,6 @@ do
     a)
         account=${OPTARG}
         ;;
-	p)
-	    project=${OPTARG}
-	    ;;
 	t)
 	    tst=1
 	    ;;
@@ -49,8 +45,8 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-# if obsid or project are empty then just print help
-if [[ -z ${obsnum} || -z ${project} ]]
+# if obsid is empty then just print help
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -75,7 +71,6 @@ else
 fi
 
 queue="-p ${GPMSTANDARDQ}"
-datadir="${GPMSCRATCH}/$project"
 
 # set dependency
 if [[ ! -z ${dep} ]]
@@ -91,7 +86,6 @@ fi
 script="${GPMSCRIPT}/uvsub_${obsnum}.sh"
 
 cat "${GPMBASE}/templates/uvsub.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                     -e "s:DATADIR:${datadir}:g" \
                                      -e "s:DEBUG:${debug}:g" \
                                      -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 

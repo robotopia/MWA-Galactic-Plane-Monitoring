@@ -29,11 +29,12 @@ then
 fi
 }
 
-# Go to working directory
-base=BASEDIR
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit 1
 
 # Update database
-cd "${base}" || exit
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 datadir="${base}/${obsnum}"

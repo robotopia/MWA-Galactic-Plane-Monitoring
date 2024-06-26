@@ -2,9 +2,8 @@
 
 usage()
 {
-echo "obs_tfilter.sh [-d dep] [-p project] [-a account] [-t] obsnum
+echo "obs_tfilter.sh [-d dep] [-a account] [-t] obsnum
   -d dep     : job number for dependency (afterok)
-  -p project : project, (must be specified, no default)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
   obsnum     : the obsid to process, or a text file of obsids (newline separated). 
@@ -18,24 +17,21 @@ pipeuser="${GPMUSER}"
 dep=
 tst=
 # parse args and set options
-while getopts ':td:a:p:' OPTION
+while getopts ':td:a:' OPTION
 do
     case "$OPTION" in
-	d)
-	    dep=${OPTARG}
-	    ;;
+    d)
+        dep=${OPTARG}
+        ;;
     a)
         account=${OPTARG}
         ;;
-    p)
-        project=${OPTARG}
+    t)
+        tst=1
         ;;
-	t)
-	    tst=1
-	    ;;
-	? | : | h)
-	    usage
-	    ;;
+    ? | : | h)
+        usage
+        ;;
   esac
 done
 # set the obsid to be the first non option
@@ -43,11 +39,10 @@ shift  "$(($OPTIND -1))"
 obsnum=$1
 
 queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/$project"
 
 # if obsid is empty then just print help
 
-if [[ -z ${obsnum} ]] || [[ -z $project ]] || [[ ! -d ${base} ]]
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -66,7 +61,6 @@ fi
 
 script="${GPMSCRIPT}/tfilter_${obsnum}.sh"
 cat "${GPMBASE}/templates/tfilter.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                 -e "s:BASEDIR:${base}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
 output="${GPMLOG}/tfilter_${obsnum}.o%A"

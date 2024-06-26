@@ -31,7 +31,6 @@ fi
 }
 
 # Set version number
-base=BASEDIR
 debug=DEBUG
 # Which data column to image
 if [[ ! -z $debug ]]
@@ -51,10 +50,11 @@ msigma=3
 tsigma=1
 
 # Update database
-cd "${base}" || exit
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
-datadir="${base}/${obsnum}"
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
 cd "${datadir}" || exit
 
 # TODO: replace with find

@@ -2,8 +2,7 @@
 
 usage()
 {
-echo "obs_uvflag.sh [-p project] [-d dep] [-a account] [-z] [-t] obsnum
-  -p project : project, no default
+echo "obs_uvflag.sh [-d dep] [-a account] [-z] [-t] obsnum
   -d dep     : job number for dependency (afterok)
   -z         : Debugging mode: flag the CORRECTED_DATA column
                 instead of flagging the DATA column
@@ -22,35 +21,32 @@ tst=
 debug=
 
 # parse args and set options
-while getopts ':tza:d:p:' OPTION
+while getopts ':tza:d:' OPTION
 do
     case "$OPTION" in
-	d)
-	    dep=${OPTARG}
-	    ;;
+    d)
+        dep=${OPTARG}
+        ;;
     a)
         account=${OPTARG}
         ;;
-	p)
-	    project=${OPTARG}
-	    ;;
-	z)
-	    debug=1
-	    ;;
-	t)
-	    tst=1
-	    ;;
-	? | : | h)
-	    usage
-	    ;;
+    z)
+        debug=1
+        ;;
+    t)
+        tst=1
+        ;;
+    ? | : | h)
+        usage
+        ;;
   esac
 done
 # set the obsid to be the first non option
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-# if obsid or project are empty then just pring help
-if [[ -z ${obsnum} || -z ${project} ]]
+# if obsid is empty then just ping help
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -75,7 +71,6 @@ else
 fi
 
 queue="-p ${GPMSTANDARDQ}"
-datadir="${GPMSCRATCH}/${project}"
 
 # set dependency
 if [[ ! -z ${dep} ]]
@@ -91,7 +86,6 @@ fi
 script="${GPMSCRIPT}/uvflag_${obsnum}.sh"
 
 cat "${GPMBASE}/templates/uvflag.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                     -e "s:DATADIR:${datadir}:g" \
                                      -e "s:DEBUG:${debug}:g" \
                                      -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
