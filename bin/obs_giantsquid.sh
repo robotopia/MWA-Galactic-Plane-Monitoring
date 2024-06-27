@@ -67,6 +67,8 @@ base="${GPMSCRATCH}"
 mkdir -p "$base"
 cd "${base}"
 
+epochs="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epochs --obs_file ${obsid_file})"
+
 # The logic for the code within the following for-loop is documented
 # in a flowchart diagram in doc/images/giantsquid.png
 
@@ -76,7 +78,7 @@ then
     filtered_obsids=
     for obsid in $obsids
     do
-        epoch="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsid})"
+        epoch=$(echo "${epochs}" | grep "${obsid}" | cut -d' ' -f2)
 
         ms="$epoch/$obsid/$obsid.ms"
         if [[ ! -d $ms ]] # If the measurement set does NOT exist
@@ -91,7 +93,7 @@ else
     echo "Force option chosen. DANGER! Existing measurement sets will now be deleted!!"
     for obsid in $obsids
     do
-        epoch="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsid})"
+        epoch=$(echo "${epochs}" | grep "${obsid}" | cut -d' ' -f2)
         cd "${base}/$epoch/${obsid}"
         rm -rf "$obsid.ms"
     done

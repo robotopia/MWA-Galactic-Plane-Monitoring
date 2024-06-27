@@ -44,6 +44,7 @@ DIRECTIVES = (
     "acacia_path",
     "ls_obs_for_cal",
     "obs_epoch",
+    "obs_epochs",
     "epoch_obs",
     "obs_processing",
     "epoch_processing",
@@ -420,6 +421,35 @@ def observation_epoch(obs_id):
     res = cur.fetchall()
     if len(res) > 0:
         print(res[0][0])
+    conn.close()
+
+def observation_epochs(obs_file):
+    """Retrieves the epoch for the observations listed in a given file
+
+    Args:
+        obs_file (str): file containing observation ids whose epochs are to be retrieved
+    """
+    try:
+        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file)])
+    except:
+        raise ValueError(f"Could not load obsids from file '{obs_file}'")
+
+    format_string = ','.join(['%s'] * len(obs_ids)) # = '%s,%s,%s,...'
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # Find out if a row with this obs_id and cal_id already exists
+    cur.execute(f"""
+            SELECT obs_id, epoch FROM epoch
+            WHERE obs_id IN ({format_string})
+            """,
+            tuple(obs_ids),
+            )
+
+    res = cur.fetchall()
+    for row in res:
+        print(f'{row[0]} {row[1]}')
     conn.close()
 
 def epoch_observations(epoch):
@@ -888,6 +918,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "obs_epoch":
         require(args, ["obs_id"])
         observation_epoch(args.obs_id)
+
+    elif args.directive.lower() == "obs_epochs":
+        require(args, ["obs_file"])
+        observation_epochs(args.obs_file)
 
     elif args.directive.lower() == "epoch_obs":
         require(args, ["epoch"])
