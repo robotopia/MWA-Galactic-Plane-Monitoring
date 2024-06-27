@@ -76,7 +76,7 @@ then
     filtered_obsids=
     for obsid in $obsids
     do
-        epoch="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+        epoch="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsid})"
 
         ms="$epoch/$obsid/$obsid.ms"
         if [[ ! -d $ms ]] # If the measurement set does NOT exist
@@ -91,7 +91,7 @@ else
     echo "Force option chosen. DANGER! Existing measurement sets will now be deleted!!"
     for obsid in $obsids
     do
-        epoch="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+        epoch="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsid})"
         cd "${base}/$epoch/${obsid}"
         rm -rf "$obsid.ms"
     done
