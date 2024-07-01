@@ -128,7 +128,7 @@ jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
 # Add rows to the database 'processing' table that will track the progress of this submission
-${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='apply_cal' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='apply_cal' --batch_file="${script}" --obs_file="${obsid}" --stderr="${error}" --stdout="${output}"
 ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
 echo "STDOUTs: ${output}"

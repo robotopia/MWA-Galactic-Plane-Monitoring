@@ -50,7 +50,7 @@ voption=
 init_depend=
 
 # parse args and set options
-while getopts 'hs:k:e:gc:ziF:S:P:ftv' OPTION
+while getopts 'd:hs:k:e:gc:ziF:S:P:ftv' OPTION
 do
     case "$OPTION" in
         z)
