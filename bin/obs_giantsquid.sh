@@ -238,11 +238,11 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
         echo "Submitted ${script} as ${jobid}. Follow progress here:"
 
         # Add rows to the database 'processing' table that will track the progress of this submission
-	${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='download' --batch_file="${script}" --obs_file=<(echo $download_obsids) --stderr="${error}" --stdout="${output}"
+	${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='download' --batch_file="${script}" --obs_file=<(echo $download_obsids) --stderr="${ERROR}" --stdout="${OUTPUT}"
         ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
-        echo "STDOUTs: ${output}"
-        echo "STDERRs: ${error}"
+        echo "STDOUTs: ${OUTPUT}"
+        echo "STDERRs: ${ERROR}"
 
     fi
 else
