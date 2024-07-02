@@ -240,6 +240,7 @@ def create_job(
 
 def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout, task):
 
+    # Retrieve the obs_ids from the provided obs_file
     try:
         obs_ids = np.loadtxt(obs_file, dtype=int)
     except:
@@ -250,6 +251,10 @@ def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout
             raise ValueError(f"Could not parse {obs_file} as an obs_id.")
 
     ntasks = len(obs_ids)
+
+    # In the task = 'apply_cal' case, the cal_obs_id field has to be populated with
+    # the current value of the cal_obs_id field in the observation table.
+    # TODO ...
 
     # Replace %A and %a with the appropriate numbers in the stdout and stderr filenames
     stdout = stdout.replace("%A", str(job_id)) # "%A" -> job_id
@@ -275,6 +280,7 @@ def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout
                 """,
         values,
     )
+
     conn.commit()
     conn.close()
 
