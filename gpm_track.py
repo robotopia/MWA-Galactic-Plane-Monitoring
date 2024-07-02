@@ -242,7 +242,7 @@ def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout
 
     # Retrieve the obs_ids from the provided obs_file
     try:
-        obs_ids = np.loadtxt(obs_file, dtype=int)
+        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file)])
     except:
         logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
         try:
@@ -252,10 +252,6 @@ def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout
 
     ntasks = len(obs_ids)
 
-    # In the task = 'apply_cal' case, the cal_obs_id field has to be populated with
-    # the current value of the cal_obs_id field in the observation table.
-    # TODO ...
-
     # Replace %A and %a with the appropriate numbers in the stdout and stderr filenames
     stdout = stdout.replace("%A", str(job_id)) # "%A" -> job_id
     stderr = stderr.replace("%A", str(job_id)) # "%A" -> job_id
@@ -263,20 +259,30 @@ def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout
     stdouts = [stdout.replace("%a", str(i+1)) for i in range(ntasks)] # "%a" -> task_id
     stderrs = [stderr.replace("%a", str(i+1)) for i in range(ntasks)] # "%a" -> task_id
 
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # In the task = 'apply_cal' case, the cal_obs_id field has to be populated with
+    # the current value of the cal_obs_id field in the observation table.
+    if task == 'apply_cal':
+        format_string = ','.join(['%s'] * len(obs_ids)) # = '%s,%s,%s,...'
+        cur.execute(f"SELECT cal_obs_id FROM observation WHERE obs_id IN ({format_string})", obs_ids)
+        cal_obs_ids = cur.fetchall()
+    else:
+        cal_obs_ids = tuple([(None,) for i in range(ntasks)])
+
     #                    v----- task_id starts at 1
     values = [(job_id, i+1, host_cluster, int(obs_ids[i]), user, batch_file,
-               stderrs[i], stdouts[i], task, os.environ['GPMGITVERSION'])
+               stderrs[i], stdouts[i], task, os.environ['GPMGITVERSION'], cal_obs_ids[i][0],)
               for i in range(ntasks)]
             
 
-    conn = gpmdb_connect()
-    cur = conn.cursor()
     cur.executemany(
         """
                 INSERT INTO processing
-                (job_id, task_id, host_cluster, obs_id, user, batch_file, stderr, stdout, task, commit)
+                (job_id, task_id, host_cluster, obs_id, user, batch_file, stderr, stdout, task, commit, cal_obs_id)
                 VALUES 
-                ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
+                ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
                 """,
         values,
     )
