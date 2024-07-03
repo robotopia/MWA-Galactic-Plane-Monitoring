@@ -40,22 +40,22 @@ else
     datacolumn="DATA"
 fi
 
-epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
-datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
-
-cd "${datadir}" || exit 1
-
 # WSClean suffixes for subchannels and MFS
 subchans="MFS 0000 0001 0002 0003"
 # Minimum uvw for self-calibration (in lambda)
 minuv=75
 # S/N Level at which to choose masked pixels for deepclean
-msigma=5
+msigma=3
 # S/N Threshold at which to stop cleaning
-tsigma=3
+tsigma=1
 
 # Update database
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit
 
 # TODO: replace with find
 metafits="$(ls -t ${obsnum}*metafits* | head -1)"
@@ -74,8 +74,8 @@ metafits="$(ls -t ${obsnum}*metafits* | head -1)"
 #    robust=-2.0
 #elif [[ $obsnum -ge 1191580576 ]] ; then
     telescope="MWALB"
-    basescale=0.6
-    imsize=8000
+    basescale=2.0
+    imsize=20000
     robust=0.5
 #fi
 
@@ -112,88 +112,33 @@ coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
 # Ensure this doesn't happen by force-removing existing beam files
 rm -f *beam*fits
 
-#if [[ $current == *"shift"* ]] 
-#then
-#    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
-#    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
-#    chgcentre \
-#            "${obsnum}.ms" \
-#            ${coords}
-#else 
-#    echo "Detected that no shift is needed for this measurement set."
-#fi
+if [[ $current == *"shift"* ]] 
+then
+    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
+    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
+    chgcentre \
+            "${obsnum}.ms" \
+            ${coords}
+else 
+    echo "Detected that no shift is needed for this measurement set."
+fi
 
-# Create a template image that has all the same properties as our eventual WSClean image
-#if [[ ! -e "${obsnum}_template.fits" ]]
-#then
-#    wsclean \
-#            -gridder wgridder \
-#            -shift ${coords} \
-#            -abs-mem ${GPMMEMORY} \
-#            -mgain 1.0 \
-#            -nmiter 1 \
-#            -niter 0 \
-#            -name ${obsnum}_template \
-#            -size ${imsize} ${imsize} \
-#            -scale ${scale:0:8} \
-#            -pol XX \
-#            -data-column ${datacolumn} \
-#            -channel-range 4 5 \
-#            -interval 4 5 \
-#            -nwlayers ${GPMNCPUS} \
-#            "${obsnum}.ms"
-#
-#    rm "${obsnum}_template-dirty.fits"
-#    mv "${obsnum}_template-image.fits" "${obsnum}_template.fits"
-#fi
-
-## Hardcoding John's PB script location for now
-## Also hardcoding creating four sub-band beams
-#pols="XX XXi XY XYi YX YXi YY YYi"
-#
-#for n in {0..3}
-#do
-#    i=$((n * 6))
-#    cstart=${chans[$i]}
-#    j=$((i + 5))
-#    cend=${chans[$j]}
-#    for pol in $pols
-#    do 
-#        if [[ ! -e "${obsnum}_000${n}-${pol}-beam.fits" ]]
-#        then
-#            lookup_jones.py ${obsnum} _template.fits ${obsnum}_000${n}- -c $cstart-$cend --wsclean_names
-#            if [[ $? != 0 ]]
-#            then
-#                echo "The script lookup_jones.py failed. Stopping now."
-#                exit 1
-#            fi
-#        fi
-#        ln -s "${obsnum}_000${n}-${pol}-beam.fits" "${obsnum}_deep-000${n}-beam-${pol}.fits"
-#    done
-#done
 
 # Set the pipefail so the test_fail does not test for tee
 set -o pipefail
 # Deep clean (for pipeline)
 wsclean \
-        -gridder wgridder \
         -shift ${coords} \
         -abs-mem ${GPMMEMORY} \
-        $multiscale \
-        -nmiter 5 \
-        -niter 10000000 \
-        -reuse-primary-beam \
-        -apply-primary-beam \
+        -nmiter 1 \
+        -niter 0 \
         -auto-mask ${msigma} \
         -auto-threshold ${tsigma} \
-        -name ${obsnum}_deep \
+        -name ${obsnum}_allsky \
         -size ${imsize} ${imsize} \
         -scale ${scale:0:8} \
         -weight briggs ${robust} \
-        -pol I,Q,U,V \
-        -join-channels \
-        -channels-out 4 \
-        -fit-spectral-pol 2 \
+        -pol I \
         -data-column ${datacolumn} \
         "${obsnum}.ms" | tee wsclean.log
 # Outputs have the generic format:
@@ -203,45 +148,3 @@ test_fail $?
 track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
 track_task.py obs_status --obs_id="${obsnum}" --status='imaged'
 
-### TODO fix wsclean2gleam.py so it more cleverly handles lack of polarisation
-# Rename files
-#for subchan in $subchans
-#do
-#    deep="${obsnum}_deep-$subchan-image.fits"
-#    newfilename=`wsclean2gleam.py -f $deep -v $version`
-#    mv $deep $newfilename
-#done
-
-# Shallow clean for a test
-# wsclean $multiscale \
-#     -nmiter 1 \
-#     -niter 100 \
-#     -reuse-primary-beam \
-#     -apply-primary-beam \
-#     -auto-mask $msigma \
-#     -auto-threshold $tsigma \
-#     -name ${obsnum}_deep \
-#     -size ${imsize} ${imsize} \
-#     -scale ${scale:0:8} \
-#     -weight briggs ${robust} \
-#     -pol I \
-#     -join-channels \
-#     -channels-out 4 \
-#     -data-column ${datacolumn} \
-#     ${obsnum}.ms | tee wsclean.log
-
-#    -save-source-list \
-#    -fit-spectral-pol 1 \
-#    ${obsnum}.ms | tee wsclean.log"
-
-## Shallow clean (for workshop)
-#wsclean -nmiter 1 -niter 100000 \
-#    -scale ${scale:0:8} \
-#    -mgain 0.85 \
-#    -auto-threshold 8 \
-#    -name ${obsnum} \
-#    -size ${imsize} ${imsize} \
-#    -pol I \
-#    -weight briggs ${robust} \
-#    -data-column CORRECTED_DATA \
-#    ${obsnum}.ms

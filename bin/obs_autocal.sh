@@ -5,7 +5,6 @@
 usage()
 {
 echo "obs_autocal.sh [-d dep] [-F frac] [-S sfrac] [-t] obsnum
-  -p project : project, no default
   -d dep     : job number for dependency (afterok)
   -i         : disable the ionospheric metric tests (default = False)
   -t         : test. Don't submit job, just make the batch file
@@ -30,7 +29,7 @@ frac=0.25
 sthresh=0.4
 
 # parse args and set options
-while getopts ':tia:d:p:f:s:' OPTION
+while getopts ':tia:d:f:s:' OPTION
 do
     case "$OPTION" in
 	d)
@@ -39,32 +38,29 @@ do
     a)
         account=${OPTARG}
         ;;
-	p)
-	    project=${OPTARG}
-	    ;;
-	i)
-	    ion=
-	    ;;
-	t)
-	    tst=1
-	    ;;
+    i)
+        ion=
+        ;;
+    t)
+        tst=1
+        ;;
     F)
         frac=${OPTARG}
         ;;
     S) 
         sthresh=${OPTARG}
         ;;
-	? | : | h)
-	    usage
-	    ;;
+    ? | : | h)
+        usage
+        ;;
   esac
 done
 # set the obsid to be the first non option
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-# if obsid or project are empty then just print help
-if [[ -z ${obsnum} || -z ${project} ]]
+# if obsid is empty then just print help
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -85,7 +81,6 @@ else
 fi
 
 queue="-p ${GPMSTANDARDQ}"
-datadir="${GPMSCRATCH}/$project"
 
 # set dependency
 if [[ ! -z ${dep} ]]
@@ -101,7 +96,6 @@ fi
 script="${GPMSCRIPT}/autocal_${obsnum}.sh"
 
 cat "${GPMBASE}/templates/autocal.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                     -e "s:DATADIR:${datadir}:g" \
                                      -e "s:IONOTEST:${ion}:g" \
                                      -e "s:PIPEUSER:${pipeuser}:g" \
                                      -e "s:FRACTION:${frac}:g" \
@@ -138,26 +132,33 @@ jobid=($(${sub}))
 jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
-for taskid in $(seq ${numfiles})
-    do
-    # rename the err/output files as we now know the jobid
-    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+# Add rows to the database 'processing' table that will track the progress of this submission
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='calibrate' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
-    if [[ -f ${obsnum} ]]
-    then
-        obs=$(sed -n -e "${taskid}"p "${obsnum}")
-    else
-        obs=$obsnum
-    fi
+echo "STDOUTs: ${output}"
+echo "STDERRs: ${error}"
 
-    if [ "${GPMTRACK}" = "track" ]
-    then
-        # record submission
-        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid}" --taskid="${taskid}" --task='calibrate' --submission_time="$(date +%s)" --batch_file="${script}" \
-                            --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
-    fi
-
-    echo "$obsoutput"
-    echo "$obserror"
-done
+#for taskid in $(seq ${numfiles})
+#    do
+#    # rename the err/output files as we now know the jobid
+#    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#
+#    if [[ -f ${obsnum} ]]
+#    then
+#        obs=$(sed -n -e "${taskid}"p "${obsnum}")
+#    else
+#        obs=$obsnum
+#    fi
+#
+#    if [ "${GPMTRACK}" = "track" ]
+#    then
+#        # record submission
+#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='calibrate' --submission_time="$(date +%s)" --batch_file="${script}" \
+#                            --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
+#    fi
+#
+#    echo "$obsoutput"
+#    echo "$obserror"
+#done

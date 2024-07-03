@@ -2,7 +2,7 @@
 
 usage()
 {
-echo "obs_image.sh [-d dep] [-z] [-t] obsnum
+echo "obs_allsky.sh [-d dep] [-z] [-t] obsnum
   -d dep     : job number for dependency (afterok)
   -z         : Debugging mode: image the CORRECTED_DATA column
                 instead of imaging the DATA column
@@ -29,12 +29,12 @@ do
     z)
         debug=1
         ;;
-    t)
-        tst=1
-        ;;
-    ? | : | h)
-        usage
-        ;;
+	t)
+	    tst=1
+	    ;;
+	? | : | h)
+	    usage
+	    ;;
   esac
 done
 # set the obsid to be the first non option
@@ -66,10 +66,6 @@ if [[ -f ${obsnum} ]]
 then
     numfiles=$(wc -l "${obsnum}" | awk '{print $1}')
     jobarray="--array=1-${numfiles}"
-    if [ ! -z ${GPMMAXARRAYJOBS} ]
-    then
-        jobarray="${jobarray}%${GPMMAXARRAYJOBS}"
-    fi
 else
     numfiles=1
     jobarray=''
@@ -77,13 +73,13 @@ fi
 
 # start the real program
 
-script="${GPMSCRIPT}/image_${obsnum}.sh"
-cat "${GPMBASE}/templates/image.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
+script="${GPMSCRIPT}/allsky_${obsnum}.sh"
+cat "${GPMBASE}/templates/allsky.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                  -e "s:DEBUG:${debug}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
-output="${GPMLOG}/image_${obsnum}.o%A"
-error="${GPMLOG}/image_${obsnum}.e%A"
+output="${GPMLOG}/allsky_${obsnum}.o%A"
+error="${GPMLOG}/allsky_${obsnum}.e%A"
 
 if [[ -f ${obsnum} ]]
 then
@@ -101,7 +97,7 @@ echo "#!/bin/bash
 # Git commit: ${GPMGITVERSION}
 
 #SBATCH --export=ALL
-#SBATCH --time=10:00:00
+#SBATCH --time=05:00:00
 #SBATCH --mem=${GPMABSMEMORY}G
 #SBATCH --clusters=${GPMCOMPUTER}
 #SBATCH --output=${output}
@@ -145,7 +141,7 @@ jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
 # Add rows to the database 'processing' table that will track the progress of this submission
-${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='image' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='allsky' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
 ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
 echo "STDOUTs: ${output}"
@@ -167,7 +163,7 @@ echo "STDERRs: ${error}"
 #    if [ "${GPMTRACK}" = "track" ]
 #    then
 #        # record submission
-#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='image' --submission_time="$(date +%s)" \
+#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='allsky' --submission_time="$(date +%s)" \
 #                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
 #    fi
 #

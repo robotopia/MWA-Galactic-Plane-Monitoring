@@ -2,9 +2,8 @@
 
 usage()
 {
-echo "obs_calcleakage [-d dep] [-p project] [-a account] [-z] [-t] obsnum
+echo "obs_calcleakage [-d dep] [-a account] [-z] [-t] obsnum
   -d dep     : job number for dependency (afterok)
-  -p project : project, (must be specified, no default)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
   obsnum     : the obsid to process, or a text file of obsids (newline separated). 
@@ -18,24 +17,21 @@ pipeuser="${GPMUSER}"
 dep=
 tst=
 # parse args and set options
-while getopts ':td:a:p:' OPTION
+while getopts ':td:a:' OPTION
 do
     case "$OPTION" in
-	d)
-	    dep=${OPTARG}
-	    ;;
+    d)
+        dep=${OPTARG}
+        ;;
     a)
         account=${OPTARG}
         ;;
-    p)
-        project=${OPTARG}
+    t)
+        tst=1
         ;;
-	t)
-	    tst=1
-	    ;;
-	? | : | h)
-	    usage
-	    ;;
+    ? | : | h)
+        usage
+        ;;
   esac
 done
 # set the obsid to be the first non option
@@ -43,12 +39,11 @@ shift  "$(($OPTIND -1))"
 obsnum=$1
 
 queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/$project"
 code="${GPMBASE}"
 
 # if obsid is empty then just print help
 
-if [[ -z ${obsnum} ]] || [[ -z $project ]] || [[ ! -d ${base} ]]
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -81,8 +76,7 @@ fi
 # start the real program
 
 script="${GPMSCRIPT}/calcleakage_${obsnum}.sh"
-cat "${GPMBASE}/templates/calcleakage.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                 -e "s:BASEDIR:${base}:g" > "${script}"
+cat "${GPMBASE}/templates/calcleakage.tmpl" | sed -e "s:OBSNUM:${obsnum}:g"  > "${script}"
 
 output="${GPMLOG}/calcleakage_${obsnum}.o%A"
 error="${GPMLOG}/calcleakage_${obsnum}.e%A"
@@ -115,27 +109,34 @@ jobid=${jobid[3]}
 
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
-for taskid in $(seq ${numfiles})
-    do
-    # rename the err/output files as we now know the jobid
-    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+# Add rows to the database 'processing' table that will track the progress of this submission
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='calcleakage' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
-    if [[ -f ${obsnum} ]]
-    then
-        obs=$(sed -n -e "${taskid}"p "${obsnum}")
-    else
-        obs=$obsnum
-    fi
+echo "STDOUTs: ${output}"
+echo "STDERRs: ${error}"
 
-    if [ "${GPMTRACK}" = "track" ]
-    then
-        # record submission
-        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid}" --taskid="${taskid}" --task='calcleakage' --submission_time="$(date +%s)" \
-                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
-    fi
-
-    echo "$obsoutput"
-    echo "$obserror"
-done
-
+#for taskid in $(seq ${numfiles})
+#    do
+#    # rename the err/output files as we now know the jobid
+#    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#
+#    if [[ -f ${obsnum} ]]
+#    then
+#        obs=$(sed -n -e "${taskid}"p "${obsnum}")
+#    else
+#        obs=$obsnum
+#    fi
+#
+#    if [ "${GPMTRACK}" = "track" ]
+#    then
+#        # record submission
+#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='calcleakage' --submission_time="$(date +%s)" \
+#                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
+#    fi
+#
+#    echo "$obsoutput"
+#    echo "$obserror"
+#done
+#

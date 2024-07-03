@@ -2,8 +2,7 @@
 
 usage()
 {
-echo "obs_autoflag.sh [-p project] [-a account] [-d dep] [-t] obsnum
-  -p project : project, no default
+echo "obs_autoflag.sh [-d dep] [-t] obsnum
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
@@ -24,9 +23,6 @@ do
 	d)
 	    dep=${OPTARG}
 	    ;;
-	p)
-	    project=${OPTARG}
-	    ;;
 	t)
 	    tst=1
 	    ;;
@@ -39,8 +35,8 @@ done
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-# if obsid or project are empty then just pring help
-if [[ -z ${obsnum} ]] || [[ -z ${project} ]]
+# if obsid is empty then just ping help
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -61,7 +57,6 @@ else
 fi
 
 queue="-p ${GPMSTANDARDQ}"
-datadir="${GPMSCRATCH}/${project}"
 
 # set dependency
 if [[ ! -z ${dep} ]]
@@ -77,7 +72,6 @@ fi
 script="${GPMSCRIPT}/autoflag_${obsnum}.sh"
 
 cat "${GPMBASE}/templates/autoflag.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                     -e "s:DATADIR:${datadir}:g" \
                                      -e "s:HOST:${GPMCOMPUTER}:g" \
                                      -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
@@ -113,32 +107,39 @@ then
     exit 0
 fi
 
+
 # submit job
 jobid=($(${sub}))
 jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} Follow progress here:"
 
-for taskid in $(seq ${numfiles})
-do
-    # rename the err/output files as we now know the jobid
-    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-    
-    if [[ -f ${obsnum} ]]
-    then
-        obs=$(sed -n -e "${taskid}"p "${obsnum}")
-    else
-        obs=$obsnum
-    fi
+# Add rows to the database 'processing' table that will track the progress of this submission
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='flag' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
-    if [ "${GPMTRACK}" = "track" ]
-    then
-        # record submission
-        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid}" --taskid="${taskid}" --task='flag' --submission_time="$(date +%s)"\
-                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
-    fi
+echo "STDOUTs: ${output}"
+echo "STDERRs: ${error}"
 
-    echo "$obsoutput"
-    echo "$obserror"
-done
+#for taskid in $(seq ${numfiles})
+#do
+#    # rename the err/output files as we now know the jobid
+#    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#    
+#    if [[ -f ${obsnum} ]]
+#    then
+#        obs=$(sed -n -e "${taskid}"p "${obsnum}")
+#    else
+#        obs=$obsnum
+#    fi
+#
+#    if [ "${GPMTRACK}" = "track" ]
+#    then
+#        # record submission
+#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='flag' --submission_time="$(date +%s)" --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
+#    fi
+#
+#    echo "$obsoutput"
+#    echo "$obserror"
+#done
 

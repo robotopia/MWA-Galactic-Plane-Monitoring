@@ -35,7 +35,6 @@ function test_fail {
 }
 
 # Set version number
-base=BASEDIR
 debug=DEBUG
 # Which data column to image
 if [[ ! -z $debug ]]
@@ -46,11 +45,12 @@ else
 fi
 
 # Update database
-cd "${base}" || exit
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
-datadir="${base}/${obsnum}"
-cd "${datadir}" || exit
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit 1
 
 # TODO: replace with find
 metafits="$(ls -t ${obsnum}*metafits* | head -1)"

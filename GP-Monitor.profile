@@ -4,7 +4,9 @@ echo "Loading the Galactic Plane Monitoring profile"
 
 # Any system module file should be loaded here. Aside from singularity and slurm there are
 # no additional modules that are expected to be needed
-module load singularity
+# But see 'acacia' script which needs rclone
+export GPMSINGMOD=$(module -t --default -r avail "^singularity$" 2>&1 | grep -v ':' | head -1)
+module load $GPMSINGMOD
 
 # Before running obs_*.sh scripts ensure the completed configuration file has been sourced. 
 # As a convention when specifying paths below, please ensure that they do not end with a trailing '/', as
@@ -36,6 +38,8 @@ export GPMCONTAINER="${GPMSCRATCH}/gleamx.img"  # Absolute path to the GPM singu
                                               # This container is still being evaluated and available when requested from Tim Galvin. In a future update
                                               # the container will be automatically downloaded alongside other data dependencies. 
 export OPENBLAS_NUM_THREADS=1   # This is needed for running (the latest version, >=v3.4) of wsclean
+
+export GPMMAXARRAYJOBS=20
 
 # SLURM compute schedular information
 export GPMCOMPUTER=${cluster}    # Maintained for compatability. Describes the name of the cluster, e.g. "magnus". 

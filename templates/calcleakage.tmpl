@@ -29,11 +29,12 @@ then
 fi
 }
 
-# Go to working directory
-base=BASEDIR
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit 1
 
 # Update database
-cd "${base}" || exit
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 datadir="${base}/${obsnum}"
@@ -47,13 +48,14 @@ cd "${datadir}" || exit
 # However, the postimage step assumes filenames without the _fixed part. So,
 # we first move the Stokes V image to a different name, and ask calc_leakage
 # to output the fixed image with the original (non-"_fixed") name:
-mv -v ${obsnum}_deep-${subchan}-V-image-pb.fits \
-      ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits
 
 # Calculate the Stokes V leakage, and fix
 subchans="0000 0001 0002 0003 MFS"
 for subchan in $subchans
 do
+    mv -v ${obsnum}_deep-${subchan}-V-image-pb.fits \
+          ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits
+
     calc_leakage.py \
         --Inonpb ${obsnum}_deep-${subchan}-I-image.fits \
         --Ipb ${obsnum}_deep-${subchan}-I-image-pb.fits \

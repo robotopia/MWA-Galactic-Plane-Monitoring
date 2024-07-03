@@ -33,6 +33,11 @@ function test_fail {
 
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit 1
+
 # Makes fits_warp parallelisation work on Zeus
 # export KMP_INIT_AT_FORK=false
 
@@ -50,10 +55,6 @@ separation=$(echo "60/3600" | bc -l)
 
 # Set exclusion for flux_warp internal exclusive crossmatch as ~ 3'
 exclusion=$(echo "180/3600" | bc -l)
-
-datadir=BASEDIR
-
-cd "${datadir}/${obsnum}" || exit 1
 
 metafits="${obsnum}.metafits"
 if [[ ! -e ${metafits} ]] || [[ ! -s ${metafits} ]]
@@ -133,7 +134,7 @@ do
         # move into place the new masked image
         rm "${obsnum}_deep-${subchan}-${pol}-image-pb.fits" && mv "${obsnum}_deep-${subchan}-${pol}-image-pb_mask.fits" "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
 
-        BANE --cores ${GPMNCPUS} --compress --noclobber "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
+        BANE --cores 1 --compress --noclobber "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
         # TODO: Replace the redirection
         aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb.fits" > >(tee -a "${obsnum}_deep-${subchan}_aegean.log") 2> >(tee -a "${obsnum}_deep-${subchan}_aegean.log" >&2)
     fi

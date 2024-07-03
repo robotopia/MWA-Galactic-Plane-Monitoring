@@ -2,8 +2,7 @@
 
 usage()
 {
-echo "obs_uvflag.sh [-p project] [-d dep] [-a account] [-z] [-t] obsnum
-  -p project : project, no default
+echo "obs_uvflag.sh [-d dep] [-a account] [-z] [-t] obsnum
   -d dep     : job number for dependency (afterok)
   -z         : Debugging mode: flag the CORRECTED_DATA column
                 instead of flagging the DATA column
@@ -22,35 +21,32 @@ tst=
 debug=
 
 # parse args and set options
-while getopts ':tza:d:p:' OPTION
+while getopts ':tza:d:' OPTION
 do
     case "$OPTION" in
-	d)
-	    dep=${OPTARG}
-	    ;;
+    d)
+        dep=${OPTARG}
+        ;;
     a)
         account=${OPTARG}
         ;;
-	p)
-	    project=${OPTARG}
-	    ;;
-	z)
-	    debug=1
-	    ;;
-	t)
-	    tst=1
-	    ;;
-	? | : | h)
-	    usage
-	    ;;
+    z)
+        debug=1
+        ;;
+    t)
+        tst=1
+        ;;
+    ? | : | h)
+        usage
+        ;;
   esac
 done
 # set the obsid to be the first non option
 shift  "$(($OPTIND -1))"
 obsnum=$1
 
-# if obsid or project are empty then just pring help
-if [[ -z ${obsnum} || -z ${project} ]]
+# if obsid is empty then just ping help
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -65,13 +61,16 @@ if [[ -f "${obsnum}" ]]
 then
     numfiles=$(wc -l "${obsnum}" | awk '{print $1}')
     jobarray="--array=1-${numfiles}"
+    if [ ! -z ${GPMMAXARRAYJOBS} ]
+    then
+        jobarray="${jobarray}%${GPMMAXARRAYJOBS}"
+    fi
 else
     numfiles=1
     jobarray=''
 fi
 
 queue="-p ${GPMSTANDARDQ}"
-datadir="${GPMSCRATCH}/${project}"
 
 # set dependency
 if [[ ! -z ${dep} ]]
@@ -87,7 +86,6 @@ fi
 script="${GPMSCRIPT}/uvflag_${obsnum}.sh"
 
 cat "${GPMBASE}/templates/uvflag.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                     -e "s:DATADIR:${datadir}:g" \
                                      -e "s:DEBUG:${debug}:g" \
                                      -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
@@ -129,26 +127,33 @@ jobid=${jobid[3]}
 
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
-for taskid in $(seq ${numfiles})
-    do
-    # rename the err/output files as we now know the jobid
-    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+# Add rows to the database 'processing' table that will track the progress of this submission
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='uvflag' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
-    if [[ -f ${obsnum} ]]
-    then
-        obs=$(sed -n -e "${taskid}"p "${obsnum}")
-    else
-        obs=$obsnum
-    fi
+echo "STDOUTs: ${output}"
+echo "STDERRs: ${error}"
 
-    if [ "${GPMTRACK}" = "track" ]
-    then
-        # record submission
-        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid}" --taskid="${taskid}" --task='uvflag' --submission_time="$(date +%s)" \
-                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
-    fi
-
-    echo "${obsoutput}"
-    echo "${obserror}"
-done
+#for taskid in $(seq ${numfiles})
+#    do
+#    # rename the err/output files as we now know the jobid
+#    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#
+#    if [[ -f ${obsnum} ]]
+#    then
+#        obs=$(sed -n -e "${taskid}"p "${obsnum}")
+#    else
+#        obs=$obsnum
+#    fi
+#
+#    if [ "${GPMTRACK}" = "track" ]
+#    then
+#        # record submission
+#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='uvflag' --submission_time="$(date +%s)" \
+#                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
+#    fi
+#
+#    echo "${obsoutput}"
+#    echo "${obserror}"
+#done

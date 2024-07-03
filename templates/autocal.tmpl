@@ -4,7 +4,6 @@ set -x
 pipeuser=PIPEUSER
 obsnum=OBSNUM
 cores=${GPMNCPUS}
-datadir=DATADIR
 fraction=FRACTION
 sthresh=STHRESH
 ion=IONOTEST # Perform ionospheric triage? (1 means yes, blank means no)
@@ -25,7 +24,10 @@ fi
 
 metafits="${obsnum}.metafits"
 
-cd "${datadir}/${obsnum}" || exit
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+
+cd "${datadir}" || exit
 
 echo "jobid: ${jobid}"
 echo "taskid: ${taskid}"
@@ -95,8 +97,6 @@ echo "Calibrator is $calibrator"
     vo2model.py --catalogue="${obsnum}_cropped_catalogue.fits" --point --output="${calmodel}" \
                 --racol=RAJ2000 --decol=DEJ2000 --acol=a --bcol=b --pacol=pa --fluxcol=S_200 --alphacol=alpha
 #fi
-
-cd "${datadir}/${obsnum}" || exit
 
 # Check whether the phase centre has already changed
 # Calibration will fail if it has, so measurement set must be shifted back to its original position

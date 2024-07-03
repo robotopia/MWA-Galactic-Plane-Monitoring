@@ -2,10 +2,8 @@
 
 usage()
 {
-echo "obs_image.sh [-d dep] [-z] [-t] obsnum
+echo "obs_acacia.sh [-d dep] [-t] obsnum
   -d dep     : job number for dependency (afterok)
-  -z         : Debugging mode: image the CORRECTED_DATA column
-                instead of imaging the DATA column
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
   obsnum     : the obsid to process, or a text file of obsids (newline separated). 
@@ -18,16 +16,12 @@ pipeuser="${GPMUSER}"
 #initial variables
 dep=
 tst=
-debug=
 # parse args and set options
-while getopts ':tzd:' OPTION
+while getopts ':td:' OPTION
 do
     case "$OPTION" in
     d)
         dep=${OPTARG}
-        ;;
-    z)
-        debug=1
         ;;
     t)
         tst=1
@@ -77,13 +71,12 @@ fi
 
 # start the real program
 
-script="${GPMSCRIPT}/image_${obsnum}.sh"
-cat "${GPMBASE}/templates/image.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                 -e "s:DEBUG:${debug}:g" \
+script="${GPMSCRIPT}/acacia_${obsnum}.sh"
+cat "${GPMBASE}/templates/acacia.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
-output="${GPMLOG}/image_${obsnum}.o%A"
-error="${GPMLOG}/image_${obsnum}.e%A"
+output="${GPMLOG}/acacia_${obsnum}.o%A"
+error="${GPMLOG}/acacia_${obsnum}.e%A"
 
 if [[ -f ${obsnum} ]]
 then
@@ -101,30 +94,28 @@ echo "#!/bin/bash
 # Git commit: ${GPMGITVERSION}
 
 #SBATCH --export=ALL
-#SBATCH --time=10:00:00
-#SBATCH --mem=${GPMABSMEMORY}G
+#SBATCH --time=01:00:00
 #SBATCH --clusters=${GPMCOMPUTER}
 #SBATCH --output=${output}
 #SBATCH --error=${error}
-#SBATCH ${GPMNCPULINE}
+#SBATCH --cpus-per-task=1
 #SBATCH --account=${GPMACCOUNT}
-#SBATCH --partition=${GPMSTANDARDQ}
+#SBATCH --partition=${GPMCOPYQ}
 " > ${sbatch_script}
-
-if [ ! -z ${GPMTASKLINE} ]
-then
-    echo "#SBATCH ${GPMTASKLINE}" >> ${sbatch_script}
-fi
 
 if [ ! -z ${jobarray} ]
 then
     echo "#SBATCH ${jobarray}" >> ${sbatch_script}
 fi
 
+RCLONE_MODULE="$(module -t --default -r avail "^rclone$" 2>&1 | grep -v ':' | head -1)"
+
 echo "
 source ${GPMPROFILE}
 
-singularity run ${GPMCONTAINER} ${script}
+module load ${RCLONE_MODULE}
+
+${script}
 " >> ${sbatch_script}
 
 sub="sbatch ${depend} --export=ALL ${sbatch_script}"
@@ -145,7 +136,7 @@ jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
 # Add rows to the database 'processing' table that will track the progress of this submission
-${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='image' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='acacia' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
 ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
 echo "STDOUTs: ${output}"
@@ -167,7 +158,7 @@ echo "STDERRs: ${error}"
 #    if [ "${GPMTRACK}" = "track" ]
 #    then
 #        # record submission
-#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='image' --submission_time="$(date +%s)" \
+#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='acacia' --submission_time="$(date +%s)" \
 #                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
 #    fi
 #

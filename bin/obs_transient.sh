@@ -2,9 +2,8 @@
 
 usage()
 {
-echo "obs_transient.sh [-d dep] [-p project] [-z] [-t] obsnum
+echo "obs_transient.sh [-d dep] [-z] [-t] obsnum
   -d dep     : job number for dependency (afterok)
-  -p project : project, (must be specified, no default)
   -z         : Debugging mode: image the CORRECTED_DATA column
                 instead of imaging the DATA column
   -t         : test. Don't submit job, just make the batch file
@@ -21,24 +20,21 @@ dep=
 tst=
 debug=
 # parse args and set options
-while getopts ':tzd:a:p:' OPTION
+while getopts ':tzd:a:' OPTION
 do
     case "$OPTION" in
-	d)
-	    dep=${OPTARG}
-	    ;;
-    p)
-        project=${OPTARG}
+    d)
+        dep=${OPTARG}
         ;;
     z)
         debug=1
         ;;
-	t)
-	    tst=1
-	    ;;
-	? | : | h)
-	    usage
-	    ;;
+    t)
+        tst=1
+        ;;
+    ? | : | h)
+        usage
+        ;;
   esac
 done
 # set the obsid to be the first non option
@@ -46,12 +42,11 @@ shift  "$(($OPTIND -1))"
 obsnum=$1
 
 queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/$project"
 code="${GPMBASE}"
 
 # if obsid is empty then just print help
 
-if [[ -z ${obsnum} ]] || [[ -z $project ]] || [[ ! -d ${base} ]]
+if [[ -z ${obsnum} ]]
 then
     usage
 fi
@@ -85,7 +80,6 @@ fi
 
 script="${GPMSCRIPT}/transient_${obsnum}.sh"
 cat "${GPMBASE}/templates/transient.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                 -e "s:BASEDIR:${base}:g" \
                                  -e "s:DEBUG:${debug}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
@@ -104,8 +98,6 @@ chmod 755 "${script}"
 echo '#!/bin/bash' > ${script}.sbatch
 echo "export OPENBLAS_NUM_THREADS=1" >> ${script}.sbatch
 echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
-# HACK to fix broken BANE
-#echo "singularity run /astro/mwasci/tgalvin/gleamx_testing_small.img ${script}" >> ${script}.sbatch
 
 sub="sbatch --begin=now+5minutes --export=ALL  --time=4:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
 sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
@@ -123,27 +115,34 @@ jobid=${jobid[3]}
 
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
-for taskid in $(seq ${numfiles})
-    do
-    # rename the err/output files as we now know the jobid
-    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+# Add rows to the database 'processing' table that will track the progress of this submission
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='transient' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
-    if [[ -f ${obsnum} ]]
-    then
-        obs=$(sed -n -e "${taskid}"p "${obsnum}")
-    else
-        obs=$obsnum
-    fi
+echo "STDOUTs: ${output}"
+echo "STDERRs: ${error}"
 
-    if [ "${GPMTRACK}" = "track" ]
-    then
-        # record submission
-        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid}" --taskid="${taskid}" --task='transient' --submission_time="$(date +%s)" \
-                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
-    fi
-
-    echo "$obsoutput"
-    echo "$obserror"
-done
-
+#for taskid in $(seq ${numfiles})
+#    do
+#    # rename the err/output files as we now know the jobid
+#    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
+#
+#    if [[ -f ${obsnum} ]]
+#    then
+#        obs=$(sed -n -e "${taskid}"p "${obsnum}")
+#    else
+#        obs=$obsnum
+#    fi
+#
+#    if [ "${GPMTRACK}" = "track" ]
+#    then
+#        # record submission
+#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='transient' --submission_time="$(date +%s)" \
+#                            --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
+#    fi
+#
+#    echo "$obsoutput"
+#    echo "$obserror"
+#done
+#

@@ -2,7 +2,7 @@
 
 usage()
 {
-echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
+echo "gpm_pipe [options] [-h] commands obsid_or_file
   options     : Options passed to the listed commands. The command-specific options are:
 
                 Command    | Option       | Description
@@ -31,11 +31,11 @@ echo "gpm_pipe [options] [-h] commands obsid [obsid ...]
                     apply_cal, autocal, autoflag, calcleakage, image, postimage,
                     postimageI, postimageV, tfilter, transient, uvflag
 
-  obsid       : The obsid(s) of the observation(s) to be processed
+  obsid_or_file : The obsid of the observation to be processed OR a file containing one or more newline-separated obsids
 
   EXAMPLE:
 
-      gpm_pipe.sh \"autoflag apply_cal uvflag image transient postimage-I postimage-V tfilter\" OBSID1 OBSID2 ..." 1>&2;
+      gpm_pipe.sh \"autoflag apply_cal uvflag image transient postimage-I postimage-V tfilter\" 1234567890" 1>&2;
 }
 
 commands=
@@ -50,7 +50,7 @@ voption=
 init_depend=
 
 # parse args and set options
-while getopts 'hs:k:e:gc:ziF:S:P:ftv' OPTION
+while getopts 'd:hs:k:e:gc:ziF:S:P:ftv' OPTION
 do
     case "$OPTION" in
         z)
@@ -90,82 +90,69 @@ then
     exit 1
 fi
 
-# Set the obsids to be the list of all remaining arguments
+# Set the obsid_or_file to be the list of all remaining arguments
 shift
-obsids="$*"
-if [[ -z $obsids ]]
+obsid_or_file="$1"
+if [[ -z $obsid_or_file ]]
 then
     usage
-    echo "No obsids supplied. Nothing to be done."
+    echo "No obsid or file supplied. Nothing to be done."
     exit 1
 fi
 
 # Common singularity command to run the python code
 SINGCMD="singularity exec ${GPMCONTAINER} "
 
-for obsid in $obsids
+depend=$init_depend
+if [[ ! -z $depend ]]
+then
+    echo " Dependent on: $depend"
+fi
+
+# Loop through commands
+for cmd in $commands
 do
-    # Get the obsid's epoch from the database to use as the "project directory"
-    epoch=$(${SINGCMD} "${GPMBASE}/gpm_track.py" obs_epoch --obs_id $obsid)
-    datadir="${GPMSCRATCH}/${epoch}"
-    mkdir -p $datadir
-    cd $datadir
+    # Construct options
+    case "$cmd" in
+        autoflag)
+            options="$toption" ;;
+        autocal)
+            options="$ioption $toption $Foption $Soption" ;;
+        apply_cal)
+            options="$zoption $toption $voption" ;;
+        calcleakage)
+            options="$toption" ;;
+        image)
+            options="$zoption $toption" ;;
+        postimage)
+            options="$toption $Poption" ;;
+        postimageI)
+            options="$toption" ;;
+        postimageV)
+            options="$toption" ;;
+        tfilter)
+            options="$toption" ;;
+        transient)
+            options="$zoption $toption" ;;
+        uvflag)
+            options="$zoption $toption" ;;
+        uvsub)
+            options="$zoption $toption" ;;
+        *)
+            echo "unrecognised command: $cmd. Exiting"
+            exit 1 ;;
+    esac
 
-    echo "============================="
-    echo " OBSID: $obsid"
+    # Construct the whole command
+    obs_cmd="obs_${cmd}.sh ${depend} ${options} $obsid_or_file"
+    echo "Running $cmd: $obs_cmd"
 
-    depend=$init_depend
-    if [[ ! -z $depend ]]
+    # Run it, and parse the output for the job number (to use as a dependency for the next job)
+    dep=($(${obs_cmd} | tee /dev/tty))
+    if [[ "$?" != 0 ]]
     then
-        echo " Dependent on: $depend"
+        echo "Command \"${cmd}\" failed. Stopping..."
+	exit 1
     fi
-
-    # Loop through commands
-    for cmd in $commands
-    do
-        # Construct options
-        case "$cmd" in
-            autoflag)
-                options="$toption" ;;
-            autocal)
-                options="$ioption $toption $Foption $Soption" ;;
-            apply_cal)
-                options="$zoption $toption $voption" ;;
-            calcleakage)
-                options="$toption" ;;
-            image)
-                options="$zoption $toption" ;;
-            postimage)
-                options="$toption $Poption" ;;
-            postimageI)
-                options="$toption" ;;
-            postimageV)
-                options="$toption" ;;
-            tfilter)
-                options="$toption" ;;
-            transient)
-                options="$zoption $toption" ;;
-            uvflag)
-                options="$zoption $toption" ;;
-            uvsub)
-                options="$zoption $toption" ;;
-            *)
-                echo "unrecognised command: $cmd. Exiting"
-                exit 1 ;;
-        esac
-
-        # Construct the whole command
-        obs_cmd="obs_${cmd}.sh ${depend} ${options} -p $epoch $obsid"
-        echo "-----------------------------"
-        echo "Running $cmd: $obs_cmd"
-
-        # Run it, and parse the output for the job number (to use as a dependency for the next job)
-        dep=($(${obs_cmd} | tee /dev/tty))
-        if [[ "$?" != 0 ]]
-        then
-            echo "Command \"${cmd}\" failed for ${obsid}. Moving to next obsid..."
-            break
-        fi
-        depend="-d ${dep[3]}"
-    done
+    depend="-d ${dep[3]}"
 done

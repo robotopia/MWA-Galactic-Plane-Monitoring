@@ -6,7 +6,6 @@ set -x
 
 pipeuser=PIPEUSER
 obsnum=OBSNUM
-datadir=BASEDIR
 
 # NOTE: The current GPM Profile script will set up the PYTHONPATH
 # to search the GPMBASE folder and the Csanda's transient filter
@@ -14,10 +13,10 @@ datadir=BASEDIR
 # so long as the script names are unique they should be found and
 # executed without issue. 
 
-#epoch=$(${GPMBASE}/determine_epoch.py --obsid $obsnum)
-#epoch="Epoch${epoch}"
+epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
+datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
 
-cd "$datadir/$obsnum/" || exit 1
+cd "${datadir}" || exit 1
 
 filtercmds=('space_corr 8 time_corr_gauss_multi 0 time_max 0' 'space_corr 8 stdev 0' 'space_corr 8 spike 0 time_max 0' 'space_corr 8  time_corr_gauss 0 time_max 0' 'time_corr_gauss 0 time_max 0')
 filternames=('tcgm' 'std' 'spike' 'dbtcg' 'tcg')

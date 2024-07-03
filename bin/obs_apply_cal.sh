@@ -2,8 +2,7 @@
 
 usage()
 {
-echo "obs_apply_cal.sh [-p project] [-d dep] [-a account] [-z] [-t] obsid
-  -p project  : project, no default
+echo "obs_apply_cal.sh [-d dep] [-a account] [-z] [-t] obsid
   -d dep      : job number for dependency (afterok)
   -z          : Debugging mode: create a new CORRECTED_DATA column
                 instead of applying to the DATA column
@@ -23,14 +22,11 @@ account=
 debug=
 
 # parse args and set options
-while getopts ':tzd:a:p:v' OPTION
+while getopts ':tzd:a:v' OPTION
 do
     case "$OPTION" in
     d)
         dep=${OPTARG}
-        ;;
-    p)
-        project=${OPTARG}
         ;;
     z)
         debug=1
@@ -85,13 +81,11 @@ fi
 
 # Set directories
 queue="-p ${GPMSTANDARDQ}"
-base="${GPMSCRATCH}/${project}"
 
 
 script="${GPMSCRIPT}/apply_cal_${obsid}.sh"
 
 cat "${GPMBASE}/templates/apply_cal.tmpl" | sed -e "s:OBSNUM:${obsid}:g" \
-                                       -e "s:BASEDIR:${base}:g" \
                                        -e "s:DEBUG:${debug}:g" \
                                        -e "s:PIPEUSER:${pipeuser}:g"  > ${script}
 
@@ -133,26 +127,33 @@ jobid=${jobid[3]}
 
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
-for taskid in $(seq ${numfiles})
-    do
-    # rename the err/output files as we now know the jobid
-    obserror=`echo ${error} | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/"`
-    obsoutput=`echo ${output} | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/"`
+# Add rows to the database 'processing' table that will track the progress of this submission
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='apply_cal' --batch_file="${script}" --obs_file="${obsid}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
-    if [[ -f ${obsid} ]]
-    then
-        obs=$(sed -n -e ${taskid}p ${obsid})
-    else
-        obs=$obsid
-    fi
+echo "STDOUTs: ${output}"
+echo "STDERRs: ${error}"
 
-    if [ "${GPMTRACK}" = "track" ]
-    then
-        # record submission
-        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid=${jobid} --taskid=${taskid} --task='apply_cal' --submission_time=`date +%s` --batch_file=${script} \
-                            --obs_id=${obs} --stderr=${obserror} --stdout=${obsoutput}
-    fi
-
-    echo $obsoutput
-    echo $obserror
-done
+#for taskid in $(seq ${numfiles})
+#    do
+#    # rename the err/output files as we now know the jobid
+#    obserror=`echo ${error} | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/"`
+#    obsoutput=`echo ${output} | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/"`
+#
+#    if [[ -f ${obsid} ]]
+#    then
+#        obs=$(sed -n -e ${taskid}p ${obsid})
+#    else
+#        obs=$obsid
+#    fi
+#
+#    if [ "${GPMTRACK}" = "track" ]
+#    then
+#        # record submission
+#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid=${jobid} --taskid=${taskid} --task='apply_cal' --submission_time=`date +%s` --batch_file=${script} \
+#                            --obs_id=${obs} --stderr=${obserror} --stdout=${obsoutput}
+#    fi
+#
+#    echo $obsoutput
+#    echo $obserror
+#done

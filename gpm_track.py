@@ -27,7 +27,10 @@ BASEURL = "http://ws.mwatelescope.org/metadata"
 # gleam-x website data/ui models.
 OBS_STATUS = ("unprocessed", "checking" ,"downloaded", "calibrated", "imaged", "archived")
 DIRECTIVES = (
+    "create_job",
+    "create_jobs",
     "queue",
+    "queue_jobs",
     "start",
     "finish",
     "fail",
@@ -41,12 +44,14 @@ DIRECTIVES = (
     "acacia_path",
     "ls_obs_for_cal",
     "obs_epoch",
+    "obs_epochs",
     "epoch_obs",
     "obs_processing",
     "epoch_processing",
     "calibrations",
     "last_obs",
     "recent_obs",
+    "obs_type",
 )
 
 
@@ -194,7 +199,7 @@ def check_imported_obs_id(obs_id):
     return found
 
 
-def queue_job(
+def create_job(
     job_id,
     task_id,
     host_cluster,
@@ -233,6 +238,59 @@ def queue_job(
     conn.close()
 
 
+def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout, task):
+
+    # Retrieve the obs_ids from the provided obs_file
+    try:
+        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file)])
+    except:
+        logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
+        try:
+            obs_ids = [int(obs_file)]
+        except:
+            raise ValueError(f"Could not parse {obs_file} as an obs_id.")
+
+    ntasks = len(obs_ids)
+
+    # Replace %A and %a with the appropriate numbers in the stdout and stderr filenames
+    stdout = stdout.replace("%A", str(job_id)) # "%A" -> job_id
+    stderr = stderr.replace("%A", str(job_id)) # "%A" -> job_id
+
+    stdouts = [stdout.replace("%a", str(i+1)) for i in range(ntasks)] # "%a" -> task_id
+    stderrs = [stderr.replace("%a", str(i+1)) for i in range(ntasks)] # "%a" -> task_id
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # In the task = 'apply_cal' case, the cal_obs_id field has to be populated with
+    # the current value of the cal_obs_id field in the observation table.
+    if task == 'apply_cal':
+        format_string = ','.join(['%s'] * len(obs_ids)) # = '%s,%s,%s,...'
+        cur.execute(f"SELECT cal_obs_id FROM observation WHERE obs_id IN ({format_string})", obs_ids)
+        cal_obs_ids = cur.fetchall()
+    else:
+        cal_obs_ids = tuple([(None,) for i in range(ntasks)])
+
+    #                    v----- task_id starts at 1
+    values = [(job_id, i+1, host_cluster, int(obs_ids[i]), user, batch_file,
+               stderrs[i], stdouts[i], task, os.environ['GPMGITVERSION'], cal_obs_ids[i][0],)
+              for i in range(ntasks)]
+            
+
+    cur.executemany(
+        """
+                INSERT INTO processing
+                (job_id, task_id, host_cluster, obs_id, user, batch_file, stderr, stdout, task, commit, cal_obs_id)
+                VALUES 
+                ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
+                """,
+        values,
+    )
+
+    conn.commit()
+    conn.close()
+
+
 def start_job(job_id, task_id, host_cluster, start_time):
     conn = gpmdb_connect()
     cur = conn.cursor()
@@ -267,6 +325,32 @@ def fail_job(job_id, task_id, host_cluster, time):
                    SET status='failed', end_time=%s 
                    WHERE job_id =%s AND task_id=%s and host_cluster=%s""",
         (time, job_id, task_id, host_cluster),
+    )
+    conn.commit()
+    conn.close()
+
+
+def queue_job(job_id, task_id, host_cluster, submission_time):
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE processing 
+                   SET status='queued', submission_time=%s 
+                   WHERE job_id =%s AND task_id=%s and host_cluster=%s""",
+        (submission_time, job_id, task_id, host_cluster),
+    )
+    conn.commit()
+    conn.close()
+
+
+def queue_jobs(job_id, host_cluster, submission_time):
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE processing 
+                   SET status='queued', submission_time=%s 
+                   WHERE job_id =%s AND host_cluster=%s""",
+        (submission_time, job_id, host_cluster),
     )
     conn.commit()
     conn.close()
@@ -349,6 +433,35 @@ def observation_epoch(obs_id):
     res = cur.fetchall()
     if len(res) > 0:
         print(res[0][0])
+    conn.close()
+
+def observation_epochs(obs_file):
+    """Retrieves the epoch for the observations listed in a given file
+
+    Args:
+        obs_file (str): file containing observation ids whose epochs are to be retrieved
+    """
+    try:
+        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file)])
+    except:
+        raise ValueError(f"Could not load obsids from file '{obs_file}'")
+
+    format_string = ','.join(['%s'] * len(obs_ids)) # = '%s,%s,%s,...'
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # Find out if a row with this obs_id and cal_id already exists
+    cur.execute(f"""
+            SELECT obs_id, epoch FROM epoch
+            WHERE obs_id IN ({format_string})
+            """,
+            tuple(obs_ids),
+            )
+
+    res = cur.fetchall()
+    for row in res:
+        print(f'{row[0]} {row[1]}')
     conn.close()
 
 def epoch_observations(epoch):
@@ -636,6 +749,30 @@ def calibrations():
     conn.close()
 
 
+def obs_type(obs_id):
+    """Prints either 'target' or 'calibration' depending on the type of observation.
+    If obs_id doesn't exist, prints nothing.
+
+    Args:
+        obs_id (int): observation id whose type is to be printed
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    # Find out if a row with this obs_id and cal_id already exists
+    cur.execute("""
+            SELECT calibration FROM observation
+            WHERE obs_id = %s
+            """,
+            (obs_id,),
+            )
+
+    res = cur.fetchone()
+    if res is not None:
+        print('calibration' if res[0] == 1 else 'target')
+    conn.close()
+
+
 def ion_update(obs_id, ion_path):
     with open(ion_path, "rb") as in_file:
         arr = np.loadtxt(in_file, delimiter=",", skiprows=1)
@@ -716,6 +853,7 @@ if __name__ == "__main__":
     ps.add_argument("--nhours", type=int, help="Only consider the last NHOURS hours (only applies to directive recent_obs)", default=24)
     ps.add_argument("--batch_file", type=str, help="batch file name", default=None)
     ps.add_argument("--obs_id", type=int, help="observation id", default=None)
+    ps.add_argument("--obs_file", type=str, help="File containing Observation IDs", default=None)
     ps.add_argument(
         "--cal_id", type=int, help="observation id of calibration data", default=None
     )
@@ -752,34 +890,18 @@ if __name__ == "__main__":
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
-    if args.directive.lower() == "queue":
-        require(
-            args,
-            [
-                "jobid",
-                "taskid",
-                "host_cluster",
-                "submission_time",
-                "obs_id",
-                "user",
-                "batch_file",
-                "stderr",
-                "stdout",
-                "task",
-            ],
-        )
-        queue_job(
-            args.jobid,
-            args.taskid,
-            args.host_cluster,
-            args.submission_time,
-            args.obs_id,
-            args.user,
-            args.batch_file,
-            args.stderr,
-            args.stdout,
-            args.task,
-        )
+    if args.directive.lower() == "create_job":
+        require(args, ["jobid", "taskid", "host_cluster", "submission_time",
+                       "obs_id", "user", "batch_file", "stderr", "stdout", "task"])
+        create_job(args.jobid, args.taskid, args.host_cluster, args.submission_time,
+                   args.obs_id, args.user, args.batch_file, args.stderr, args.stdout,
+                   args.task)
+
+    if args.directive.lower() == "create_jobs":
+        require(args, ["jobid", "host_cluster", "obs_file", "user",
+                       "batch_file", "stderr", "stdout", "task"])
+        create_jobs(args.jobid, args.host_cluster, args.obs_file, args.user,
+                    args.batch_file, args.stderr, args.stdout, args.task)
 
     elif args.directive.lower() == "start":
         require(args, ["jobid", "taskid", "host_cluster", "start_time"])
@@ -793,6 +915,14 @@ if __name__ == "__main__":
         require(args, ["jobid", "taskid", "host_cluster", "finish_time"])
         fail_job(args.jobid, args.taskid, args.host_cluster, args.finish_time)
 
+    elif args.directive.lower() == "queue":
+        require(args, ["jobid", "taskid", "host_cluster", "submission_time"])
+        queue_job(args.jobid, args.taskid, args.host_cluster, args.submission_time)
+
+    elif args.directive.lower() == "queue_jobs":
+        require(args, ["jobid", "host_cluster", "submission_time"])
+        queue_jobs(args.jobid, args.host_cluster, args.submission_time)
+
     elif args.directive.lower() == "obs_status":
         require(args, ["obs_id", "status"])
         observation_status(args.obs_id, args.status)
@@ -800,6 +930,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "obs_epoch":
         require(args, ["obs_id"])
         observation_epoch(args.obs_id)
+
+    elif args.directive.lower() == "obs_epochs":
+        require(args, ["obs_file"])
+        observation_epochs(args.obs_file)
 
     elif args.directive.lower() == "epoch_obs":
         require(args, ["epoch"])
@@ -855,6 +989,10 @@ if __name__ == "__main__":
 
     elif args.directive.lower() == "calibrations":
         calibrations()
+
+    elif args.directive.lower() == "obs_type":
+        require(args, ["obs_id"])
+        obs_type(args.obs_id)
 
     elif args.directive.lower() == "last_obs":
         get_last_obs()

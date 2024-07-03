@@ -6,16 +6,15 @@ time_request="02:00:00"
 
 usage()
 {
-echo "obs_giantsquid.sh [-p project] [-d depend] [-t] obsid [obsid ...]
+echo "obs_giantsquid.sh [-d depend] [-t] obsid [obsid ...]
   -d depend         : job number for dependency (afterok)
-  -p project        : project, (must be specified, no default)
   -t                : test. Don't submit job, just make the batch file
                       and then return the submission command
   -T                : override the default SLURM time request  (${time_request})
   -f                : Force re-download (default is to ignore obsids
                       if the measurement set already exists).
   -n N              : When downloading, limit number of simultaneous array jobs
-                      to N (default = 5)
+                      to N (default = \$GPMMAXARRAYJOBS = $GPMMAXARRAYJOBS)
   -o obsid_file     : the path to a file containing obsid(s) to process" 1>&2;
 }
 
@@ -24,16 +23,14 @@ pipeuser=${GPMUSER}
 depend=
 tst=
 force=
-sim_jobs=5
+sim_jobs="$GPMMAXARRAYJOBS"
 
 # parse args and set options
-while getopts ':tT:hd:p:o:fn:' OPTION
+while getopts ':tT:hd:o:fn:' OPTION
 do
     case "$OPTION" in
     d)
         depend="--dependency=afterok:${OPTARG}" ;;
-    p)
-        project=${OPTARG} ;;
     t)
         tst=1 ;;
     T)
@@ -65,18 +62,12 @@ then
     exit 0
 fi
 
-# If project is not specified then exit
-if [[ -z $project ]]
-then
-    echo "Project (-p) must be supplied"
-    usage
-    exit 1;
-fi
-
-# Use project in working directory
-base="${GPMSCRATCH}/${project}"
+# Make sure the scratch directory exists
+base="${GPMSCRATCH}"
 mkdir -p "$base"
 cd "${base}"
+
+epochs="$(singularity exec $GPMCONTAINER ${GPMBASE}/gpm_track.py obs_epochs --obs_file ${obsid_file})"
 
 # The logic for the code within the following for-loop is documented
 # in a flowchart diagram in doc/images/giantsquid.png
@@ -87,7 +78,9 @@ then
     filtered_obsids=
     for obsid in $obsids
     do
-        ms="$obsid/$obsid.ms"
+        epoch=$(echo "${epochs}" | grep "${obsid}" | cut -d' ' -f2)
+
+        ms="$epoch/$obsid/$obsid.ms"
         if [[ ! -d $ms ]] # If the measurement set does NOT exist
         then
             filtered_obsids="$filtered_obsids $obsid"
@@ -100,7 +93,8 @@ else
     echo "Force option chosen. DANGER! Existing measurement sets will now be deleted!!"
     for obsid in $obsids
     do
-        cd "${base}/${obsid}"
+        epoch=$(echo "${epochs}" | grep "${obsid}" | cut -d' ' -f2)
+        cd "${base}/$epoch/${obsid}"
         rm -rf "$obsid.ms"
     done
 fi
@@ -242,28 +236,14 @@ singularity run ${GPMCONTAINER} ${script} \$obsid
         jobid=($(${sub}))
         jobid=${jobid[3]}
 
-        # rename the err/output files as we now know the jobid
-        errors="${ERROR//%A/${jobid[0]}}"
-        outputs="${OUTPUT//%A/${jobid[0]}}"
-
-        # record submission
-        n=1
-        for obsid in $download_obsids
-        do
-            if [ "${GPMTRACK}" = "track" ]
-            then
-                # rename the err/output files as we now know the jobid
-                error="${errors//%j/${n}}"
-                output="${outputs//%j/${n}}"
-
-                ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue --jobid="${jobid[0]}" --taskid="${n}" --task='download' --submission_time="$(date +%s)" --batch_file="${script}" --obs_id="${obsid}" --stderr="${error}" --stdout="${output}"
-            fi
-            ((n+=1))
-        done
-
         echo "Submitted ${script} as ${jobid}. Follow progress here:"
-        echo "STDOUT: ${outputs}"
-        echo "STDERR: ${errors}"
+
+        # Add rows to the database 'processing' table that will track the progress of this submission
+	${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='download' --batch_file="${script}" --obs_file=<(echo $download_obsids) --stderr="${ERROR}" --stdout="${OUTPUT}"
+        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
+
+        echo "STDOUTs: ${OUTPUT}"
+        echo "STDERRs: ${ERROR}"
 
     fi
 else
