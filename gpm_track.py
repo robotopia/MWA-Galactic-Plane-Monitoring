@@ -36,6 +36,7 @@ DIRECTIVES = (
     "fail",
     "obs_status",
     "obs_calibrator",
+    "set_epoch_cal",
     "iono_update",
     "import_obs",
     "check_obs",
@@ -591,6 +592,29 @@ def observation_calibrator_id(obs_id, cal_id):
     conn.close()
 
 
+def set_epoch_cal(cal_id, epoch):
+    """An update function that will set the calibration observation for an entire epoch
+
+    Args:
+        cal_id (int): observation id of the calibrator to insert.
+        epoch (str): The epoch to apply the calibrator to
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+                UPDATE observation
+                LEFT JOIN epoch ON observation.obs_id = epoch.obs_id
+                SET observation.cal_obs_id = %s 
+                WHERE epoch.epoch = %s COLLATE utf8mb4_bin AND observation.calibration = false
+                """,
+        (cal_id, epoch,),
+    )
+    conn.commit()
+    conn.close()
+
+
 def acacia_path(obs_id, file_type):
     """A select function that will get the acacia path for a specific observation ID and a given "file type"
 
@@ -949,6 +973,10 @@ if __name__ == "__main__":
     elif args.directive.lower() == "obs_calibrator":
         require(args, ["obs_id"])
         observation_calibrator_id(args.obs_id, args.cal_id)
+
+    elif args.directive.lower() == "set_epoch_cal":
+        require(args, ["cal_id", "epoch"])
+        set_epoch_cal(args.cal_id, args.epoch)
 
     elif args.directive.lower() == "update_apply_cal":
         require(args, ["obs_id", "cal_id", "field", "value"])
