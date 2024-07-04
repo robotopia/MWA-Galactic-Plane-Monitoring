@@ -14,6 +14,12 @@
       <span class="failed legend">Failed</span>
       <span class="calibration legend">Calibration</span>
     </div>
+    <form method="post" action="{% url 'set_epoch_cal' epoch=epoch user=user %}">
+      {% csrf_token %}
+      <label for="set_epoch_cal">Assign this cal obs to all observations in this epoch</label>
+      <input type="number" id="set_epoch_cal" name="cal_obs" required/>
+      <button type="submit">Submit</button>
+    </form>
     <p>Times shown are <b>submission times (UTC)</b>.</p>
     <!-- Context menu for QA = "quality assurance" -->
     <div id="qa-context-menu" class="context-menu">

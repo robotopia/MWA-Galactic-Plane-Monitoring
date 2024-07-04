@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from . import models
 import json
@@ -14,6 +14,7 @@ def EpochOverviewView(request, epoch, user):
 
     context = {
         'epoch': epoch,
+        'user': user,
         'overviews': overviews,
     }
 
@@ -53,3 +54,24 @@ def changeQaStateView(request):
     apply_cal.save()
 
     return HttpResponse(status=200)
+
+
+def setEpochCal(request, epoch, user):
+
+    # Request method must be 'POST'
+    if not request.method == 'POST':
+        return HttpResponse(status=400)
+
+    cal_obs_pk = request.POST.get("cal_obs")
+    cal_obs = models.Observation.objects.filter(pk=cal_obs_pk, calibration=True).first()
+
+    if cal_obs is None:
+        return HttpResponse(f"Calibration observation {cal_obs_pk} not found", status=400)
+
+    observations = models.Observation.objects.filter(epoch__epoch=epoch, calibration=False)
+    observations.update(cal_obs=cal_obs)
+
+    for observation in observations:
+        observation.save()
+
+    return redirect('epoch_overview', epoch=epoch, user=user)
