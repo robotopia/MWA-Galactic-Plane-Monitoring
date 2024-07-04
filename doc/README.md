@@ -10,6 +10,7 @@
 - [Interacting with the database](#interacting-with-the-database)
   - [Add an observation's metadata to the database](#add-an-observations-metadata-to-the-database)
   - [Assign a calibration obs to an observation](#assign-a-calibration-obs-to-an-observation)
+  - [Assign a calibration obs to an entire epoch](#assign-a-calibration-obs-to-an-entire-epoch)
   - [Signal that a calibration can/cannot be transferred to a particular observation](#signal-that-a-calibration-cancannot-be-transferred-to-a-particular-observation)
   - [Check the processing history of a particular observation](#check-the-processing-history-of-a-particular-observation)
   - [Get a summary of the processing of a particular Epoch](#get-a-summary-of-the-processing-of-a-particular-epoch)
@@ -136,6 +137,12 @@ gpm_track.py calibrations
 
 ```
 gpm_track.py obs_calibrator --obs_id [OBS_ID] --cal_id [CAL_ID]
+```
+
+### Assign a calibration obs to an entire epoch
+
+```
+gpm_track.py set_epoch_cal --cal_id [CAL_ID] --epoch [EPOCH]
 ```
 
 ### Signal that a calibration can/cannot be transferred to a particular observation
