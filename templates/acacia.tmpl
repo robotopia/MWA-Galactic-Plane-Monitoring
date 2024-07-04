@@ -159,7 +159,7 @@ if [ $exitcode -ne 0 ]; then
 else
    #echo "Removing the tar file from scratch as it was successfully transferred into Acacia"
    echo "Final place in Acacia: ${fullPathInAcacia}/${tarFileName}"
-   #rm "${auxiliaryDirForTars}/${tarFileName}" #Comment this line when debugging workflow
+   rm "${auxiliaryDirForTars}/${tarFileName}" #Comment this line when debugging workflow
 fi
 #---------------
 # Final checks ...
