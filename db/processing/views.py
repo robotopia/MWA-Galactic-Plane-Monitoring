@@ -21,6 +21,18 @@ def EpochOverviewView(request, epoch, user):
     return render(request, 'processing/epoch_overview.html', context)
 
 
+def EpochsView(request, user):
+
+    epochs = models.Epoch.objects.order_by('epoch').values_list('epoch').distinct()
+
+    context = {
+        'epochs': epochs,
+        'user': user,
+    }
+
+    return render(request, 'processing/epochs.html', context)
+
+
 # Change the quality assurance label for a given obs
 def changeQaStateView(request):
 

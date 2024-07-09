@@ -1,0 +1,16 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Epochs</title>
+  </head>
+  <body>
+    <h1>GPM Epochs</h1>
+    <ul>
+      {% for epoch in epochs %}
+      <li><a href="{% url 'epoch_overview' epoch=epoch.0 user=user %}">{{ epoch.0 }}</a></li>
+      {% endfor %}
+    </ul>
+  </body>
+</style>
