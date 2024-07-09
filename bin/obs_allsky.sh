@@ -93,8 +93,7 @@ chmod 755 "${script}"
 sbatch_script=${script}.sbatch
 echo "#!/bin/bash
 
-# GPM Version: ${GPMVERSION}
-# Git commit: ${GPMGITVERSION}
+# GPM Version: ${GPMGITVERSION}
 
 #SBATCH --export=ALL
 #SBATCH --time=05:00:00

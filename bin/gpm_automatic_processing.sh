@@ -26,8 +26,7 @@ fi
 
 # Initial messages to the user
 echo "----------------------------------"
-echo "AUTOMATIC GPM PIPELINE ${GPMVERSION}"
-echo "${GPMGITVERSION}"
+echo "AUTOMATIC GPM PIPELINE ${GPMGITVERSION}"
 echo "----------------------------------"
 echo "Started at: $(date)"
 echo "This log being written to: ${LOG}"
