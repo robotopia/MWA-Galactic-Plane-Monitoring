@@ -99,7 +99,7 @@ echo '#!/bin/bash' > ${script}.sbatch
 echo "export OPENBLAS_NUM_THREADS=1" >> ${script}.sbatch
 echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
 
-sub="sbatch --begin=now+5minutes --export=ALL  --time=4:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
+sub="sbatch --begin=now+2minutes --export=ALL  --time=4:00:00 --mem=${GPMABSMEMORY}G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
 sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
