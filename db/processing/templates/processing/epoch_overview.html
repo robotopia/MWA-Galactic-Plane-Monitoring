@@ -40,7 +40,8 @@
         <th>uvsub</th>
         <th>image</th>
         <th>calcleakage</th>
-        <th>postimage</th>
+        <th>postimageI</th>
+        <th>postimageV</th>
         <th>transient</th>
         <th>acacia</th>
         <th>Notes</th>
@@ -85,8 +86,11 @@
         <td class="{{ tasks.calcleakage.status }}">
           <span class="datetime">{{ tasks.calcleakage.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.postimage.status }}">
-          <span class="datetime">{{ tasks.postimage.date|date:'Y-m-d H:i' }}</span>
+        <td class="{{ tasks.postimageI.status }}">
+          <span class="datetime">{{ tasks.postimageI.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.postimageV.status }}">
+          <span class="datetime">{{ tasks.postimageV.date|date:'Y-m-d H:i' }}</span>
         </td>
         <td class="{{ tasks.transient.status }}">
           <span class="datetime">{{ tasks.transient.date|date:'Y-m-d H:i' }}</span>
