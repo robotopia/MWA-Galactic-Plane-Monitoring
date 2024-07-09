@@ -25,7 +25,7 @@ export GPMACCOUNT=               # The SLURM account jobs will be run under. e.g
 export GPMBASE="/not/actual/path" # Path to base of GPM Pipeline where the repository was 'git clone' into including the name of the repository foldername, e.g. "/astro/mwasci/tgalvin/GPM-pipeline" 
 export GPMSCRATCH="/scratch"     # Path to your scratch space used for processing on the HPC environment, e.g. /scratch
                                 # Within pawsey this is /astro/mwas/${GPMUSER}
-export GPMVERSION='v0.4'        # Version number of the pipeline. This should not be changed. Currently it is defined here but not used.  
+export GPMVERSION='v0.5'        # Version number of the pipeline. This should not be changed. Currently it is defined here but not used.  
 export GPMGITVERSION=$(git --git-dir=${GPMBASE}/.git rev-parse HEAD) # Get the precise git commit that we're currently on (and therefore using)
 echo "Version: ${GPMVERSION}"
 echo "Git commit: ${GPMGITVERSION}"
