@@ -80,6 +80,20 @@ erDiagram
 
 ## View definitions
 
+### `epoch`
+
+This view defines what `epoch` even means.
+It's a calculated number based on the number of days since a particular arbitrary time.
+
+```
+CREATE VIEW epoch AS
+    SELECT observation.obs_id AS obs_id,
+           CONCAT('Epoch',
+                  LPAD(FLOOR(((observation.obs_id - 1335398418) / 86400)),4,'0')) AS epoch,
+           FROM_UNIXTIME((observation.obs_id + 315964800)) AS approx_datetime
+    FROM observation;
+```
+
 ### `epoch_overview`
 
 This view shows just the most recent tasks that users has processed.
@@ -117,12 +131,28 @@ CREATE VIEW epoch_overview AS
 
 ### `overview_summary`
 
-This view shows how many of the most recently added tasks (i.e. the tasks that are shown in `epoch_overview`) for each combination of `epoch` and `user`.
+This view shows how many of the most recently added tasks (i.e. the tasks that are shown in [`epoch_overview`](#epoch-overview)) for each combination of `epoch` and `user`.
 
 ```
 CREATE VIEW overview_summary AS
-  SELECT epoch, count(*a), user AS completed
-    FROM epoch_overview
+  SELECT epoch, count(*) AS completed, user, p.pipeline
+    FROM epoch_overview AS eo
+    LEFT JOIN pipeline_step AS p ON eo.task = p.task
     WHERE status = 'finished'
-    GROUP BY epoch, user;
+    GROUP BY epoch, user, pipeline;
+```
+
+### `nobs_per_epoch`
+
+This view shows how many non-calibration observations are in each epoch.
+
+```
+CREATE VIEW nobs_per_epoch AS
+    SELECT e.epoch,
+           count(*) AS nobs
+        FROM observation AS o
+        LEFT JOIN epoch AS e
+            ON o.obs_id = e.obs_id
+        WHERE o.calibration = false
+        GROUP BY e.epoch;
 ```
