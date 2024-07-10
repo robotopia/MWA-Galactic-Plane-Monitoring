@@ -6,13 +6,14 @@ import json
 # Create your views here.
 
 # The main view: see the state of an epoch's processing at a glance
-def EpochOverviewView(request, epoch, user):
+def EpochOverviewView(request, pipeline, epoch, user):
 
     observations = models.Observation.objects.all()
     observations = [o for o in observations if o.epoch.epoch == epoch]
     overviews = {o: {eo.task: {"status": eo.status, "cal_obs": eo.cal_obs, "cal_usable": eo.cal_usable, "cal_notes": eo.cal_notes if eo.cal_notes else "", "date": eo.submission_time} for eo in o.epoch_overviews.all() if eo.user == user and eo.epoch == epoch} for o in observations}
 
     context = {
+        'pipeline': pipeline,
         'epoch': epoch,
         'user': user,
         'overviews': overviews,
@@ -21,13 +22,17 @@ def EpochOverviewView(request, epoch, user):
     return render(request, 'processing/epoch_overview.html', context)
 
 
-def EpochsView(request, user):
+def EpochsView(request, pipeline, user):
 
-    epochs = models.Epoch.objects.order_by('epoch').values_list('epoch').distinct()
+    epoch_completions = models.EpochCompletion.objects.filter(pipeline=pipeline, user=user)
+    partially_complete_epochs = {e.epoch: e.completed/e.total*100 for e in epoch_completions}
+    all_epochs = [e['epoch'] for e in models.Epoch.objects.all().order_by('epoch').values('epoch').distinct()]
+    completion_data = {e: partially_complete_epochs[e] if e in partially_complete_epochs else 0.0 for e in all_epochs}
 
     context = {
-        'epochs': epochs,
+        'pipeline': pipeline,
         'user': user,
+        'completion_data': completion_data,
     }
 
     return render(request, 'processing/epochs.html', context)

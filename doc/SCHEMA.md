@@ -138,7 +138,9 @@ CREATE VIEW overview_summary AS
   SELECT epoch, count(*) AS completed, user, p.pipeline
     FROM epoch_overview AS eo
     LEFT JOIN pipeline_step AS p ON eo.task = p.task
-    WHERE status = 'finished'
+    LEFT JOIN observation AS o ON eo.obs_id = o.obs_id
+    WHERE eo.status = 'finished'
+        AND o.calibration = false
     GROUP BY epoch, user, pipeline;
 ```
 
@@ -156,3 +158,22 @@ CREATE VIEW nobs_per_epoch AS
         WHERE o.calibration = false
         GROUP BY e.epoch;
 ```
+
+### `epoch_completion`
+
+This view is the same as [`overview_summary`](#overview-summary) but with an extra column showing the total number of pipeline steps to be completed for each epoch/user/pipeline step combination.
+
+```
+CREATE VIEW epoch_completion AS
+    SELECT os.*, count(*) AS total
+        FROM overview_summary AS os
+        LEFT JOIN pipeline_step AS ps
+            ON os.pipeline = ps.pipeline
+        LEFT JOIN epoch AS e
+            ON os.epoch = e.epoch
+        LEFT JOIN observation AS o
+            ON e.obs_id = o.obs_id
+        WHERE o.calibration = false
+        GROUP BY os.epoch, os.completed, os.user, os.pipeline;
+```
+

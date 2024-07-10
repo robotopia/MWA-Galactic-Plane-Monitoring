@@ -8,8 +8,8 @@
   <body>
     <h1>GPM Epochs</h1>
     <ul>
-      {% for epoch in epochs %}
-      <li><a href="{% url 'epoch_overview' epoch=epoch.0 user=user %}">{{ epoch.0 }}</a></li>
+      {% for epoch, completion in completion_data.items %}
+      <li><a href="{% url 'epoch_overview' pipeline=pipeline epoch=epoch user=user %}">{{ epoch }}</a> - {{ completion|floatformat:0 }}%</li>
       {% endfor %}
     </ul>
   </body>
