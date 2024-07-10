@@ -1,0 +1,281 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{ epoch }}</title>
+  </head>
+  <body>
+    <div>
+      <p>Back to <a href="{% url 'epochs' pipeline=pipeline user=user %}">list of epochs</a></p>
+      Legend:
+      <span class="queued legend">Queued</span>
+      <span class="started legend">Started</span>
+      <span class="finished legend">Finished</span>
+      <span class="failed legend">Failed</span>
+      <span class="calibration legend">Calibration</span>
+    </div>
+    <form method="post" action="{% url 'set_epoch_cal' epoch=epoch user=user %}">
+      {% csrf_token %}
+      <label for="set_epoch_cal">Assign this cal obs to all observations in this epoch</label>
+      <input type="number" id="set_epoch_cal" name="cal_obs" required/>
+      <button type="submit">Submit</button>
+    </form>
+    <p>Times shown are <b>submission times (UTC)</b>.</p>
+    <!-- Context menu for QA = "quality assurance" -->
+    <div id="qa-context-menu" class="context-menu">
+      <div class="context-menuitem cal-usable" onclick='setQa("good");'>&#x2713;</div>
+      <div class="context-menuitem cal-unusable" onclick='setQa("bad");'>&#x274C;</div>
+      <div class="context-menuitem" onclick='setQa("none");'>Remove QA</div>
+    </div>
+    <table>
+      <tr>
+        <th>Obs ID</th>
+        <th>Assigned cal obs</th>
+        <th>download</th>
+        <th>autoflag</th>
+        <th>autocal</th>
+        <th>applycal</th>
+        <th>uvflag</th>
+        <th>uvsub</th>
+        <th>image</th>
+        <th>calcleakage</th>
+        <th>postimageI</th>
+        <th>postimageV</th>
+        <th>Notes</th>
+      </tr>
+      {% for obs, tasks in overviews.items %}
+      <tr class="epoch-overview-row">
+        <td class="selectable{% if obs.calibration %} calibration{% endif %}">{{ obs }}</td>
+        <td>{{ obs.cal_obs }}</td>
+        <td class="{{ tasks.download.status }}">
+          <span class="datetime">{{ tasks.download.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.flag.status }}">
+          <span class="datetime">{{ tasks.flag.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.calibrate.status }}">
+          <span class="datetime">{{ tasks.calibrate.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.apply_cal.status }}">
+          {{ tasks.apply_cal.cal_obs }}<br>
+          <span class="datetime">{{ tasks.apply_cal.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.uvflag.status }}">
+          <span class="datetime">{{ tasks.uvflag.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.uvsubtract.status }}">
+          <span class="datetime">{{ tasks.uvsubtract.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="image-cell {{ tasks.image.status }}" onClick="selectCell(this, {{ obs }}, {{ tasks.apply_cal.cal_obs }});">
+          <span class="datetime">{{ tasks.image.date|date:'Y-m-d H:i' }}</span>
+          {% if tasks.apply_cal.cal_obs %}
+          {% if tasks.apply_cal.cal_usable %}
+          <div class="qa cal-usable">&#x2713;</div>
+          {% elif tasks.apply_cal.cal_usable == False %}
+          <div class="qa cal-unusable">&#x274C;</div>
+          {% elif tasks.apply_cal.cal_notes != '' %}
+          <div class="qa cal-unsure">?</div>
+          {% else %}
+          <div class="qa"></div>
+          {% endif %}
+          {% endif %}
+        </td>
+        <td class="{{ tasks.calcleakage.status }}">
+          <span class="datetime">{{ tasks.calcleakage.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.postimageI.status }}">
+          <span class="datetime">{{ tasks.postimageI.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td class="{{ tasks.postimageV.status }}">
+          <span class="datetime">{{ tasks.postimageV.date|date:'Y-m-d H:i' }}</span>
+        </td>
+        <td>
+          {{ tasks.apply_cal.cal_notes }}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+  <script>
+    var selectedCell = {
+      element: null,
+      obsId: null,
+      calObsId: null
+    };
+
+    var qaContextMenu = document.getElementById("qa-context-menu");
+
+    // Deselect the selected cell, if there is any cell selected
+    function deselectCell() {
+      if (selectedCell.element !== null) {
+        selectedCell.element.classList.remove("selected-cell");
+        selectedCell.element = null;
+        selectedCell.obsId = null;
+        selectedCell.calObsId = null;
+        qaContextMenu.style.display = "none";
+      }
+    }
+
+    // Select the given cell
+    // But if it's already selected, deselect it
+    function selectCell(element, obsId, calObsId) {
+      if (element == selectedCell.element) {
+        deselectCell();
+
+        qaContextMenu.style.display = "none";
+      } else {
+        deselectCell();
+        element.classList.add("selected-cell");
+        selectedCell.element = element;
+        selectedCell.obsId = obsId;
+        selectedCell.calObsId = calObsId;
+
+        // Context menu for image cells
+        qaContextMenu.style.display = "inline-flex";
+        qaContextMenu.style.left = (element.offsetLeft + element.offsetWidth) + "px";
+        qaContextMenu.style.top = element.offsetTop + "px";
+      }
+    }
+
+    function setQa(quality) {
+
+      // quality can only be {"good", "bad", "none"}
+      if (quality !== "good" && quality !== "bad" && quality !== "none") {
+        return;
+      }
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', "{% url 'set_qa' %}");
+      xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+      xhr.setRequestHeader("Content-type", "application/json");
+
+      const data = {
+        obs: selectedCell.obsId,
+        calObs: selectedCell.calObsId,
+        quality: quality
+      };
+
+      xhr.onload = () => {
+        if (xhr.status != 200) {
+          return;
+        }
+
+        // Do other stuff here (= change symbol)
+        qaDiv = selectedCell.element.querySelector('.qa');
+
+        if (quality === "good") {
+          qaDiv.innerHTML = "&#x2713;";
+          qaDiv.classList.add("cal-usable");
+          qaDiv.classList.remove("cal-unusable");
+          qaDiv.classList.remove("cal-unsure");
+        } else if (quality === "bad") {
+          qaDiv.innerHTML = "&#x274C;";
+          qaDiv.classList.remove("cal-usable");
+          qaDiv.classList.add("cal-unusable");
+          qaDiv.classList.remove("cal-unsure");
+        } else if (quality === "none") {
+          qaDiv.innerHTML = "?";
+          qaDiv.classList.remove("cal-usable");
+          qaDiv.classList.remove("cal-unusable");
+          qaDiv.classList.add("cal-unsure");
+        }
+
+        // Hide the context menu
+        deselectCell();
+      }
+
+      console.log(data);
+      xhr.send(JSON.stringify(data));
+
+      // Set the symbol to be an hourglass
+      qaDiv = selectedCell.element.querySelector('.qa');
+      qaDiv.innerHTML = "&#8987;";
+    }
+
+  </script>
+</html>
+<style>
+.legend {
+  text-align: center;
+  padding: 2px;
+}
+.queued {
+  background-color: #00a;
+  color: #eee;
+}
+.started {
+  background-color: #880;
+}
+.finished {
+  background-color: #080;
+}
+.failed {
+  background-color: #c00;
+  color: #eee;
+}
+.calibration {
+  background-color: #c80;
+}
+td {
+  padding: 5px;
+}
+td:not(.selectable) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+th {
+  background-color: #448;
+  color: #eee;
+  padding: 5px;
+}
+.epoch-overview-row .datetime {
+  font-size: small;
+}
+.qa {
+  background-color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  text-align: center;
+  font-weight: 900;
+  font-family: Arial, Helvetica, sans-serif;
+  display: inline-block;
+  cursor: default;
+}
+.cal-usable {
+  color: #080;
+}
+.cal-unusable {
+  color: #c00;
+}
+.cal-unsure {
+  color: #c80;
+}
+td.selected-cell {
+  border: 3px solid #800;
+  padding: 2px;
+}
+#qa-context-menu {
+  border: 1px solid black;
+}
+.context-menu {
+  border: 1px solid black;
+  display: none;
+  flex-direction: column;
+  position: absolute;
+}
+.context-menuitem {
+  padding: 5px;
+  background-color: white;
+  cursor: pointer;
+  user-select: none;
+}
+.context-menuitem:hover {
+  background-color: beige;
+}
+</style>
