@@ -248,8 +248,8 @@ do
         # Compress the scaling image so I can apply it to the RMS and BKG images
         factor=$(pyhead.py -p BN_CFAC "${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits" | awk '{print $3}')
         SR6 -f $factor -o ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf.fits
-        python3 $GPMBASE/gleam_x/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits
-        python3 $GPMBASE/gleam_x/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_bkg.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits
+        python3 $GPMBASE/gpm/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits
+        python3 $GPMBASE/gpm/bin/divide.py ${obsnum}_deep-${subchan}-${pol}-image-pb_bkg.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits
 
         #factor=$(pyhead.py -p BSCALE "${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" | awk '{print $3}')
         
