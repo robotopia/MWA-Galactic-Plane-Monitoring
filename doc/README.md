@@ -9,6 +9,7 @@
   - [Database secrets file](#database-secrets-file)
 - [Interacting with the database](#interacting-with-the-database)
   - [Add an observation's metadata to the database](#add-an-observations-metadata-to-the-database)
+  - [Find which calibration obs has been assigned to an observations](#find-which-calibration-obs-has-been-assigned-to-an-observations)
   - [Assign a calibration obs to an observation](#assign-a-calibration-obs-to-an-observation)
   - [Assign a calibration obs to an entire epoch](#assign-a-calibration-obs-to-an-entire-epoch)
   - [Signal that a calibration can/cannot be transferred to a particular observation](#signal-that-a-calibration-cancannot-be-transferred-to-a-particular-observation)
@@ -131,6 +132,12 @@ gpm_track.py epoch_obs --epoch Epoch0032
 
 ```
 gpm_track.py calibrations
+```
+
+### Find which calibration obs has been assigned to an observations
+
+```
+gpm_track.py obs_calibrator --obs_id [OBS_ID]
 ```
 
 ### Assign a calibration obs to an observation
