@@ -6,7 +6,9 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class AcaciaFile(models.Model):
     obs = models.ForeignKey('Observation', models.DO_NOTHING)
@@ -101,6 +103,36 @@ class EpochOverview(models.Model):
         managed = False
         db_table = 'epoch_overview'
         ordering = ['obs', 'user', 'task']
+
+
+class HpcUser(models.Model):
+    name = models.CharField(max_length=1023)
+    auth_users = models.ManyToManyField(
+        User,
+        blank=True,
+        through='HpcAuthUser',
+        through_fields=('hpc_user', 'auth_user'),
+        related_name='hpc_users',
+    )
+
+    def __str__(self) -> str:
+        return self.name
+
+    class Meta:
+        managed = False
+        db_table = 'hpc_user'
+        verbose_name = 'HPC User'
+        verbose_name_plural = 'HPC Users'
+
+
+class HpcAuthUser(models.Model):
+    hpc_user = models.ForeignKey('HpcUser', models.DO_NOTHING)
+    auth_user = models.ForeignKey(User, models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'hpc_auth_user'
+
 
 class Mosaic(models.Model):
     mos_id = models.AutoField(primary_key=True)

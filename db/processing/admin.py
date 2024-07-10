@@ -77,6 +77,11 @@ class EpochOverviewAdmin(admin.ModelAdmin):
     list_filter = ['user', YearListFilter, 'task', 'status', 'epoch']
     date_hierarchy = 'submission_time'
 
+@admin.register(HpcUser)
+class HpcUserAdmin(admin.ModelAdmin):
+    list_display = ['name']
+    #filter_horizontal = ['auth_users']
+
 @admin.register(Mosaic)
 class MosaicAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'user', 'job_id', 'status']

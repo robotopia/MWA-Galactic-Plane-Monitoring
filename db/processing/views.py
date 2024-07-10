@@ -8,6 +8,10 @@ import json
 # The main view: see the state of an epoch's processing at a glance
 def EpochOverviewView(request, pipeline, epoch, user):
 
+    # Check that the logged in (Django) user is allowed access to the specified hpc_user
+    if not request.user.hpc_users.filter(name=user):
+        return HttpResponse('Unauthorized access', status=401)
+
     observations = models.Observation.objects.all()
     observations = [o for o in observations if o.epoch.epoch == epoch]
     overviews = {o: {eo.task: {"status": eo.status, "cal_obs": eo.cal_obs, "cal_usable": eo.cal_usable, "cal_notes": eo.cal_notes if eo.cal_notes else "", "date": eo.submission_time} for eo in o.epoch_overviews.all() if eo.user == user and eo.epoch == epoch} for o in observations}
@@ -19,10 +23,17 @@ def EpochOverviewView(request, pipeline, epoch, user):
         'overviews': overviews,
     }
 
-    return render(request, 'processing/epoch_overview.html', context)
+    try:
+        return render(request, f'processing/{pipeline}_epoch_overview.html', context)
+    except:
+        return HttpResponse(f"Pipeline '{pipeline}' not found", status=404)
 
 
 def EpochsView(request, pipeline, user):
+
+    # Check that the logged in (Django) user is allowed access to the specified hpc_user
+    if not request.user.hpc_users.filter(name=user):
+        return HttpResponse('Unauthorized access', status=401)
 
     epoch_completions = models.EpochCompletion.objects.filter(pipeline=pipeline, user=user)
     partially_complete_epochs = {e.epoch: e.completed/e.total*100 for e in epoch_completions}
@@ -74,6 +85,10 @@ def changeQaStateView(request):
 
 
 def setEpochCal(request, epoch, user):
+
+    # Check that the logged in (Django) user is allowed access to the specified hpc_user
+    if not request.user.hpc_users.filter(name=user):
+        return HttpResponse('Unauthorized access', status=401)
 
     # Request method must be 'POST'
     if not request.method == 'POST':
