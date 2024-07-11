@@ -615,25 +615,37 @@ def set_epoch_cal(cal_id, epoch):
     conn.close()
 
 
-def acacia_path(obs_id, file_type):
-    """A select function that will get the acacia path for a specific observation ID and a given "file type"
+def acacia_path(obs_file):
+    """A select function that will get the acacia path for a specific observation ID
 
     Args:
         obs_id (int): observation id to get the acacia path for
-        file_type (str): The type of file as listed in the database
     """
+
+    # Retrieve the obs_ids from the provided obs_file
+    try:
+        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file)])
+    except:
+        logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
+        try:
+            obs_ids = [int(obs_file)]
+        except:
+            raise ValueError(f"Could not parse {obs_file} as an obs_id.")
+
+    format_string = ','.join(['%s'] * len(obs_ids)) # = '%s,%s,%s,...'
+
     conn = gpmdb_connect()
     cur = conn.cursor()
 
-    cur.execute("""
-                SELECT path FROM acacia_file
-                WHERE obs_id=%s AND type=%s
+    cur.execute(f"""
+                SELECT obs_id, epoch, acacia FROM backup
+                WHERE obs_id IN ({format_string})
                 """,
-        (obs_id, file_type),
+                tuple(obs_ids),
     )
     res = cur.fetchall()
-    if len(res) > 0:
-        print(res[0][0])
+    for row in res:
+        print(f'{row[0]} {row[1]} {row[2]}')
     conn.close()
 
 
@@ -884,7 +896,7 @@ if __name__ == "__main__":
     ps.add_argument("--stderr", type=str, help="standard error log", default=None)
     ps.add_argument("--stdout", type=str, help="standard out log", default=None)
     ps.add_argument("--field", type=str, help="database field to update (update_apply_cal only)", default=None)
-    ps.add_argument("--value", type=str, help="database value to insert into \"field\" (update_apply_cal and acacia_path).", default=None)
+    ps.add_argument("--value", type=str, help="database value to insert into \"field\" (update_apply_cal).", default=None)
     ps.add_argument("--epoch", type=str, help="epoch name (e.g. Epoch0123), used for directive epoch_processing", default=None)
     ps.add_argument(
         "--status",
@@ -1000,8 +1012,8 @@ if __name__ == "__main__":
         logger.info(f"{args.obs_id=} was {found=}")
 
     elif args.directive.lower() == "acacia_path":
-        require(args, ["obs_id", "value"])
-        acacia_path(args.obs_id, args.value)
+        require(args, ["obs_file"])
+        acacia_path(args.obs_file)
 
     elif args.directive.lower() == "ls_obs_for_cal":
         require(args, ["cal_id"])
