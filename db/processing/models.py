@@ -10,17 +10,6 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-class AcaciaFile(models.Model):
-    obs = models.ForeignKey('Observation', models.DO_NOTHING)
-    type = models.CharField(max_length=255, blank=True, null=True)
-    path = models.CharField(max_length=1023)
-
-    class Meta:
-        managed = False
-        db_table = 'acacia_file'
-        unique_together = (('obs', 'type'),)
-
-
 class AntennaFlag(models.Model):
     start_obs_id = models.IntegerField()
     end_obs_id = models.IntegerField()

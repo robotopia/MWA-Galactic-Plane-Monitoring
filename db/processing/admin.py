@@ -47,11 +47,6 @@ class YearListFilter(admin.SimpleListFilter):
         elif self.value() == '2024':
             return queryset.filter(obs__gte=1388102418, obs__lte=1419724817)
 
-# Register your models here.
-@admin.register(AcaciaFile)
-class AcaciaFileAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'obs', 'type', 'path']
-
 @admin.register(AntennaFlag)
 class AntennaFlagAdmin(admin.ModelAdmin):
     list_display = ['pk', 'start_obs_id', 'end_obs_id', 'antenna']
