@@ -56,6 +56,12 @@ class ApplyCalAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'cal_obs', 'usable']
     autocomplete_fields = ['obs', 'cal_obs']
 
+@admin.register(Backup)
+class BackupAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'obs', 'epoch', 'acacia']
+    list_filter = ['epoch']
+    autocomplete_fields = ['obs']
+
 @admin.register(CalApparent)
 class CalApparentAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'source', 'appflux', 'infov']

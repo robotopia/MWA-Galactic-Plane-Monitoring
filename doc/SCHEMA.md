@@ -177,3 +177,17 @@ CREATE VIEW epoch_completion AS
         GROUP BY os.epoch, os.completed, os.user, os.pipeline;
 ```
 
+### `backup`
+
+This view computes the official paths (e.g. on Acacia) where the data are backed up.
+
+```
+CREATE VIEW backup AS
+    SELECT obs_id,
+           epoch,
+           IF(approx_datetime < '2024-01-01',
+              CONCAT("mwasci:gpmon/", LOWER(epoch), "/", obs_id, ".tar.gz"),
+              CONCAT("mwasci:gpm2024/", epoch, "/", obs_id, ".tar.gz")
+           ) AS acacia
+    FROM epoch;
+```
