@@ -37,9 +37,6 @@ cd "${datadir}" || exit 1
 # Update database
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
-datadir="${base}/${obsnum}"
-cd "${datadir}" || exit
-
 # The default output name of calc_leakage (below) appends _fixed to the stem
 # of the fixed V image:
 #
