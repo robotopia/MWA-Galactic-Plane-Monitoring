@@ -50,7 +50,7 @@ track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date
 subchans="0000 0001 0002 0003 MFS"
 for subchan in $subchans
 do
-    mv -v ${obsnum}_deep-${subchan}-V-image-pb.fits \
+    cp ${obsnum}_deep-${subchan}-V-image-pb.fits \
           ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits
 
     calc_leakage.py \
