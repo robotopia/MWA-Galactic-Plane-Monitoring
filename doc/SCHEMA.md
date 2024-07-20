@@ -191,3 +191,18 @@ CREATE VIEW backup AS
            ) AS acacia
     FROM epoch;
 ```
+
+### `epoch_stats`
+
+This view computes some basic stats about each epoch.
+
+```
+CREATE VIEW epoch_stats AS
+    SELECT e.epoch,
+           MIN(e.obs_id) AS starttime,
+           MAX(o.obs_id + o.duration_sec) AS endtime
+    FROM epoch AS e
+    LEFT JOIN observation AS o
+        ON e.obs_id = o.obs_id
+    GROUP BY e.epoch;
+```
