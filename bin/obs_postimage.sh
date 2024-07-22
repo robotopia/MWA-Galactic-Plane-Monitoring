@@ -2,11 +2,10 @@
 
 usage()
 {
-echo "obs_postimage.sh [-d dep] [-a account] [-t] [-P pol] obsnum
+echo "obs_postimage.sh [-d dep] [-a account] [-t] obsnum
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
-  -P pol     : which polarisation to process (default: I)
   obsnum     : the obsid to process, or a text file of obsids (newline separated). 
                A job-array task will be submitted to process the collection of obsids. " 1>&2;
 exit 1;
@@ -17,9 +16,8 @@ pipeuser="${GPMUSER}"
 #initial variables
 dep=
 tst=
-pol=I
 # parse args and set options
-while getopts ':td:a:P:' OPTION
+while getopts ':td:a:' OPTION
 do
     case "$OPTION" in
     d)
@@ -30,9 +28,6 @@ do
         ;;
     t)
         tst=1
-        ;;
-    P)
-        pol=${OPTARG}
         ;;
     ? | : | h)
         usage
@@ -80,7 +75,6 @@ fi
 
 script="${GPMSCRIPT}/postimage_${obsnum}.sh"
 cat "${GPMBASE}/templates/postimage.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                 -e "s:POL:${pol}:g" \
                                  -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
 
 output="${GPMLOG}/postimage_${obsnum}.o%A"
@@ -115,7 +109,7 @@ jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} . Follow progress here:"
 
 # Add rows to the database 'processing' table that will track the progress of this submission
-${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task="postimage${pol}" --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task="postimage" --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
 ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
 echo "STDOUTs: ${output}"
