@@ -20,8 +20,7 @@ digraph G {
   uvflag [label="Apply UV flags\n(obs_uvflag)"];
   uvsub [label="Apply UV subtraction\n(obs_uvsub)"];
   image [label="Generate images\n(obs_image)"];
-  postimageI [label="Find sources\nFlux-warp\nFits-warp\n(obs_postimageI)"];
-  postimageV [label="Find sources\nFlux-warp\nFits-warp\n(obs_postimageV)"];
+  postimage [label="Find sources\nFlux-warp\nFits-warp\n(obs_postimage)"];
   calc_leakage [label="Correct polari-\nsation leakage\n(obs_calcleakage)"];
 
   giantsquid -> autoflag -> is_cal;
@@ -31,12 +30,12 @@ digraph G {
   uvsub -> uvflag [dir=back];
   uvflag -> apply_cal [dir=back];
   transient -> image [dir=back];
-  tfilter -> postimageI [style=invis];
-  image -> calc_leakage -> postimageI -> postimageV;
+  tfilter -> postimage [style=invis];
+  image -> calc_leakage -> postimage;
   apply_cal -> calsol [dir=back; style=dashed];
   is_cal -> apply_cal [label="N"];
 
   {rank="same"; giantsquid; autoflag; is_cal; autocal;}
   {rank="same"; apply_cal; calsol; uvflag; uvsub; image; transient;}
-  {rank="same"; tfilter; postimageI; postimageV; calc_leakage;}
+  {rank="same"; tfilter; postimage; calc_leakage;}
 }

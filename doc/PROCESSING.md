@@ -81,16 +81,15 @@ gpm_pipe [options] [-h] commands obsid [obsid ...]
                            |              | sub-bands, so there are four segments. If a single
                            |              | segment has more then SFRAC flagged it is marked as bad.
                            |              | (default = 0.4)
-                postimage  | -P pol       | which polarisation to process (default: I)
 
   commands    : A string of space-delimited commands to run, as a dependency chain, in the order in which they are listed.
                 e.g. "image postimage" will run "obs_image.sh" followed by "obs_postimage.sh". Available commands:
-                    apply_cal, autocal, autoflag, calcleakage, image, manta, postimage,
-                    postimageI, postimageV, tfilter, transient, uvflag
+                    apply_cal, autocal, autoflag, calcleakage, image, postimage,
+                    tfilter, transient, uvflag
 
   obsid       : The obsid(s) of the observation(s) to be processed
 
   EXAMPLE:
 
-      gpm_pipe.sh "manta autoflag apply_cal uvflag image transient postimage-I postimage-V tfilter" OBSID1 OBSID2 ...
+      gpm_pipe.sh "autoflag apply_cal uvflag image transient postimage tfilter" OBSID1 OBSID2 ...
 ```
