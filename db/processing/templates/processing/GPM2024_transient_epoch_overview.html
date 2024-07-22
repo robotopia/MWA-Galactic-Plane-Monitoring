@@ -15,7 +15,7 @@
       <span class="failed legend">Failed</span>
       <span class="calibration legend">Calibration</span>
     </div>
-    <form method="post" action="{% url 'set_epoch_cal' epoch=epoch user=user %}">
+    <form method="post" action="{% url 'set_epoch_cal' pipeline=pipeline epoch=epoch user=user %}">
       {% csrf_token %}
       <label for="set_epoch_cal">Assign this cal obs to all observations in this epoch</label>
       <input type="number" id="set_epoch_cal" name="cal_obs" required/>

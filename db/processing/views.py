@@ -84,7 +84,7 @@ def changeQaStateView(request):
     return HttpResponse(status=200)
 
 
-def setEpochCal(request, epoch, user):
+def setEpochCal(request, pipeline, epoch, user):
 
     # Check that the logged in (Django) user is allowed access to the specified hpc_user
     if not request.user.hpc_users.filter(name=user):
@@ -106,4 +106,4 @@ def setEpochCal(request, epoch, user):
     for observation in observations:
         observation.save()
 
-    return redirect('epoch_overview', epoch=epoch, user=user)
+    return redirect('epoch_overview', pipeline=pipeline, epoch=epoch, user=user)
