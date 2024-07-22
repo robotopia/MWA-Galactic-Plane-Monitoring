@@ -50,8 +50,30 @@ track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date
 subchans="0000 0001 0002 0003 MFS"
 for subchan in $subchans
 do
-    cp ${obsnum}_deep-${subchan}-V-image-pb.fits \
-          ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits
+    if [ ! -f ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits ]
+    then
+        # First time to apply leakage correction:
+        # Make a copy of the pre-corrected Stokes V image
+        cp ${obsnum}_deep-${subchan}-V-image-pb.fits \
+           ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits
+    else
+        # Not the first time applying leakage correction:
+        # Two cases:
+        #   1. A few copy of the Stokes V image as been made by a previous step,
+        #      in which case we want to base the calculation from "...image-pb.fits"
+        #   2. The user has simply tried to re-run this script, in which case we
+        #      want to base the calculation from "...before_leakage_fix.fits"
+        # The way to tell the difference it to check which of the two files
+        # is newer.
+        if [ ${obsnum}_deep-${subchan}-V-image-pb.fits -nt ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits ]
+        then
+            cp ${obsnum}_deep-${subchan}-V-image-pb.fits \
+               ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits
+        else
+            cp ${obsnum}_deep-${subchan}-V-image-pb-before_leakage_fix.fits \
+               ${obsnum}_deep-${subchan}-V-image-pb.fits
+        fi
+    fi
 
     calc_leakage.py \
         --Inonpb ${obsnum}_deep-${subchan}-I-image.fits \
