@@ -7,15 +7,6 @@ echo "gpm_restore obsnum
   It both downloads and extracts the backed-up tar file.
   This script does not run anything on the SLURM queue.
 
-  KNOWN ISSUES:
-    - This script assumes the tar file does not contain the obsid
-      in the file paths. This is only true for backups made in 2024.
-      Consequently, restoring a 2022 data set using this script will
-      place the data in
-         .../[epoch]/[obsid]/[obsid]
-      instead of the correct place,
-         .../[epoch]/[obsid]
-
   obsnum : the obsid to be restored, or a text file of obsids." 1>&2;
 exit 1;
 }
