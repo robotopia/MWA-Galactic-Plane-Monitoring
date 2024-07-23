@@ -148,8 +148,7 @@ do
         done
 
         BANE --cores 1 --compress --noclobber "${obsnum}_deep-${subchan}-I-image-pb.fits"
-        # TODO: Replace the redirection
-        aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-I-image-pb.fits" "./${obsnum}_deep-${subchan}-I-image-pb.fits" > >(tee -a "${obsnum}_deep-${subchan}_aegean.log") 2> >(tee -a "${obsnum}_deep-${subchan}_aegean.log" >&2)
+        aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-I-image-pb.fits" "./${obsnum}_deep-${subchan}-I-image-pb.fits"  > "${obsnum}_deep-${subchan}_aegean.log" 2>&1
     fi
 
     nsrc=$(grep "INFO found" "${obsnum}_deep-${subchan}_aegean.log" | head -1 | awk '{print $3}')
