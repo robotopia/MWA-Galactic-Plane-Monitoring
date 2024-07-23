@@ -284,20 +284,14 @@ do
                 ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits \
                 ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits
 
-            if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_comp.fits" ]]
-            then
-                # (Don't save to the log this time as the numbers should not have changed)
-                aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits"
-            fi
+            # (Don't save to the log this time as the numbers should not have changed)
+            aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits"
 
-            if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_weight.fits" ]]
-            then
-                # Generate a weight map for mosaicking
-                generate_weight_map.py \
-                    "${obsnum}_deep-${subchan}-I-image-pb-XX-beam.fits" \
-                    "${obsnum}_deep-${subchan}-I-image-pb-YY-beam.fits" \
-                    "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
-            fi
+            # Generate a weight map for mosaicking
+            generate_weight_map.py \
+                "${obsnum}_deep-${subchan}-I-image-pb-XX-beam.fits" \
+                "${obsnum}_deep-${subchan}-I-image-pb-YY-beam.fits" \
+                "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
         done
     fi
 done
