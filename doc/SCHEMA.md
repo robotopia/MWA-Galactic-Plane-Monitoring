@@ -185,6 +185,7 @@ This view computes the official paths (e.g. on Acacia) where the data are backed
 CREATE VIEW backup AS
     SELECT obs_id,
            epoch,
+           approx_datetime < '2024-01-01' AS tar_contains_folder,
            IF(approx_datetime < '2024-01-01',
               CONCAT("mwasci:gpmon/", LOWER(epoch), "/", obs_id, ".tar.gz"),
               CONCAT("mwasci:gpm2024/", epoch, "/", obs_id, ".tar.gz")
