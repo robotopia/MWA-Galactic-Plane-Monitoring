@@ -638,14 +638,14 @@ def acacia_path(obs_file):
     cur = conn.cursor()
 
     cur.execute(f"""
-                SELECT obs_id, epoch, acacia FROM backup
+                SELECT obs_id, epoch, tar_contains_folder, acacia FROM backup
                 WHERE obs_id IN ({format_string})
                 """,
                 tuple(obs_ids),
     )
     res = cur.fetchall()
     for row in res:
-        print(f'{row[0]} {row[1]} {row[2]}')
+        print(f'{row[0]} {row[1]} {row[2]} {row[3]}')
     conn.close()
 
 

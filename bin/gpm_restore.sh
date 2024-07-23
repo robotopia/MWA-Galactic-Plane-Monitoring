@@ -43,11 +43,16 @@ SINGCMD="singularity exec ${GPMCONTAINER}"
 
 acacia_paths=$($SINGCMD $GPMBASE/gpm_track.py acacia_path --obs_file $obsnum)
 
-echo "$acacia_paths" | while read obsid epoch acacia_path
+echo "$acacia_paths" | while read obsid epoch tar_contains_folder acacia_path
 do
-  SCRATCH_PATH=$GPMSCRATCH/$epoch/$obsid
+  if [[ "$tar_contains_folder" == "0" ]]
+  then
+    SCRATCH_PATH=$GPMSCRATCH/$epoch/$obsid
+  else
+    SCRATCH_PATH=$GPMSCRATCH/$epoch
+  fi
   echo "-----------------------------"
-  echo "Downloading $obsid to $SCRATCH_PATH"
+  echo "Downloading $obsid to $GPMSCRATCH/$epoch/$obsid"
   mkdir -p $SCRATCH_PATH
   cd $SCRATCH_PATH
   rclone cat $acacia_path | tar xvzf -
