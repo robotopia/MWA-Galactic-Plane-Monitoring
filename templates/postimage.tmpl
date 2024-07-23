@@ -293,9 +293,10 @@ do
             if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_weight.fits" ]]
             then
                 # Generate a weight map for mosaicking
-                generate_weight_map.py "${obsnum}_deep-${subchan}-${pol}-image-pb_warp-XX-beam.fits" \
-                "${obsnum}_deep-${subchan}-${pol}-image-pb_warp-YY-beam.fits" \
-                "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
+                generate_weight_map.py \
+                    "${obsnum}_deep-${subchan}-I-image-pb-XX-beam.fits" \
+                    "${obsnum}_deep-${subchan}-I-image-pb-YY-beam.fits" \
+                    "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
             fi
         done
     fi
