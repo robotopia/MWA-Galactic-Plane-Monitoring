@@ -145,13 +145,18 @@ do
     done
 
     BANE --cores 1 --compress --noclobber "${obsnum}_deep-${subchan}-I-image-pb.fits"
-    aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-I-image-pb.fits" "./${obsnum}_deep-${subchan}-I-image-pb.fits"  > "${obsnum}_deep-${subchan}_aegean.log" 2>&1
+    test_fail $?
+
+    aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-I-image-pb.fits" \
+        "./${obsnum}_deep-${subchan}-I-image-pb.fits"  > "${obsnum}_deep-${subchan}_aegean.log" 2>&1
+    test_fail $?
 
     nsrc=$(grep "INFO found" "${obsnum}_deep-${subchan}_aegean.log" | head -1 | awk '{print $3}')
 
     if [[ $nsrc -lt $minsrcs ]]
     then
         echo "Can't warp ${obsnum} -- only $nsrc sources and minimum required id $minsrcs -- probably a horrible image"
+        test_fail 1
     else
         RA=$( pyhead.py -p RA "${obsnum}.metafits" | awk '{print $3}' )
         Dec=$( pyhead.py -p DEC "${obsnum}.metafits" | awk '{print $3}' )
@@ -164,9 +169,7 @@ do
         # TODO make this dependent on CENTCHAN
         radius=50. #24.8
         
-        if [[ ! -e "${obsnum}_${subchan}_complete_sources_xm.fits" ]]
-        then
-            fits_warp.py \
+        fits_warp.py \
             --incat "${obsnum}_deep-${subchan}-I-image-pb_comp.fits" \
             --refcat "${POS_MODEL_CATALOGUE}" \
             --xm "${obsnum}_${subchan}_complete_sources_xm.fits" \
@@ -176,11 +179,9 @@ do
             --ra2 RAJ2000 \
             --dec2 DEJ2000 \
             --infits "${obsnum}_deep-${subchan}-I-image-pb.fits"
-        fi
+        test_fail $?
         
-        if [[ ! -e "${obsnum}_deep-${subchan}-I-image-pb_warp.fits" || ! -e "${obsnum}_deep-${subchan}-V-image-pb_warp.fits" ]]
-        then
-            fits_warp.py --incat "./${obsnum}_deep-${subchan}-I-image-pb_comp.fits" \
+        fits_warp.py --incat "./${obsnum}_deep-${subchan}-I-image-pb_comp.fits" \
             --refcat "${POS_MODEL_CATALOGUE}" \
             --corrected "./${obsnum}_deep-${subchan}-I-image-pb_comp_warp-corrected.fits" \
             --xm "./${obsnum}_${subchan}_fits_warp_xm.fits" \
@@ -196,14 +197,12 @@ do
             --signal peak_flux_1 \
             --enforce-min-srcs 100
             # --signal peak_flux --noise local_rms --SNR 10
-        fi
+        test_fail $?
 
         
-        if [[ ! -e ${obsnum}_${subchan}_xm.fits ]]
-        then
-            # flux_warp dependency here
-            # Match the image catalogue to the model table:
-            match_catalogues \
+        # flux_warp dependency here
+        # Match the image catalogue to the model table:
+        match_catalogues \
             "${obsnum}_deep-${subchan}-I-image-pb_comp_warp-corrected.fits" \
             "${FLUX_MODEL_CATALOGUE}" \
             --separation "${separation}" \
@@ -220,7 +219,7 @@ do
             -F "int_flux" \
             --eflux "err_int_flux" \
             --localrms "local_rms"
-        fi
+        test_fail $?
 
             # GLEAM-X options
             #--mode mean \
@@ -232,29 +231,30 @@ do
             if [[ ! -e "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_unscaled.fits" ]]
             then
                 flux_warp \
-                "${obsnum}_${subchan}_xm.fits" \
-                "${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" \
-                --freq "${freqq}" \
-                --threshold 0.1 \
-                --mode=linear_screen \
-                --nmax 400 \
-                --flux_key "flux" \
-                --smooth 5.0 \
-                --ignore_magellanic \
-                --localrms_key "local_rms" \
-                --add-to-header \
-                --ra_key "RAJ2000" \
-                --dec_key "DEJ2000" \
-                --index "alpha" \
-                --curvature "beta" \
-                --ref_flux_key "S_200" \
-                --ref_freq 200.0 \
-                --alpha -0.77 \
-                --plot \
-                --cmap "gnuplot2" \
-                --order 2 \
-                --ext png \
-                --nolatex
+                    "${obsnum}_${subchan}_xm.fits" \
+                    "${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" \
+                    --freq "${freqq}" \
+                    --threshold 0.1 \
+                    --mode=linear_screen \
+                    --nmax 400 \
+                    --flux_key "flux" \
+                    --smooth 5.0 \
+                    --ignore_magellanic \
+                    --localrms_key "local_rms" \
+                    --add-to-header \
+                    --ra_key "RAJ2000" \
+                    --dec_key "DEJ2000" \
+                    --index "alpha" \
+                    --curvature "beta" \
+                    --ref_flux_key "S_200" \
+                    --ref_freq 200.0 \
+                    --alpha -0.77 \
+                    --plot \
+                    --cmap "gnuplot2" \
+                    --order 2 \
+                    --ext png \
+                    --nolatex
+                test_fail $?
 
                 # The _scaled stem will break onward processing so move the filenames around
                 mv ${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits \
@@ -267,6 +267,7 @@ do
 
         # Rerun the source finding on both I and V (but will need to do fresh BANE on V)
         BANE --cores 1 --compress --noclobber "${obsnum}_deep-${subchan}-V-image-pb_warp.fits"
+        test_fail $?
 
         for pol in I V
         do
@@ -286,12 +287,14 @@ do
 
             # (Don't save to the log this time as the numbers should not have changed)
             aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits"
+            test_fail $?
 
             # Generate a weight map for mosaicking
             generate_weight_map.py \
                 "${obsnum}_deep-${subchan}-I-image-pb-XX-beam.fits" \
                 "${obsnum}_deep-${subchan}-I-image-pb-YY-beam.fits" \
                 "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
+            test_fail $?
         done
     fi
 done
