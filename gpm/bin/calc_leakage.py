@@ -70,7 +70,7 @@ def do_fit(Inonpb, Ipb, Vpb, nsigma=20, makePlots=False, subchan=None):
         ax.set_ylim(0, ymax)
         ax.set_aspect('equal')
         outpng = f"{obsid}_{subchan}_leakage_map.png" if subchan is not None else f"{obsid}_leakage_map.png"
-        fig.savefig(f"{obsid}_leakage_map.png", bbox_inches="tight")
+        fig.savefig(outpng, bbox_inches="tight")
 
     # Create 3D plot of the data points and the fitted curve
         fig = plt.figure()
@@ -86,7 +86,8 @@ def do_fit(Inonpb, Ipb, Vpb, nsigma=20, makePlots=False, subchan=None):
         ax.set_xlabel('RA')
         ax.set_ylabel('Dec')
         ax.set_zlabel('Fractional leakage / %')
-        fig.savefig(f"{obsid}_leakage_fit.png", bbox_inches="tight")
+        outpng = f"{obsid}_{subchan}_leakage_fit.png" if subchan is not None else f"{obsid}_leakage_fit.png"
+        fig.savefig(outpng, bbox_inches="tight")
 
     # Make a residuals plot
         fig = plt.figure()
@@ -100,7 +101,8 @@ def do_fit(Inonpb, Ipb, Vpb, nsigma=20, makePlots=False, subchan=None):
         ax.set_xlim(0, xmax)
         ax.set_ylim(0, ymax)
         ax.set_aspect('equal')
-        fig.savefig(f"{obsid}_corrected_map.png", bbox_inches="tight")
+        outpng = f"{obsid}_{subchan}_corrected_map.png" if subchan is not None else f"{obsid}_corrected_map.png"
+        fig.savefig(outpng, bbox_inches="tight")
 
     return(popt)
 
