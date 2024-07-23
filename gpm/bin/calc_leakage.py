@@ -26,7 +26,7 @@ def func(xy, a, b, c, d, e, f):
     x, y = xy
     return a + b*x + c*y + d*x**2 + e*y**2 + f*x*y
 
-def do_fit(Inonpb, Ipb, Vpb, nsigma=20, makePlots=False):
+def do_fit(Inonpb, Ipb, Vpb, nsigma=20, makePlots=False, subchan=None):
 
     img_I_npb = np.squeeze(fits.open(Inonpb)[0].data)
     img_I = np.squeeze(fits.open(Ipb)[0].data)
@@ -69,22 +69,7 @@ def do_fit(Inonpb, Ipb, Vpb, nsigma=20, makePlots=False):
         ax.set_xlim(0, xmax)
         ax.set_ylim(0, ymax)
         ax.set_aspect('equal')
-        fig.savefig(f"{obsid}_leakage_map.png", bbox_inches="tight")
-
-        minleakage = np.nanmin(z)
-        maxleakage = np.nanmax(z)
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-    # Reversing these to match that the RA and Dec axes are reversed in the FITS image
-        sc = ax.scatter(y, x, c=z, vmin=minleakage, vmax=maxleakage)
-        ax.set_xlabel("RA / pix")
-        ax.set_ylabel("Dec / pix")
-        cb = plt.colorbar(sc)
-        cb.set_label("Fractional leakage / %")
-        ax.set_xlim(0, xmax)
-        ax.set_ylim(0, ymax)
-        ax.set_aspect('equal')
+        outpng = f"{obsid}_{subchan}_leakage_map.png" if subchan is not None else f"{obsid}_leakage_map.png"
         fig.savefig(f"{obsid}_leakage_map.png", bbox_inches="tight")
 
     # Create 3D plot of the data points and the fitted curve
@@ -134,6 +119,7 @@ def correct_image(Vpb, Ipb, popt, Vout):
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--Inonpb', type=str, dest="Inonpb", help='Stokes I non-primary-beam-corrected image')
+    parser.add_argument('--subchan', type=str, dest="subchan", help='The subchannel. Only used for differentiating output plots. If given, the output filename is "{obsid}_{subchan}_leakage_map.png", otherwise "{obsid}_leakage_map.png"')
     parser.add_argument('--Ipb', type=str, dest="Ipb", help='Stokes I primary-beam-corrected image')
     parser.add_argument('--Vpb', type=str, dest="Vpb", help='Stokes V primary-beam-corrected image')
     parser.add_argument('--Vout', type=str, dest="Vout", help='Output leakage-corrected Stokes V image (default _fixed)', default=None)
@@ -141,7 +127,7 @@ if __name__=='__main__':
     parser.add_argument('--plots', action="store_true", default=False, help='Make diagnostic plots (default=False)')
     args = parser.parse_args()
 
-    popt = do_fit(args.Inonpb, args.Ipb, args.Vpb, args.nsigma, args.plots)
+    popt = do_fit(args.Inonpb, args.Ipb, args.Vpb, args.nsigma, args.plots, subchan=args.subchan)
     if args.Vout is not None:
         Vout = args.Vout
     else:
