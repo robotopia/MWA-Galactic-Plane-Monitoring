@@ -41,7 +41,8 @@ cd "${datadir}" || exit 1
 # export KMP_INIT_AT_FORK=false
 
 # Sub-channels
-subchans="0000 0001 0002 0003 MFS"
+#subchans="0000 0001 0002 0003 MFS"
+subchans="MFS"  # For now, only do post-processing on the MFS image -- the others are not needed for our current purpose!
 
 # flux_warp method
 method=scaled
