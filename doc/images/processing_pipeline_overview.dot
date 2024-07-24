@@ -2,14 +2,14 @@ digraph G {
   rankdir="LR";
 
   // TODO: Make this subgraph actually do something! (And add other subgraphs)
-  subgraph cluster_0 {
-    style=filled;
-    color=lightgrey;
-    transient [label="Make time cubes\n(obs_transient)"];
-    tfilter [label="Apply matched and\nother filters\n(obs_tfilter)"];
-    transient -> tfilter;
-    label="Transients"
-  }
+  //subgraph cluster_0 {
+  //  style=filled;
+  //  color=lightgrey;
+  //  transient [label="Make time cubes\n(obs_transient)"];
+  //  tfilter [label="Apply matched and\nother filters\n(obs_tfilter)"];
+  //  transient -> tfilter;
+  //  label="Transients"
+  //}
 
   is_cal [shape=diamond; label="Is this a\ncalibration\nobservation?"];
   calsol [shape=rectangle; label="Calibration\nsolution"];
@@ -22,6 +22,8 @@ digraph G {
   image [label="Generate images\n(obs_image)"];
   postimage [label="Find sources\nFlux-warp\nFits-warp\n(obs_postimage)"];
   calc_leakage [label="Correct polari-\nsation leakage\n(obs_calcleakage)"];
+  transient [label="Make time cubes\n(obs_transient)"];
+  tfilter [label="Apply matched and\nother filters\n(obs_tfilter)"];
 
   giantsquid -> autoflag -> is_cal;
   is_cal -> autocal [label="Y"];
@@ -30,6 +32,7 @@ digraph G {
   uvsub -> uvflag [dir=back];
   uvflag -> apply_cal [dir=back];
   transient -> image [dir=back];
+  tfilter -> transient [dir=back];
   tfilter -> postimage [style=invis];
   image -> calc_leakage -> postimage;
   apply_cal -> calsol [dir=back; style=dashed];
