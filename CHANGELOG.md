@@ -13,8 +13,12 @@
 ### Changed
 
 - In the user profile, combined "version" and "gitversion" into a single version number, which is now the string that is sent to the database when logging jobs
-- In the database, replaced the `acacia_file` view for the more generic `backup` view.
+- In the database, replaced the `acacia_file` view for the more generic `backup` view
 - Updates to documentation, especially definitions of database views
+- Updated the API for `gpm_track.py`'s `acacia_path` and `update_apply_cal` directives to now read in files of obsids, instead of single obsids
+- Made `obs_calcleakage.sh` robust to multiple runs on the same obsid
+- Switched to using a more complete version of the NVSS catalogue during `postimage`
+- Removed various checks in `postimage` that attempted to avoid redoing certain expensive calculations (moving towards a more modular approach)
 
 ### Fixed
 
