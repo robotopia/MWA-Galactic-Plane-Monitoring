@@ -1,6 +1,26 @@
 
 # Change Log
 
+## v0.4 - 2024-07-03
+
+### Changed
+
+- Added automatic detection of default singularity module when loading profile
+- Added git-tag based versioning to be made available in scripts
+- Reverted to looking for available calibration solution on disk (instead of trying to automatically pull it from Acacia, for example)
+- Added `gpm_automatic_processing.sh`, which so far only checks the MWA services for any new observations that have been taken since the most recent observation in the database
+- Added a `-d` (dependency) option to `gpm_pipe.sh`
+- Added an `obs_acacia.sh` script for archiving imaged observations to Acacia
+- Added a draft script (not yet working) for making an all-sky image
+- Removed the `-c` option from `obs_apply_cal.sh`
+- Removed `-p` options from all scripts (the epoch is now always automatically determined from the database)
+- When submitting multi-obs jobs, database updates are now also done in bulk (instead of one taskid at a time)
+- Added `GPMMAXARRAYJOBS` environment variable to profile, for throttling SLURM queue usage
+- Changed `obs_image.sh` so that its sbatch script contains a full set of SLURM directives
+- Removed deprecated `obs_manta.sh`
+- Created new Django application to sit on top of database
+- Changed incorrect clean settings (`msigma` now set to 5, `tsigma` now set to 3), and other potential errors in `wsclean` calls
+
 ## v0.3 - 2024-01-11
  
 ### Changed
