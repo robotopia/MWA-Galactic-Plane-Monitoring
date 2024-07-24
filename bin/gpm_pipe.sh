@@ -114,6 +114,8 @@ for cmd in $commands
 do
     # Construct options
     case "$cmd" in
+        acacia)
+            options="$toption" ;;
         autoflag)
             options="$toption" ;;
         autocal)
@@ -126,10 +128,6 @@ do
             options="$zoption $toption" ;;
         postimage)
             options="$toption $Poption" ;;
-        postimageI)
-            options="$toption" ;;
-        postimageV)
-            options="$toption" ;;
         tfilter)
             options="$toption" ;;
         transient)
