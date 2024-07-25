@@ -145,7 +145,7 @@ do
            "${obsnum}_deep-${subchan}-${pol}-image-pb.fits"
     done
 
-    BANE --cores 1 --compress --noclobber "${obsnum}_deep-${subchan}-I-image-pb.fits"
+    BANE --cores 1 --compress "${obsnum}_deep-${subchan}-I-image-pb.fits"
     test_fail $?
 
     aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-I-image-pb.fits" \
@@ -267,7 +267,7 @@ do
         done
 
         # Rerun the source finding on both I and V (but will need to do fresh BANE on V)
-        BANE --cores 1 --compress --noclobber "${obsnum}_deep-${subchan}-V-image-pb_warp.fits"
+        BANE --cores 1 --compress "${obsnum}_deep-${subchan}-V-image-pb_warp.fits"
         test_fail $?
 
         # Compress the scaling image so it can be applied it to the RMS and BKG images
