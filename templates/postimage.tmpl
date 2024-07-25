@@ -289,15 +289,15 @@ do
             # (Don't save to the log this time as the numbers should not have changed)
             aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits"
             test_fail $?
-
-            # Generate a weight map for mosaicking
-            rm -f ${obsnum}_deep-${subchan}-${pol}-image-pb_weight.fits
-            generate_weight_map.py \
-                "${obsnum}_deep-${subchan}-I-image-pb-XX-beam.fits" \
-                "${obsnum}_deep-${subchan}-I-image-pb-YY-beam.fits" \
-                "${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits"
-            test_fail $?
         done
+
+        # Generate a weight map for mosaicking
+        rm -f ${obsnum}_deep-${subchan}-I-image-pb_weight.fits
+        generate_weight_map.py \
+            "${obsnum}_deep-${subchan}-I-image-pb-XX-beam.fits" \
+            "${obsnum}_deep-${subchan}-I-image-pb-YY-beam.fits" \
+            "${obsnum}_deep-${subchan}-I-image-pb_warp_rms.fits"
+        test_fail $?
     fi
 done
 
