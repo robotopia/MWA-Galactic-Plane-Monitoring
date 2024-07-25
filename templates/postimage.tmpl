@@ -270,22 +270,22 @@ do
         BANE --cores 1 --compress --noclobber "${obsnum}_deep-${subchan}-V-image-pb_warp.fits"
         test_fail $?
 
+        # Compress the scaling image so it can be applied it to the RMS and BKG images
+        factor=$(pyhead.py -p BN_CFAC "${obsnum}_deep-${subchan}-I-image-pb_rms.fits" | awk '{print $3}')
+        SR6 -f $factor \
+            -o ${obsnum}_deep-${subchan}-I-image-pb_warp_scaled_cf_sr6.fits \
+            ${obsnum}_deep-${subchan}-I-image-pb_warp_scaled_cf.fits
+        python3 $GPMBASE/gpm/bin/divide.py \
+            ${obsnum}_deep-${subchan}-I-image-pb_rms.fits \
+            ${obsnum}_deep-${subchan}-I-image-pb_warp_scaled_cf_sr6.fits \
+            ${obsnum}_deep-${subchan}-I-image-pb_warp_rms.fits
+        python3 $GPMBASE/gpm/bin/divide.py \
+            ${obsnum}_deep-${subchan}-I-image-pb_bkg.fits \
+            ${obsnum}_deep-${subchan}-I-image-pb_warp_scaled_cf_sr6.fits \
+            ${obsnum}_deep-${subchan}-I-image-pb_warp_bkg.fits
+
         for pol in I V
         do
-            # Compress the scaling image so it can be applied it to the RMS and BKG images
-            factor=$(pyhead.py -p BN_CFAC "${obsnum}_deep-${subchan}-I-image-pb_rms.fits" | awk '{print $3}')
-            SR6 -f $factor \
-                -o ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits \
-                ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf.fits
-            python3 $GPMBASE/gpm/bin/divide.py \
-                ${obsnum}_deep-${subchan}-${pol}-image-pb_rms.fits \
-                ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits \
-                ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_rms.fits
-            python3 $GPMBASE/gpm/bin/divide.py \
-                ${obsnum}_deep-${subchan}-${pol}-image-pb_bkg.fits \
-                ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_scaled_cf_sr6.fits \
-                ${obsnum}_deep-${subchan}-${pol}-image-pb_warp_bkg.fits
-
             # (Don't save to the log this time as the numbers should not have changed)
             aegean --cores 1 --autoload --table="./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits" "./${obsnum}_deep-${subchan}-${pol}-image-pb_warp.fits"
             test_fail $?
