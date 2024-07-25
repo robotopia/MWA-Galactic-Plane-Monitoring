@@ -291,6 +291,7 @@ do
             test_fail $?
 
             # Generate a weight map for mosaicking
+            rm -f ${obsnum}_deep-${subchan}-${pol}-image-pb_weight.fits
             generate_weight_map.py \
                 "${obsnum}_deep-${subchan}-I-image-pb-XX-beam.fits" \
                 "${obsnum}_deep-${subchan}-I-image-pb-YY-beam.fits" \
