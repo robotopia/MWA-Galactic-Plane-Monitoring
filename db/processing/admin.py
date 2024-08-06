@@ -66,6 +66,10 @@ class BackupAdmin(admin.ModelAdmin):
 class CalApparentAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'source', 'appflux', 'infov']
 
+@admin.register(Cluster)
+class ClusterAdmin(admin.ModelAdmin):
+    list_display = ['name', 'hpc']
+
 @admin.register(Epoch)
 class EpochAdmin(admin.ModelAdmin):
     list_display = ['obs', 'epoch', 'approx_datetime']
@@ -78,10 +82,17 @@ class EpochOverviewAdmin(admin.ModelAdmin):
     list_filter = ['user', YearListFilter, 'task', 'status', 'epoch']
     date_hierarchy = 'submission_time'
 
+@admin.register(Hpc)
+class HpcAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name']
+
 @admin.register(HpcUser)
 class HpcUserAdmin(admin.ModelAdmin):
-    list_display = ['name']
-    #filter_horizontal = ['auth_users']
+    list_display = ['id', 'name']
+
+@admin.register(HpcUserSetting)
+class HpcUserSettingAdmin(admin.ModelAdmin):
+    list_display = ['id', 'hpc_user', 'account', 'max_array_jobs']
 
 @admin.register(Mosaic)
 class MosaicAdmin(admin.ModelAdmin):
@@ -97,6 +108,10 @@ class ObservationAdmin(admin.ModelAdmin):
 class PipelineStepAdmin(admin.ModelAdmin):
     list_display = ['pk', 'pipeline', 'step_order', 'task']
 
+@admin.register(TaskClusterSetting)
+class TaskClusterSettingAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'task', 'cluster', 'time_request', 'queue']
+
 @admin.register(Processing)
 class ProcessingAdmin(admin.ModelAdmin):
     list_display = ['job_id', 'obs_id', 'user', 'task', 'submission_time', 'status']
@@ -105,5 +120,9 @@ class ProcessingAdmin(admin.ModelAdmin):
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
     list_display = ['source', 'raj2000', 'decj2000', 'flux', 'alpha', 'beta']
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'name', 'script_name']
 
 

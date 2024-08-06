@@ -60,6 +60,17 @@ class CalApparent(models.Model):
         unique_together = (('obs', 'source'),)
 
 
+class Cluster(models.Model):
+    name = models.CharField(max_length=31)
+    hpc = models.ForeignKey('Hpc', models.DO_NOTHING)
+    copy_queue = models.CharField(max_length=31, null=True, blank=True)
+    work_queue = models.CharField(max_length=31, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'cluster'
+
+
 class Epoch(models.Model):
     obs = models.OneToOneField('Observation', models.DO_NOTHING, primary_key=True)
     epoch = models.CharField(max_length=9)
@@ -106,8 +117,22 @@ class EpochOverview(models.Model):
         ordering = ['obs', 'user', 'task']
 
 
+class Hpc(models.Model):
+    name = models.CharField(max_length=127)
+
+    def __str__(self) -> str:
+        return self.name
+
+    class Meta:
+        managed = False
+        db_table = 'hpc'
+        verbose_name = 'HPC'
+        verbose_name_plural = 'HPCs'
+
+
 class HpcUser(models.Model):
     name = models.CharField(max_length=1023)
+    hpc = models.ForeignKey("Hpc", models.DO_NOTHING, related_name="hpc_users")
     auth_users = models.ManyToManyField(
         User,
         blank=True,
@@ -117,13 +142,28 @@ class HpcUser(models.Model):
     )
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name}@{self.hpc}"
 
     class Meta:
         managed = False
         db_table = 'hpc_user'
-        verbose_name = 'HPC User'
-        verbose_name_plural = 'HPC Users'
+        verbose_name = 'HPC user'
+        verbose_name_plural = 'HPC users'
+
+
+class HpcUserSetting(models.Model):
+    hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="hpc_user_settings")
+    account = models.CharField(max_length=31, null=True, blank=True)
+    max_array_jobs = models.IntegerField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.hpc_user}"
+
+    class Meta:
+        managed = False
+        db_table = 'hpc_user_setting'
+        verbose_name = 'HPC user setting'
+        verbose_name_plural = 'HPC user settings'
 
 
 class HpcAuthUser(models.Model):
@@ -200,10 +240,25 @@ class PipelineStep(models.Model):
     step_order = models.IntegerField()
     task = models.TextField()
 
+    def __str__(self) -> str:
+        return f"{self.task} ({self.pipeline})"
+
     class Meta:
         managed = False
         db_table = 'pipeline_step'
         unique_together = (('pipeline', 'step_order'),)
+        ordering = ['pipeline', 'step_order']
+
+
+class TaskClusterSetting(models.Model):
+    task = models.ForeignKey("Task", models.DO_NOTHING, related_name="cluster_settings")
+    cluster = models.ForeignKey("Cluster", models.DO_NOTHING, related_name="task_settings")
+    time_request = models.CharField(max_length=15, null=True, blank=True)
+    queue = models.CharField(max_length=31, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = 'task_cluster_setting'
 
 
 class Processing(models.Model):
@@ -242,3 +297,20 @@ class Source(models.Model):
     class Meta:
         managed = False
         db_table = 'sources'
+
+
+
+class Task(models.Model):
+    name = models.CharField(max_length=31)
+    script_name = models.CharField(max_length=31)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+    class Meta:
+        managed = False
+        db_table = 'task'
+        ordering = ['name']
+
+
