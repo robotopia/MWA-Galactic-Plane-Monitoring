@@ -207,3 +207,45 @@ CREATE VIEW epoch_stats AS
         ON e.obs_id = o.obs_id
     GROUP BY e.epoch;
 ```
+
+### `slurm_summary`
+
+This view summarises the SLURM directive values for each user/task/cluster combination.
+
+```
+CREATE VIEW slurm_summary AS
+    SELECT hu.name AS user,
+           t.name AS task,
+           c.name AS cluster,
+           hus.account,
+           hus.max_array_jobs,
+           tcs.time_request,
+           tcs.queue,
+           tcs.cpus_per_task,
+           tcs.memory_request_gb
+    FROM hpc_user_setting AS hus
+    JOIN task_cluster_setting AS tcs
+    LEFT JOIN hpc_user AS hu
+        ON hus.hpc_user_id = hu.id
+    LEFT JOIN task AS t
+        ON tcs.task_id = t.id
+    LEFT JOIN cluster AS c
+        ON tcs.cluster_id = c.id;
+```
+
+### `slurm_header`
+
+> [!WARNING]
+> In progress
+
+```
+    SELECT user, task, cluster,
+           CONCAT(
+               IF(account IS NOT NULL, CONCAT("#SBATCH --account=", account, "\n"), ""),
+               IF(time_request IS NOT NULL, CONCAT("#SBATCH --time=", time_request, "\n"), ""),
+               IF(queue IS NOT NULL, CONCAT("#SBATCH --partition=", queue, "\n"), ""),
+               IF(cpus_per_task IS NOT NULL, CONCAT("#SBATCH --cpus-per-task=", cpus_per_task, "\n"), ""),
+               IF(memory_request_gb IS NOT NULL, CONCAT("#SBATCH --mem=", memory_request_gb, "g\n"), "")
+           ) AS text
+    FROM slurm_summary;
+```

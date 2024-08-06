@@ -66,6 +66,9 @@ class Cluster(models.Model):
     copy_queue = models.CharField(max_length=31, null=True, blank=True)
     work_queue = models.CharField(max_length=31, null=True, blank=True)
 
+    def __str__(self) -> str:
+        return f"{self.name} ({self.hpc})"
+
     class Meta:
         managed = False
         db_table = 'cluster'
@@ -250,17 +253,6 @@ class PipelineStep(models.Model):
         ordering = ['pipeline', 'step_order']
 
 
-class TaskClusterSetting(models.Model):
-    task = models.ForeignKey("Task", models.DO_NOTHING, related_name="cluster_settings")
-    cluster = models.ForeignKey("Cluster", models.DO_NOTHING, related_name="task_settings")
-    time_request = models.CharField(max_length=15, null=True, blank=True)
-    queue = models.CharField(max_length=31, null=True, blank=True)
-
-    class Meta:
-        managed = False
-        db_table = 'task_cluster_setting'
-
-
 class Processing(models.Model):
     job_id = models.IntegerField(primary_key=True)  # The composite primary key (job_id, task_id, host_cluster) found, that is not supported. The first column is selected.
     task_id = models.IntegerField()
@@ -312,5 +304,23 @@ class Task(models.Model):
         managed = False
         db_table = 'task'
         ordering = ['name']
+
+
+class TaskClusterSetting(models.Model):
+    task = models.ForeignKey("Task", models.DO_NOTHING, related_name="cluster_settings")
+    cluster = models.ForeignKey("Cluster", models.DO_NOTHING, related_name="task_settings")
+    time_request = models.CharField(max_length=15, null=True, blank=True)
+    queue = models.CharField(max_length=31, null=True, blank=True)
+    cpus_per_task = models.IntegerField(blank=True, null=True, verbose_name="CPUs per task")
+    memory_request_gb = models.IntegerField(blank=True, null=True, verbose_name="Memory request (GB)")
+
+    def __str__(self) -> str:
+        return f"{self.task} ({self.cluster})"
+
+    class Meta:
+        managed = False
+        db_table = 'task_cluster_setting'
+        unique_together = ['task', 'cluster']
+        ordering = ['task', 'cluster']
 
 

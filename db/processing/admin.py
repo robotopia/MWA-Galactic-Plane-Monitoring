@@ -111,6 +111,7 @@ class PipelineStepAdmin(admin.ModelAdmin):
 @admin.register(TaskClusterSetting)
 class TaskClusterSettingAdmin(admin.ModelAdmin):
     list_display = ['pk', 'task', 'cluster', 'time_request', 'queue']
+    list_filter = ['task', 'cluster']
 
 @admin.register(Processing)
 class ProcessingAdmin(admin.ModelAdmin):
