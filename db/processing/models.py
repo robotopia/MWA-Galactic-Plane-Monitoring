@@ -164,6 +164,8 @@ class HpcUserSetting(models.Model):
                                   help_text="The 'scratch' path where the data are processed")
     logdir = models.CharField(max_length=1023, null=True, blank=True,
                               help_text="The path where to place the log files")
+    scriptdir = models.CharField(max_length=1023, null=True, blank=True,
+                              help_text="The path where to place the script files")
     container = models.CharField(max_length=1023, null=True, blank=True,
                               help_text="The path where to the singularity container")
 
