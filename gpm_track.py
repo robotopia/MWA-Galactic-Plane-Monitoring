@@ -793,7 +793,7 @@ def get_environment():
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT account, max_array_jobs, basedir, scratchdir, logdir, container
+        SELECT account, basedir, scratchdir, logdir, container
         FROM hpc_user_setting AS hus
         LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
         WHERE hu.name = %s
@@ -802,11 +802,10 @@ def get_environment():
     )
     res = cur.fetchone()
     print(f"""export GPMACCOUNT={res[0]}
-export GPMMAXARRAYJOBS={res[1]}
-export GPMBASE={res[2]}
-export GPMSCRATCH={res[3]}
-export GPMLOG={res[4]}
-export GPMCONTAINER={res[5]}""")
+export GPMBASE={res[1]}
+export GPMSCRATCH={res[2]}
+export GPMLOG={res[3]}
+export GPMCONTAINER={res[4]}""")
     conn.close()
 
 
