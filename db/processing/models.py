@@ -164,6 +164,8 @@ class HpcUserSetting(models.Model):
                                   help_text="The 'scratch' path where the data are processed")
     logdir = models.CharField(max_length=1023, null=True, blank=True,
                               help_text="The path where to place the log files")
+    container = models.CharField(max_length=1023, null=True, blank=True,
+                              help_text="The path where to the singularity container")
 
     def __str__(self) -> str:
         return f"{self.hpc_user}"
@@ -286,9 +288,9 @@ class Processing(models.Model):
 
 
 class SlurmHeader(models.Model):
-    user = models.CharField(max_length=1023)
-    task = models.CharField(max_length=31)
-    cluster = models.CharField(max_length=31)
+    user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="slurm_headers")
+    task = models.ForeignKey("Task", models.DO_NOTHING, related_name="slurm_headers")
+    cluster = models.ForeignKey("Cluster", models.DO_NOTHING, related_name="slurm_headers")
     header = models.TextField(primary_key=True)
 
     def __str__(self) -> str:

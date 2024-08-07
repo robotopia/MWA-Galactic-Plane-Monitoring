@@ -53,6 +53,7 @@ DIRECTIVES = (
     "last_obs",
     "recent_obs",
     "obs_type",
+    "get_environment",
 )
 
 
@@ -785,6 +786,30 @@ def calibrations():
     conn.close()
 
 
+def get_environment():
+    """Gets HPC user environment information from the hpc_user_setting table
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT account, max_array_jobs, basedir, scratchdir, logdir, container
+        FROM hpc_user_setting AS hus
+        LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
+        WHERE hu.name = %s
+        """,
+        (os.environ["USER"],)
+    )
+    res = cur.fetchone()
+    print(f"""export GPMACCOUNT={res[0]}
+export GPMMAXARRAYJOBS={res[1]}
+export GPMBASE={res[2]}
+export GPMSCRATCH={res[3]}
+export GPMLOG={res[4]}
+export GPMCONTAINER={res[5]}""")
+    conn.close()
+
+
 def obs_type(obs_id):
     """Prints either 'target' or 'calibration' depending on the type of observation.
     If obs_id doesn't exist, prints nothing.
@@ -1040,6 +1065,9 @@ if __name__ == "__main__":
     elif args.directive.lower() == "recent_obs":
         require(args, ["nhours"])
         recent_observations(args.nhours)
+
+    elif args.directive.lower() == "get_environment":
+        get_environment()
 
     else:
         print(
