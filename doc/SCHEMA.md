@@ -214,23 +214,19 @@ This view summarises the SLURM directive values for each user/task/cluster combi
 
 ```
 CREATE VIEW slurm_summary AS
-    SELECT hu.name AS user,
-           t.name AS task,
-           c.name AS cluster,
+    SELECT hus.hpc_user_id,
+           tcs.task_id,
+           tcs.cluster_id,
            hus.account,
            hus.max_array_jobs,
            tcs.time_request,
            tcs.queue,
            tcs.cpus_per_task,
-           tcs.memory_request_gb
+           tcs.memory_request_gb,
+           tcs.task_cluster_id,
+           tcs.export
     FROM hpc_user_setting AS hus
-    JOIN task_cluster_setting AS tcs
-    LEFT JOIN hpc_user AS hu
-        ON hus.hpc_user_id = hu.id
-    LEFT JOIN task AS t
-        ON tcs.task_id = t.id
-    LEFT JOIN cluster AS c
-        ON tcs.cluster_id = c.id;
+    JOIN task_cluster_setting AS tcs;
 ```
 
 ### `slurm_header`
@@ -239,13 +235,51 @@ CREATE VIEW slurm_summary AS
 > In progress
 
 ```
-    SELECT user, task, cluster,
+CREATE VIEW slurm_header AS
+    SELECT hpc_user_id, task_id, cluster_id,
            CONCAT(
+               IF(export IS NOT NULL, CONCAT("#SBATCH --export=", export, "\n"), ""),
                IF(account IS NOT NULL, CONCAT("#SBATCH --account=", account, "\n"), ""),
                IF(time_request IS NOT NULL, CONCAT("#SBATCH --time=", time_request, "\n"), ""),
                IF(queue IS NOT NULL, CONCAT("#SBATCH --partition=", queue, "\n"), ""),
                IF(cpus_per_task IS NOT NULL, CONCAT("#SBATCH --cpus-per-task=", cpus_per_task, "\n"), ""),
-               IF(memory_request_gb IS NOT NULL, CONCAT("#SBATCH --mem=", memory_request_gb, "g\n"), "")
-           ) AS text
-    FROM slurm_summary;
+               IF(memory_request_gb IS NOT NULL, CONCAT("#SBATCH --mem=", memory_request_gb, "g\n"), ""),
+               IF(task_cluster_id IS NOT NULL, CONCAT("#SBATCH --clusters=", tc.name, "\n"), "")
+           ) AS header
+    FROM slurm_summary AS ss
+    LEFT JOIN cluster AS tc
+        ON task_cluster_id = tc.id;
+```
+
+### `epoch_obs_list` and `slurm_obs_list_header`
+
+> [!WARNING]
+> Only uses non-calibration observations in the array list.
+> See `slurm_cal_list_header` for the equivalent using just calibration observations [<-- TODO!]
+
+```
+CREATE VIEW epoch_obs_list AS
+    SELECT e.epoch,
+           GROUP_CONCAT(e.obs_id) AS obs_id_list
+    FROM epoch AS e
+    LEFT JOIN observation AS o
+        ON e.obs_id = o.obs_id
+    WHERE o.calibration = false
+    GROUP BY e.epoch;
+```
+
+```
+CREATE VIEW slurm_obs_list_header AS
+    SELECT sh.hpc_user_id, sh.task_id, sh.cluster_id, eol.epoch,
+           CONCAT(sh.header,
+                  "#SBATCH --array=", eol.obs_id_list, "\n",
+                  "#SBATCH --output=", hus.logdir, "/", t.name, "_%a.o%j\n",
+                  "#SBATCH --error=", hus.logdir, "/", t.name, "_%a.e%j\n"
+                  )
+    FROM slurm_header AS sh
+    JOIN epoch_obs_list AS eol
+    LEFT JOIN hpc_user_setting AS hus
+        ON sh.hpc_user_id = hus.hpc_user_id
+    LEFT JOIN task AS t
+        ON sh.task_id = t.id;
 ```

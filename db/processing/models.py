@@ -158,6 +158,12 @@ class HpcUserSetting(models.Model):
     hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="hpc_user_settings")
     account = models.CharField(max_length=31, null=True, blank=True)
     max_array_jobs = models.IntegerField(null=True, blank=True)
+    basedir = models.CharField(max_length=1023, null=True, blank=True,
+                               help_text="The path where the software repository is installed")
+    scratchdir = models.CharField(max_length=1023, null=True, blank=True,
+                                  help_text="The 'scratch' path where the data are processed")
+    logdir = models.CharField(max_length=1023, null=True, blank=True,
+                              help_text="The path where to place the log files")
 
     def __str__(self) -> str:
         return f"{self.hpc_user}"
@@ -242,6 +248,7 @@ class PipelineStep(models.Model):
     pipeline = models.CharField(max_length=31)
     step_order = models.IntegerField()
     task = models.TextField()
+    task_id = models.ForeignKey("Task", models.DO_NOTHING, db_column='task_id', related_name="pipeline_steps")
 
     def __str__(self) -> str:
         return f"{self.task} ({self.pipeline})"
@@ -276,6 +283,23 @@ class Processing(models.Model):
         unique_together = (('job_id', 'task_id', 'host_cluster'),)
         ordering = ['-submission_time']
         verbose_name_plural = "Processing"
+
+
+class SlurmHeader(models.Model):
+    user = models.CharField(max_length=1023)
+    task = models.CharField(max_length=31)
+    cluster = models.CharField(max_length=31)
+    header = models.TextField(primary_key=True)
+
+    def __str__(self) -> str:
+        return f"SLURM header ({self.user} / {self.task} / {self.cluster})"
+
+    class Meta:
+        managed = False
+        db_table = 'slurm_header'
+        ordering = ['user', 'task', 'cluster']
+        verbose_name = 'SLURM header'
+        verbose_name_plural = 'SLURM headers'
 
 
 class Source(models.Model):
@@ -313,6 +337,9 @@ class TaskClusterSetting(models.Model):
     queue = models.CharField(max_length=31, null=True, blank=True)
     cpus_per_task = models.IntegerField(blank=True, null=True, verbose_name="CPUs per task")
     memory_request_gb = models.IntegerField(blank=True, null=True, verbose_name="Memory request (GB)")
+    task_cluster = models.ForeignKey("Cluster", models.DO_NOTHING, null=True, blank=True,
+                                     related_name="runnable_task_settings")
+    export = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.task} ({self.cluster})"
