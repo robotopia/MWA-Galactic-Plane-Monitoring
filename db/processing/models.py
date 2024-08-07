@@ -288,18 +288,18 @@ class Processing(models.Model):
 
 
 class SlurmHeader(models.Model):
-    user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="slurm_headers")
+    hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="slurm_headers")
     task = models.ForeignKey("Task", models.DO_NOTHING, related_name="slurm_headers")
     cluster = models.ForeignKey("Cluster", models.DO_NOTHING, related_name="slurm_headers")
     header = models.TextField(primary_key=True)
 
     def __str__(self) -> str:
-        return f"SLURM header ({self.user} / {self.task} / {self.cluster})"
+        return f"SLURM header ({self.hpc_user} / {self.task} / {self.cluster})"
 
     class Meta:
         managed = False
         db_table = 'slurm_header'
-        ordering = ['user', 'task', 'cluster']
+        ordering = ['hpc_user', 'task', 'cluster']
         verbose_name = 'SLURM header'
         verbose_name_plural = 'SLURM headers'
 

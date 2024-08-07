@@ -236,7 +236,7 @@ CREATE VIEW slurm_summary AS
 
 ```
 CREATE VIEW slurm_header AS
-    SELECT hpc_user_id, task_id, cluster_id,
+    SELECT hpc_user_id, task_id, cluster_id, max_array_jobs,
            CONCAT(
                IF(export IS NOT NULL, CONCAT("#SBATCH --export=", export, "\n"), ""),
                IF(account IS NOT NULL, CONCAT("#SBATCH --account=", account, "\n"), ""),
@@ -272,7 +272,9 @@ CREATE VIEW epoch_obs_list AS
 CREATE VIEW slurm_obs_list_header AS
     SELECT sh.hpc_user_id, sh.task_id, sh.cluster_id, eol.epoch,
            CONCAT(sh.header,
-                  "#SBATCH --array=", eol.obs_id_list, "\n",
+                  "#SBATCH --array=", eol.obs_id_list,
+                  IF(sh.max_array_jobs IS NOT NULL, CONCAT("%", sh.max_array_jobs), ""),
+                  "\n",
                   "#SBATCH --output=", hus.logdir, "/", t.name, "_%a.o%j\n",
                   "#SBATCH --error=", hus.logdir, "/", t.name, "_%a.e%j\n"
                   ) AS header

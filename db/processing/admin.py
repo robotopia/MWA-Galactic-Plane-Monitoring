@@ -120,8 +120,8 @@ class ProcessingAdmin(admin.ModelAdmin):
 
 @admin.register(SlurmHeader)
 class SlurmHeaderAdmin(admin.ModelAdmin):
-    list_display = ['user', 'task', 'cluster']
-    readonly_fields = ['user', 'task', 'cluster', 'header']
+    list_display = ['hpc_user', 'task', 'cluster']
+    readonly_fields = ['hpc_user', 'task', 'cluster', 'header']
 
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
