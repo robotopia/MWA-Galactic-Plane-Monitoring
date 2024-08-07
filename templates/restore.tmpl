@@ -38,6 +38,9 @@ fi
 RCLONE_MODULE=$(module -t --default -r avail "^rclone$" 2>&1 | grep -v ':' | head -1)
 module load $RCLONE_MODULE
 
+# Load environment settings afresh
+hpc_user_settings=$($GPMBASE/gpm_track.py get_environment)
+
 acacia_path_info=$($GPMBASE/gpm_track.py acacia_path --obs_file $obsnum)
 test_fail $?
 

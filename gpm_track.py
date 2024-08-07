@@ -54,6 +54,7 @@ DIRECTIVES = (
     "recent_obs",
     "obs_type",
     "get_environment",
+    "write_slurm_script",
 )
 
 
@@ -291,6 +292,42 @@ def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout
 
     conn.commit()
     conn.close()
+
+
+def write_slurm_script(task, epoch, host_cluster, user):
+    """Uses information from the database to assemble a SLURM script
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+    cur.execute("""SELECT solh.header, t.script_name
+        FROM slurm_obs_list_header AS solh
+        LEFT JOIN task AS t ON solh.task_id = t.id
+        LEFT JOIN cluster AS c ON solh.cluster_id = c.id
+        LEFT JOIN hpc_user AS hu ON solh.hpc_user_id = hu.id
+        WHERE t.name = %s
+          AND solh.epoch = %s COLLATE utf8mb4_bin 
+          AND c.name = %s
+          AND hu.name = %s
+        """,
+        (task, epoch, host_cluster, user),
+    )
+    header, script_name = cur.fetchone()
+
+    # Print shebang
+    print("#!/bin/bash -l\n")
+
+    # Print SLURM header
+    print(header)
+
+    # Prepare the script
+    print("obsnum=$SLURM_ARRAY_TASK_ID")
+    print(f"script=$GPMSCRIPT/{task}_${{obsnum}}_${{SLURM_JOB_ID}}.sh")
+    print(f"cp $GPMBASE/templates/{script_name}.tmpl $script")
+    print(f"srun singularity exec $GPMCONTAINER $script ${{obsnum}}")
+
+    conn.commit()
+    conn.close()
+
 
 
 def start_job(job_id, task_id, host_cluster, start_time):
@@ -1068,6 +1105,10 @@ if __name__ == "__main__":
 
     elif args.directive.lower() == "get_environment":
         get_environment()
+
+    elif args.directive.lower() == "write_slurm_script":
+        require(args, ["task", "host_cluster", "epoch", "user"])
+        write_slurm_script(args.task, args.epoch, args.host_cluster, args.user)
 
     else:
         print(
