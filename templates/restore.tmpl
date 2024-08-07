@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 usage()
 {
 echo "obs_restore.sh obsnum
@@ -28,11 +26,20 @@ then
   exit 1
 fi
 
+function test_fail {
+if [[ $1 != 0 ]]
+then
+    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    exit "$1"
+fi
+}
+
 # Load the rclone module
 RCLONE_MODULE=$(module -t --default -r avail "^rclone$" 2>&1 | grep -v ':' | head -1)
 module load $RCLONE_MODULE
 
 acacia_path_info=$($GPMBASE/gpm_track.py acacia_path --obs_file $obsnum)
+test_fail $?
 
 read -r obsid epoch tar_contains_folder acacia_path <<< "$acacia_path_info"
 
@@ -47,3 +54,4 @@ echo "Downloading $obsid to $GPMSCRATCH/$epoch/$obsid"
 mkdir -p $SCRATCH_PATH
 cd $SCRATCH_PATH
 rclone cat $acacia_path | tar xvzf -
+test_fail $?
