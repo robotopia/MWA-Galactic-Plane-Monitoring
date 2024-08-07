@@ -260,7 +260,7 @@ CREATE VIEW slurm_header AS
 ```
 CREATE VIEW epoch_obs_list AS
     SELECT e.epoch,
-           GROUP_CONCAT(e.obs_id) AS obs_id_list
+           GROUP_CONCAT(e.obs_id ORDER BY e.obs_id) AS obs_id_list
     FROM epoch AS e
     LEFT JOIN observation AS o
         ON e.obs_id = o.obs_id
@@ -275,7 +275,7 @@ CREATE VIEW slurm_obs_list_header AS
                   "#SBATCH --array=", eol.obs_id_list, "\n",
                   "#SBATCH --output=", hus.logdir, "/", t.name, "_%a.o%j\n",
                   "#SBATCH --error=", hus.logdir, "/", t.name, "_%a.e%j\n"
-                  )
+                  ) AS header
     FROM slurm_header AS sh
     JOIN epoch_obs_list AS eol
     LEFT JOIN hpc_user_setting AS hus
