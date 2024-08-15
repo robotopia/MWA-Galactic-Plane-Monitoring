@@ -98,7 +98,7 @@ then
     echo "#SBATCH ${jobarray}
 
 # Get obsid for this array job
-obsnum=\$(sed -n -e \"\${SLURM_ARRAY_TASK_ID}\"p \"\${obsnum}\")
+obsnum=\$(sed -n -e \"\${SLURM_ARRAY_TASK_ID}\"p \"${obsnum}\")
 
 taskid=\"\${SLURM_ARRAY_TASK_ID}\"
 jobid=\"\${SLURM_ARRAY_JOB_ID}\"
@@ -166,9 +166,8 @@ sub="sbatch ${depend} --export=ALL ${sbatch_script}"
 
 if [[ ! -z ${tst} ]]
 then
-    echo "script is ${script}"
-    echo "submit via:"
-    echo "${sub}"
+    echo -e "script is:\n\t${sbatch_script}"
+    echo -e "submit via:\n\t${sub}"
     exit 0
 fi
 
