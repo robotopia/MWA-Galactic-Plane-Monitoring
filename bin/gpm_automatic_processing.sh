@@ -10,6 +10,7 @@
 MWA_PROJECT=G0080
 
 # A handy "alias" for running the database-interaction script
+container="singularity exec $GPMCONTAINER"
 gpmdb="singularity exec $GPMCONTAINER $GPMBASE/gpm_track.py"
 
 # Where the output of this log will go
@@ -58,7 +59,7 @@ if echo "${MWA_RESPONSE}" | grep -q html
 then
   echo "Found no new observations"
 else
-  NEW_OBS="$(echo "${MWA_RESPONSE}" | jq '.[] | .[0]')"
+  NEW_OBS="$(echo "${MWA_RESPONSE}" | ${container} jq '.[] | .[0]')"
   NUM_NEW_OBS=$(echo "${NEW_OBS}" | wc -w)
 
   ## Import them into the database
