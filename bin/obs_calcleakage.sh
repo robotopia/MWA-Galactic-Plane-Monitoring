@@ -97,7 +97,7 @@ chmod 755 "${script}"
 echo '#!/bin/bash' > ${script}.sbatch
 echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
 
-sub="sbatch --begin=now --export=ALL  --time=00:30:00 --mem=24G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
+sub="sbatch --begin=now --export=ALL  --time=00:05:00 --mem=16G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
 sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
