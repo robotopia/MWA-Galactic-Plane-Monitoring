@@ -61,8 +61,8 @@ then
     fi
 fi
 
-output="${GPMLOG}/image_${obsnum}.o%A"
-error="${GPMLOG}/image_${obsnum}.e%A"
+output="${GPMLOG}/restore_${obsnum}.o%A"
+error="${GPMLOG}/restore_${obsnum}.e%A"
 
 if [[ -f ${obsnum} ]]
 then
@@ -77,8 +77,8 @@ echo "#!/bin/bash
 # GPM Version: ${GPMGITVERSION}
 
 #SBATCH --export=ALL
-#SBATCH --time=01:00:00
-#SBATCH --mem=1G
+#SBATCH --time=00:20:00
+#SBATCH --mem=150M
 #SBATCH --clusters=${GPMCOMPUTER}
 #SBATCH --output=${output}
 #SBATCH --error=${error}
