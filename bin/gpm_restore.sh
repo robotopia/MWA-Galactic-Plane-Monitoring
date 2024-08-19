@@ -82,7 +82,6 @@ echo "#!/bin/bash
 #SBATCH --clusters=${GPMCOMPUTER}
 #SBATCH --output=${output}
 #SBATCH --error=${error}
-#SBATCH ${GPMNCPULINE}
 #SBATCH --account=${GPMACCOUNT}
 #SBATCH --partition=${GPMCOPYQ}" > ${sbatch_script}
 
