@@ -1007,11 +1007,11 @@ if __name__ == "__main__":
         # If obs_file was provided (and obs_id wasn't), pull out the ObsIDs from git file
         if args.obs_file is not None and args.obs_id is None:
             try:
-                setattr(args, "obs_id", [int(o) for o in np.loadtxt(obs_file, ndmin=1)])
+                setattr(args, "obs_id", [int(o) for o in np.loadtxt(args.obs_file, ndmin=1)])
             except:
-                logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
+                logger.info(f"Could not read file: \"{args.obs_file}\". Will assume it is an obsid.")
                 try:
-                    setattr(args, "obs_id", [int(obs_file)])
+                    setattr(args, "obs_id", [int(args.obs_file)])
                 except:
                     raise ValueError(f"Could not parse {obs_file} as an obs_id.")
 
