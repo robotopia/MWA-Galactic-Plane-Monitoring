@@ -654,7 +654,7 @@ def acacia_path(obs_file):
 
     # Retrieve the obs_ids from the provided obs_file
     try:
-        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file)])
+        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file, ndmin=1)])
     except:
         logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
         try:
@@ -1005,7 +1005,7 @@ if __name__ == "__main__":
         # If obs_file was provided (and obs_id wasn't), pull out the ObsIDs from git file
         if args.obs_file is not None and args.obs_id is None:
             try:
-                setattr(args, "obs_id", [int(o) for o in np.loadtxt(obs_file)])
+                setattr(args, "obs_id", [int(o) for o in np.loadtxt(obs_file, ndmin=1)])
             except:
                 logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
                 try:
