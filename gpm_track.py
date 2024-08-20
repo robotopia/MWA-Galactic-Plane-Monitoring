@@ -473,7 +473,7 @@ def observation_epochs(obs_file):
         obs_file (str): file containing observation ids whose epochs are to be retrieved
     """
     try:
-        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file)])
+        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file, ndmin=1)])
     except:
         raise ValueError(f"Could not load obsids from file '{obs_file}'")
 
@@ -898,7 +898,7 @@ def require(args, reqlist):
     ie that the attributes in the reqlist are not None.
     """
     for r in reqlist:
-        if r == "obs" and (getattr(args, "obs_id") is None or getattr(args, "obs_file") is None):
+        if r == "obs" and (getattr(args, "obs_id") is None and getattr(args, "obs_file") is None):
             logger.error("Directive {0} requires argument either obs_id or obs_file".format(args.directive))
             sys.exit(1)
                 
@@ -1003,11 +1003,11 @@ if __name__ == "__main__":
         # If obs_file was provided (and obs_id wasn't), pull out the ObsIDs from git file
         if args.obs_file is not None and args.obs_id is None:
             try:
-                setattr(args, "obs_id", tuple([int(o) for o in np.loadtxt(obs_file)]))
+                setattr(args, "obs_id", [int(o) for o in np.loadtxt(obs_file)])
             except:
                 logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
                 try:
-                    obs_ids = [int(obs_file)]
+                    setattr(args, "obs_id", [int(obs_file)])
                 except:
                     raise ValueError(f"Could not parse {obs_file} as an obs_id.")
 
