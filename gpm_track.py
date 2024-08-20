@@ -983,7 +983,9 @@ if __name__ == "__main__":
     # If only one obs_id was supplied, make sure it is an int
     # (instead of a list containing a single int).
     # This is just a hack so that all the functions which assume
-    # obs_id is a single int don't break.
+    # obs_id is a single int don't break. Because it's a hack, it has to be
+    # UNDONE for any function that relies on it actually being a list.
+    # At present, that includes "create_jobs".
     if args.obs_id is not None:
         if len(args.obs_id) == 1:
             setattr(args, "obs_id", args.obs_id[0])
@@ -1012,6 +1014,9 @@ if __name__ == "__main__":
                     setattr(args, "obs_id", [int(obs_file)])
                 except:
                     raise ValueError(f"Could not parse {obs_file} as an obs_id.")
+
+        # Reverse-hack for making sure, in this case, obs_id is a 1D list
+        setattr(args, "obs_id", np.atleast_1d(args.obs_id))
 
         create_jobs(args.jobid, args.host_cluster, args.obs_id, args.user,
                     args.batch_file, args.stderr, args.stdout, args.task)
