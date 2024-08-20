@@ -898,25 +898,27 @@ def require(args, reqlist):
     ie that the attributes in the reqlist are not None.
     """
     for r in reqlist:
-        if r == "obs" and (getattr(args, "obs_id") is None and getattr(args, "obs_file") is None):
-            logger.error("Directive {0} requires argument either obs_id or obs_file".format(args.directive))
-            sys.exit(1)
-                
-        if getattr(args, r) is None:
-            logger.error("Directive {0} requires argument {1}".format(args.directive, r))
-            sys.exit(1)
+        if r == "obs":
+            if (getattr(args, "obs_id") is None and getattr(args, "obs_file") is None):
+                logger.error("Directive {0} requires argument either obs_id or obs_file".format(args.directive))
+                sys.exit(1)
+        else:
+                    
+            if getattr(args, r) is None:
+                logger.error("Directive {0} requires argument {1}".format(args.directive, r))
+                sys.exit(1)
 
-        # an sqlite to mysql change
-        if isinstance(args.__dict__[r], str) and "date +%s" in args.__dict__[r]:
-            args.__dict__[r] = args.__dict__[r].replace("date +%s", "NOW()")
+            # an sqlite to mysql change
+            if isinstance(args.__dict__[r], str) and "date +%s" in args.__dict__[r]:
+                args.__dict__[r] = args.__dict__[r].replace("date +%s", "NOW()")
 
-        if r == "status" and args.status.lower() not in OBS_STATUS:
-            logger.error(
-                "Observation status `{0}` is not in the allowed list {1}. Exiting without updating. \n".format(
-                    args.status, OBS_STATUS
+            if r == "status" and args.status.lower() not in OBS_STATUS:
+                logger.error(
+                    "Observation status `{0}` is not in the allowed list {1}. Exiting without updating. \n".format(
+                        args.status, OBS_STATUS
+                    )
                 )
-            )
-            sys.exit(1)
+                sys.exit(1)
 
     return True
 
