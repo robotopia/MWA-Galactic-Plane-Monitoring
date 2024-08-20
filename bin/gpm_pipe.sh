@@ -28,8 +28,8 @@ echo "gpm_pipe [options] [-h] commands obsid_or_file
 
   commands    : A string of space-delimited commands to run, as a dependency chain, in the order in which they are listed.
                 e.g. \"image postimage\" will run \"obs_image.sh\" followed by \"obs_postimage.sh\". Available commands:
-                    apply_cal, autocal, autoflag, calcleakage, image, postimage,
-                    postimageI, postimageV, tfilter, transient, uvflag
+                    apply_cal, autocal, autoflag, calcleakage, image,
+		    postimage, tfilter, transient, uvflag
 
   obsid_or_file : The obsid of the observation to be processed OR a file containing one or more newline-separated obsids
 
