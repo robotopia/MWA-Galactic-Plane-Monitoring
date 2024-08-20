@@ -181,7 +181,7 @@ then
     sbatch_script="${script%.sh}.sbatch"
 
     BEGIN="now+1minutes"
-    MEM="50G"
+    MEM="1G"
     EXPORT="$(echo ${!GPM*} | tr ' ' ','),MWA_ASVO_API_KEY"
     TIME="${time_request}"
     CLUSTERS="${GPMCOPYM}"
