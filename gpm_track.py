@@ -241,18 +241,10 @@ def create_job(
     conn.close()
 
 
-def create_jobs(job_id, host_cluster, obs_file, user, batch_file, stderr, stdout, task):
+def create_jobs(job_id, host_cluster, obs_ids, user, batch_file, stderr, stdout, task):
 
-    # Retrieve the obs_ids from the provided obs_file
-    try:
-        obs_ids = tuple([int(o) for o in np.loadtxt(obs_file)])
-    except:
-        logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
-        try:
-            obs_ids = [int(obs_file)]
-        except:
-            raise ValueError(f"Could not parse {obs_file} as an obs_id.")
-
+    # Cast obs_ids as tuple, just to make sure mysql commands get what they're expecting
+    obs_ids = tuple(obs_ids)
     ntasks = len(obs_ids)
 
     # Replace %A and %a with the appropriate numbers in the stdout and stderr filenames
@@ -906,10 +898,10 @@ def require(args, reqlist):
     ie that the attributes in the reqlist are not None.
     """
     for r in reqlist:
-        if r not in args.__dict__.keys():
-            logger.error("Directive {0} requires argument {1}".format(args.directive, r))
+        if r == "obs" and (getattr(args, "obs_id") is None or getattr(args, "obs_file") is None):
+            logger.error("Directive {0} requires argument either obs_id or obs_file".format(args.directive))
             sys.exit(1)
-
+                
         if getattr(args, r) is None:
             logger.error("Directive {0} requires argument {1}".format(args.directive, r))
             sys.exit(1)
@@ -950,8 +942,9 @@ if __name__ == "__main__":
     ps.add_argument("--finish_time", type=int, help="job finish time", default=None)
     ps.add_argument("--nhours", type=int, help="Only consider the last NHOURS hours (only applies to directive recent_obs)", default=24)
     ps.add_argument("--batch_file", type=str, help="batch file name", default=None)
-    ps.add_argument("--obs_id", type=int, help="observation id", default=None)
-    ps.add_argument("--obs_file", type=str, help="File containing Observation IDs", default=None)
+    obs_group = ps.add_mutually_exclusive_group()
+    obs_group.add_argument("--obs_id", type=int, nargs='*', help="observation id", default=None)
+    obs_group.add_argument("--obs_file", type=str, help="File containing Observation IDs", default=None)
     ps.add_argument(
         "--cal_id", type=int, help="observation id of calibration data", default=None
     )
@@ -985,6 +978,14 @@ if __name__ == "__main__":
     args.user = os.environ["GPMUSER"]
     args.host_cluster = os.environ["GPMCLUSTER"]
 
+    # If only one obs_id was supplied, make sure it is an int
+    # (instead of a list containing a single int).
+    # This is just a hack so that all the functions which assume
+    # obs_id is a single int don't break.
+    if args.obs_id is not None:
+        if len(args.obs_id) == 1:
+            setattr(args, "obs_id", args.obs_id[0])
+
     if args.verbose:
         logger.setLevel(logging.DEBUG)
 
@@ -996,9 +997,21 @@ if __name__ == "__main__":
                    args.task)
 
     if args.directive.lower() == "create_jobs":
-        require(args, ["jobid", "host_cluster", "obs_file", "user",
+        require(args, ["jobid", "host_cluster", "obs", "user",
                        "batch_file", "stderr", "stdout", "task"])
-        create_jobs(args.jobid, args.host_cluster, args.obs_file, args.user,
+
+        # If obs_file was provided (and obs_id wasn't), pull out the ObsIDs from git file
+        if args.obs_file is not None and args.obs_id is None:
+            try:
+                setattr(args, "obs_id", tuple([int(o) for o in np.loadtxt(obs_file)]))
+            except:
+                logger.info(f"Could not read file: \"{obs_file}\". Will assume it is an obsid.")
+                try:
+                    obs_ids = [int(obs_file)]
+                except:
+                    raise ValueError(f"Could not parse {obs_file} as an obs_id.")
+
+        create_jobs(args.jobid, args.host_cluster, args.obs_id, args.user,
                     args.batch_file, args.stderr, args.stdout, args.task)
 
     elif args.directive.lower() == "start":
