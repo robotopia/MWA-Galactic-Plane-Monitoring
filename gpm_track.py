@@ -1016,7 +1016,7 @@ if __name__ == "__main__":
                     raise ValueError(f"Could not parse {obs_file} as an obs_id.")
 
         # Reverse-hack for making sure, in this case, obs_id is a 1D list
-        setattr(args, "obs_id", np.atleast_1d(args.obs_id))
+        setattr(args, "obs_id", [int(o) for o in np.atleast_1d(args.obs_id)])
 
         create_jobs(args.jobid, args.host_cluster, args.obs_id, args.user,
                     args.batch_file, args.stderr, args.stdout, args.task)
