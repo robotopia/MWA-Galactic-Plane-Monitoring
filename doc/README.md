@@ -7,6 +7,7 @@
   - [Setting up an SSH key pair (optional\*)](#setting-up-an-ssh-key-pair-optional)
   - [Loading the GPM profile](#loading-the-gpm-profile)
   - [Database secrets file](#database-secrets-file)
+  - [Setting up `tfilter`](#setting-up-tfilter)
 - [Interacting with the database](#interacting-with-the-database)
   - [Add an observation's metadata to the database](#add-an-observations-metadata-to-the-database)
   - [Find which calibration obs has been assigned to an observations](#find-which-calibration-obs-has-been-assigned-to-an-observations)
@@ -83,6 +84,22 @@ chmod 600 /path/to/secrets/file
 ```
 
 The `GPMSECRETS` environment variable (see [Interacting with the database](#interacting-with-the-database)) should be set to the path to this file.
+
+### Setting up `tfilter`
+
+`tfilter` requires the following files:
+
+- `gleam_xx_yy.hdf5`
+- `gleam_jones.hdf5`
+- `atnf_pulsar_cat.fits`
+- `GLEAM_GP.fits`
+- `GGSM.fits`
+
+The first two (`gleam_*.hdf5`) are already automatically downloaded when sourcing the profile for the first time, in a path defined by `GPMMWALOOKUP`.
+
+`atnf_pulsar_cat.fits` and `GGSM.fits` are git-tracked (from the same commit when this README was updated with this info) and live in the `/models` folder.
+
+`GLEAM_GP.fits`, however, is far too big (~359M), and so needs to be acquired. **TODO: Add instructions as to how to get this file!**
 
 ## First- vs second-pass processing
 

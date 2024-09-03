@@ -142,3 +142,6 @@ containers/*.img
 
 # Profiles
 GP-Monitor[-_]*.profile
+
+# Other large data files
+GLEAM_GP.fits
