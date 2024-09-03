@@ -1,3 +1,0 @@
-[submodule "externals/TransientSearch"]
-	path = externals/TransientSearch
-	url = git@github.com:CsanadHorvath/TransientSearch.git

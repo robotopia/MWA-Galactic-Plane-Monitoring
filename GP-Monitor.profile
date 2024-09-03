@@ -101,6 +101,13 @@ export GPMSTAGE=             # To support the polarisation effort led by Xiang Z
                             # data then you may ignore this. If you *ARE* involved, please reach out to a GPM member to ensure this
                             # is correctly configured and known on the CSIRO side. 
 
+# ENVIRONMENT VARIABLES needed for the tfilter pipeline step
+# See doc/README.md (#Setting up tfilter) for more information about the files that these environment variables point to, where they live by default, and how to acquire them if they are not already included in this repo.
+export MWA_PB_BEAM=${GPMMWALOOKUP}/gleam_xx_yy.hdf5
+export MWA_PB_JONES=${GPMMWALOOKUP}/gleam_jones.hdf
+export ATNF_PULSAR_CAT=${GPMBASE}/models/atnf_pulsar_cat.fits
+export GLEAM_GP=${GPMBASE}/models/GLEAM_GP.fits   # <--- This one is too big to be git-tracked in this repo. See the docs for instructions on how to acquire it
+export GGSM=${GPMBASE}/models/GGSM.fits
 
 # Singularity bind paths
 # This describes a set of paths that need to be available within the container for all processing tasks. Depending on the system

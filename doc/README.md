@@ -87,6 +87,8 @@ The `GPMSECRETS` environment variable (see [Interacting with the database](#inte
 
 ### Setting up `tfilter`
 
+#### Required data files
+
 `tfilter` requires the following files:
 
 - `gleam_xx_yy.hdf5`
@@ -99,7 +101,33 @@ The first two (`gleam_*.hdf5`) are already automatically downloaded when sourcin
 
 `atnf_pulsar_cat.fits` and `GGSM.fits` are git-tracked (from the same commit when this README was updated with this info) and live in the `/models` folder.
 
-`GLEAM_GP.fits`, however, is far too big (~359M), and so needs to be acquired. **TODO: Add instructions as to how to get this file!**
+`GLEAM_GP.fits`, however, is far too big (~359M), and so needs to be acquired. It can be obtained from [this Dropbox link](https://www.dropbox.com/scl/fi/rt3n2pfs8yztrgevbq3s0/GLEAM_GP.fits?rlkey=2iwy2g0o4f5r3jrjnmwyfxifb&dl=0)
+
+#### Cloning the `tfilter` code
+
+The `tfilter` code is imported into this code via git's "submodule" functionality.
+It was originally setup with
+
+```
+git submodule add git@github.com:CsanadHorvath/Transients.git externals/tfilter
+```
+
+In order to clone that code, you will need read access to [its repository](https://github.com/CsanadHorvath/Transients).
+Then, run
+
+```
+git submodule init
+git submodule update
+```
+
+#### Setting environment variables
+
+As defined in [container.def](https://github.com/CsanadHorvath/Transients/blob/main/container.def), `tfilter` requires the container that runs the code to have the following environment variables defined, pointing to the locations of the data files listed in the [Required data files](#required-data-files) section above: `MWA_PB_BEAM`, `MWA_PB_JONES`, `ATNF_PULSAR_CAT`, `GLEAM_GP`, and `GGSM`.
+These environment variables are defined in the profile (`GP-Monitor.profile`).
+Ensure that they are pointing to the correct locations of the files on your system.
+
+> [!WARNING]
+> For the GPM pipeline, we will use the existing GPM container, which **should** already contain all the software (in particular, all the Python modules). This is yet to be fully tested.
 
 ## First- vs second-pass processing
 
