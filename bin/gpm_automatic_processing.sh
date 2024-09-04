@@ -2,6 +2,22 @@
 
 #set -eux
 
+######################################
+# Importing a set of obsids manually #
+######################################
+#
+# The below script only considers any ObsIDs more recent than the last
+# successfully imported ObsID. If, however, there is any need to import
+# some ObsIDs manually, it can be done in the following way (after
+# loading the GPM environment/profile), for example:
+#
+# MWA_PROJECT=G0080
+# LOG=${GPMLOG}/gpm_automatic_processing_$(date +'%Y-%m-%dT%T').log
+#
+# for obsid in [obsid1] [obsid2] ...; do
+#    singularity exec $GPMCONTAINER $GPMBASE/gpm_track.py import_obs --obs_id ${obsid} 2>&1 | tee -a $LOG
+# done
+#
 #################
 # Initial setup #
 #################
