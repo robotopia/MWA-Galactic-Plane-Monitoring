@@ -24,6 +24,8 @@ singlecoord = SkyCoord(tab["ra"][0], tab["dec"][0], unit=(u.deg, u.deg), frame="
 x, y = w.world_to_pixel(singlecoord)
 coordlist = SkyCoord(tab["ra"], tab["dec"], unit=(u.deg, u.deg), frame="fk5")
 x, y = w.world_to_pixel(coordlist)
+x -= 0.5
+y -= 0.5
 x, y = x.astype(int), y.astype(int)
 tab["beam"] = np.squeeze(beamdata[:,:,y, x])
 
