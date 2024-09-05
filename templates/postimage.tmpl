@@ -298,6 +298,10 @@ do
             "${obsnum}_deep-${subchan}-I-image-pb-YY-beam.fits" \
             "${obsnum}_deep-${subchan}-I-image-pb_warp_rms.fits"
         test_fail $?
+
+        # Add the primary beam values at the source positions to the catalogues
+        add_beam_to_cat.py ${obsnum}_deep-MFS-I-image-pb
+        test_fail $?
     fi
 done
 
