@@ -300,7 +300,7 @@ do
         test_fail $?
 
         # Add the primary beam values at the source positions to the catalogues
-        add_beam_to_cat.py ${obsnum}_deep-MFS-I-image-pb
+        ${GPMBASE}/gpm/bin/add_beam_to_cat.py ${obsnum}_deep-MFS-I-image-pb
         test_fail $?
     fi
 done
