@@ -41,7 +41,7 @@ def main():
 
     # Use the same path as where the transient cube lived to also use as
     # the working directory for where to put all the outputs
-    path = os.path.dirname(args.transient_cube)
+    path = os.path.dirname(args.transient_cube) + '/{0}_{1}'
 
     cands = TransientSearch(
         path,

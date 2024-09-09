@@ -1,0 +1,42 @@
+diff --git a/FileIO.py b/FileIO.py
+index b9b00ec..9deb94b 100644
+--- a/FileIO.py
++++ b/FileIO.py
+@@ -42,8 +42,7 @@ def ReadHeader(fname):
+             obs_header['FREQ'] = obs_header['CRVAL3']
+             obs_header['TIMESTEP'] = df.attrs['TIME_INTERVAL']
+     else:
+-        print('Only support fits and hdf5 tables!')
+-        exit()
++        raise ValueError('Only support fits and hdf5 tables!')
+     
+     return obs_header
+ 
+@@ -67,8 +66,7 @@ def ReadImage(fname):
+             obs_header['FREQ'] = obs_header['CRVAL3']
+             obs_header['TIMESTEP'] = df.attrs['TIME_INTERVAL']
+     else:
+-        print('Only support fits and hdf5 tables!')
+-        exit()
++        raise ValueError('Only support fits and hdf5 tables!')
+     
+     return obs_data, obs_header
+ 
+@@ -77,15 +75,13 @@ def ReadTable(fname):
+     if obs_ext == '.fits': # Open fits file
+         hdul = fits.open(fname)
+         if len(hdul) < 2:
+-            print('Could not find table hdu!')
+-            exit()
++            raise ValueError('Could not find table hdu!')
+         tab_data = hdul[1].data
+         tab_header = hdul[1].header
+         img_header = hdul[0].header
+         hdul.close()
+     else:
+-        print('Only support fits tables!')
+-        exit()
++        raise ValueError('Only support fits tables!')
+         
+     return tab_data, tab_header, img_header
+ 

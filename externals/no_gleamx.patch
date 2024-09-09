@@ -1,0 +1,13 @@
+diff --git a/island.py b/island.py
+index a462c13..b75cccc 100644
+--- a/island.py
++++ b/island.py
+@@ -4,7 +4,7 @@ import numpy as np
+ from scipy import ndimage
+ from astropy import units as u
+ from astropy.wcs.utils import pixel_to_skycoord
+-from gleam_x.bin.beam_value_at_radec import beam_value, parse_metafits
++from beam_value_at_radec import beam_value, parse_metafits
+ from astropy import units as u
+ import lowner_john_ellipse as ellipse
+ import matplotlib.pyplot as plt

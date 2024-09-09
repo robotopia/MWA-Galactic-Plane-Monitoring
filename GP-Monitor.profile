@@ -117,7 +117,7 @@ export GGSM=${GPMBASE}/models/GGSM.fits
 export SINGULARITY_BINDPATH="${GPMHOME}:${HOME},${GPMSCRIPT},${GPMBASE},${GPMSCRATCH},${GPMSSH},${GPMMWALOOKUP}:/pb_lookup,${GPMMWAPB},${GPMSTAGE}"
 
 export PATH="${PATH}:${GPMBASE}/bin" # Adds the obs_* script to the searchable path. 
-export PYTHONPATH="${PYTHONPATH}:${GPMBASE}:${GPMBASE}/gpm/bin:/local/usr/bin:${GPMBASE}/external/tfilter" # Adds the scripts to the python path
+export PYTHONPATH="${PYTHONPATH}:${GPMBASE}:${GPMBASE}/gpm/bin:/local/usr/bin:${GPMBASE}/externals/tfilter" # Adds the scripts to the python path
 export HOST_CLUSTER=${GPMCLUSTER}    # Maintained for compatability. Will be removed soon. 
 
 # Force matplotlib to write configuration to a location with write access. Attempting to fix issues on pawsey 
