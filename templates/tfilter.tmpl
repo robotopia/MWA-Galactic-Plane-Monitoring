@@ -39,8 +39,17 @@ track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date
 
 # Run the filters!
 $GPMBASE/gpm/bin/run_tfilter.py $PWD/${obsnum}_transient.hdf5 ${obsnum}
-
 test_fail $?
+
+# The above run_tfilter.py call uses the default "run_name" of "gpm2024". This means that all output files from this script should have the filename pattern [obsid]_gpm2024*.
+runname=gpm2024
+
+# Create a subfolder to put all these files in.
+mkdir -p tfilter_results
+mv ${obsnum}_${runname}* tfilter_results/.
+
+# Upload to the webapp!
+$GPMBASE/gpm/bin/upload_cand.py --data_directory tfilter_results
+
 track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
 #track_task.py obs_status --obs_id="${obsnum}" --status='tfiltered'
-

@@ -31,7 +31,7 @@ def main():
 
     parser.add_argument('transient_cube', help="The *absolute* path to the data cube containing the time-step images to be analysed")
     parser.add_argument('obsid', type=int, help="The ObsID of the observation")
-    parser.add_argument('--run_name', default="try_1", help="The file stem name to use for various intermediate output files. Can be arbitrary, but safer to let this code use the default value.")
+    parser.add_argument('--run_name', default="gpm2024", help="The file stem name to use for various intermediate output files. Can be arbitrary, but safer to let this code use the default value.")
     parser.add_argument('--make_plots', type=bool, default=True, help="Save plots to disk? (default = True)")
     parser.add_argument('--save_filtered', type=bool, default=False, help="Save filter images? (default = False)")
     parser.add_argument('--max_plots', type=int, default=150, help="Only make a maximum of this many plots (default = 150)")
