@@ -46,7 +46,9 @@ runname=gpm2024
 
 # Create a subfolder to put all these files in.
 mkdir -p tfilter_results
-mv ${obsnum}_${runname}* tfilter_results/.
+mv ${obsnum}_${runname}*png \
+   ${obsnum}_${runname}*gif \
+   ${obsnum}_${runname}_islands_selected_meta.fits tfilter_results/.
 
 # Upload to the webapp!
 $GPMBASE/gpm/bin/upload_cand.py --data_directory tfilter_results
