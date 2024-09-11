@@ -50,6 +50,7 @@ mv ${obsnum}_${runname}* tfilter_results/.
 
 # Upload to the webapp!
 $GPMBASE/gpm/bin/upload_cand.py --data_directory tfilter_results
+test_fail $?
 
 track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
 #track_task.py obs_status --obs_id="${obsnum}" --status='tfiltered'
