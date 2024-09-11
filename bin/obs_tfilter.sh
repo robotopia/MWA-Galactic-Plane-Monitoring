@@ -47,6 +47,20 @@ then
     usage
 fi
 
+# Establish job array options
+if [[ -f "${obsnum}" ]]
+then
+    numfiles=$(wc -l "${obsnum}" | awk '{print $1}')
+    jobarray="--array=1-${numfiles}"
+    if [ ! -z ${GPMMAXARRAYJOBS} ]
+    then
+        jobarray="${jobarray}%${GPMMAXARRAYJOBS}"
+    fi
+else
+    numfiles=1
+    jobarray=''
+fi
+
 if [[ ! -z ${dep} ]]
 then
     depend="--dependency=afterok:${dep}"
@@ -73,8 +87,8 @@ echo '#!/bin/bash' > "${script}.sbatch"
 echo "singularity run ${GPMCONTAINER} ${script}" >> "${script}.sbatch"
 
 #sub="sbatch --begin=now+5minutes --export=ALL  --time=01:00:00 --mem=10G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
-sub="sbatch --export=ALL  --time=00:10:00 --mem=40G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
-sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --export=ALL --time=00:10:00 --mem=40G -M ${GPMCOMPUTER} --output=${output} --error=${error}"
+sub="${sub} ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 if [[ ! -z ${tst} ]]
 then
     echo "script is ${script}"
