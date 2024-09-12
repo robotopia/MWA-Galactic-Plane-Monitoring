@@ -9,6 +9,10 @@ old_method = False
 in_xx = sys.argv[1]
 in_yy = sys.argv[2]
 in_rms = sys.argv[3]
+
+border = 300  # WARNING!! This number may need to be changed if the image resolution changes
+              # TODO: use argparse and make more robust
+
 out_weight = in_xx.replace("-XX-beam.fits", "_weight.fits")
 
 hdu_xx = fits.open(in_xx)
@@ -39,5 +43,11 @@ else:
     weight = 1.0 / (cen_rms) ** 2
 
 hdu_xx[0].data = weight * stokes_I
+
+hdu[0].data[:,:,0:border,:] = 0.0
+hdu[0].data[:,:,:,0:border] = 0.0
+hdu[0].data[:,:,-border:,:] = 0.0
+hdu[0].data[:,:,:,-border:] = 0.0
+
 hdu_xx.writeto(out_weight)
 
