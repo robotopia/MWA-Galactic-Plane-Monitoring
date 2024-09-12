@@ -78,7 +78,7 @@ echo "#!/bin/bash
 
 #SBATCH --export=ALL
 #SBATCH --time=00:20:00
-#SBATCH --mem=150M
+#SBATCH --mem=250M
 #SBATCH --clusters=${GPMCOMPUTER}
 #SBATCH --output=${output}
 #SBATCH --error=${error}
