@@ -33,13 +33,13 @@
         <th>Obs ID</th>
         <th>Assigned cal obs</th>
         <th>download</th>
-        <th>(restore)</th>
         <th>autoflag</th>
         <th>autocal</th>
         <th>applycal</th>
         <th>uvflag</th>
         <th>uvsub</th>
         <th>image</th>
+        <th>(restore)</th>
         <th>calcleakage</th>
         <th>postimage</th>
         <th>Notes</th>
@@ -50,9 +50,6 @@
         <td>{{ obs.cal_obs }}</td>
         <td class="{{ tasks.download.status }}">
           <span class="datetime">{{ tasks.download.date|date:'Y-m-d H:i' }}</span>
-        </td>
-        <td class="{{ tasks.restore.status }}">
-          <span class="datetime">{{ tasks.restore.date|date:'Y-m-d H:i' }}</span>
         </td>
         <td class="{{ tasks.flag.status }}">
           <span class="datetime">{{ tasks.flag.date|date:'Y-m-d H:i' }}</span>
@@ -83,6 +80,9 @@
           <div class="qa"></div>
           {% endif %}
           {% endif %}
+        </td>
+        <td class="{{ tasks.restore.status }}">
+          <span class="datetime">{{ tasks.restore.date|date:'Y-m-d H:i' }}</span>
         </td>
         <td class="{{ tasks.calcleakage.status }}">
           <span class="datetime">{{ tasks.calcleakage.date|date:'Y-m-d H:i' }}</span>
