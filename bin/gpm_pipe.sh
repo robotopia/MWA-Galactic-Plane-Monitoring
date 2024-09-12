@@ -128,6 +128,8 @@ do
             options="$zoption $toption" ;;
         postimage)
             options="$toption $Poption" ;;
+        restore)
+            options= ;;
         tfilter)
             options="$toption" ;;
         transient)
