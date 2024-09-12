@@ -51,23 +51,23 @@
         <td class="{{ tasks.download.status }}">
           <span class="datetime">{{ tasks.download.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.flag.status }}">
+        <td class="{{ tasks.flag.status }} {% if tasks.flag.date < tasks.download.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.flag.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.calibrate.status }}">
+        <td class="{{ tasks.calibrate.status }} {% if tasks.calibrate.date < tasks.flag.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.calibrate.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.apply_cal.status }}">
+        <td class="{{ tasks.apply_cal.status }} {% if tasks.apply_cal.date < tasks.flag.date %}out-of-date{% endif %}">
           {{ tasks.apply_cal.cal_obs }}<br>
           <span class="datetime">{{ tasks.apply_cal.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.uvflag.status }}">
+        <td class="{{ tasks.uvflag.status }} {% if tasks.uvflag.date < tasks.apply_cal.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.uvflag.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.uvsubtract.status }}">
+        <td class="{{ tasks.uvsubtract.status }} {% if tasks.uvsubtract.date < tasks.uvflag.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.uvsubtract.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="image-cell {{ tasks.image.status }}" onClick="selectCell(this, {{ obs }}, {{ tasks.apply_cal.cal_obs }});">
+        <td class="image-cell {{ tasks.image.status }} {% if tasks.image.date < tasks.uvsubtract.date %}out-of-date{% endif %}" onClick="selectCell(this, {{ obs }}, {{ tasks.apply_cal.cal_obs }});">
           <span class="datetime">{{ tasks.image.date|date:'Y-m-d H:i' }}</span>
           {% if tasks.apply_cal.cal_obs %}
           {% if tasks.apply_cal.cal_usable %}
@@ -81,13 +81,13 @@
           {% endif %}
           {% endif %}
         </td>
-        <td class="{{ tasks.transient.status }}">
+        <td class="{{ tasks.transient.status }} {% if tasks.transient.date < tasks.image.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.transient.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.acacia.status }}">
+        <td class="{{ tasks.acacia.status }} {% if tasks.acacia.date < tasks.transient.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.acacia.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.tfilter.status }}">
+        <td class="{{ tasks.tfilter.status }} {% if tasks.tfilter.date < tasks.transient.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.tfilter.date|date:'Y-m-d H:i' }}</span>
         </td>
         <td>

@@ -51,23 +51,23 @@
         <td class="{{ tasks.download.status }}">
           <span class="datetime">{{ tasks.download.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.flag.status }}">
+        <td class="{{ tasks.flag.status }} {% if tasks.flag.date < tasks.download.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.flag.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.calibrate.status }}">
+        <td class="{{ tasks.calibrate.status }} {% if tasks.calibrate.date < tasks.flag.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.calibrate.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.apply_cal.status }}">
+        <td class="{{ tasks.apply_cal.status }} {% if tasks.apply_cal.date < tasks.flag.date %}out-of-date{% endif %}">
           {{ tasks.apply_cal.cal_obs }}<br>
           <span class="datetime">{{ tasks.apply_cal.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.uvflag.status }}">
+        <td class="{{ tasks.uvflag.status }} {% if tasks.uvflag.date < tasks.apply_cal.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.uvflag.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.uvsubtract.status }}">
+        <td class="{{ tasks.uvsubtract.status }} {% if tasks.uvsubtract.date < tasks.uvflag.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.uvsubtract.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="image-cell {{ tasks.image.status }}" onClick="selectCell(this, {{ obs }}, {{ tasks.apply_cal.cal_obs }});">
+        <td class="image-cell {{ tasks.image.status }} {% if tasks.image.date < tasks.uvsubtract.date %}out-of-date{% endif %}" onClick="selectCell(this, {{ obs }}, {{ tasks.apply_cal.cal_obs }});">
           <span class="datetime">{{ tasks.image.date|date:'Y-m-d H:i' }}</span>
           {% if tasks.apply_cal.cal_obs %}
           {% if tasks.apply_cal.cal_usable %}
@@ -84,10 +84,10 @@
         <td class="{{ tasks.restore.status }}">
           <span class="datetime">{{ tasks.restore.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.calcleakage.status }}">
+        <td class="{{ tasks.calcleakage.status }} {% if tasks.calcleakage.date < tasks.restore.date or tasks.calcleakage.date < tasks.image.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.calcleakage.date|date:'Y-m-d H:i' }}</span>
         </td>
-        <td class="{{ tasks.postimage.status }}">
+        <td class="{{ tasks.postimage.status }} {% if tasks.postimage.date < tasks.calcleakage.date %}out-of-date{% endif %}">
           <span class="datetime">{{ tasks.postimage.date|date:'Y-m-d H:i' }}</span>
         </td>
         <td>
@@ -213,6 +213,9 @@
 .failed {
   background-color: #c00;
   color: #eee;
+}
+.out-of-date {
+  opacity: 0.5;
 }
 .calibration {
   background-color: #c80;
