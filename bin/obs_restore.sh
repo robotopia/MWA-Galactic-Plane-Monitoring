@@ -174,7 +174,7 @@ fi
 jobid=($(${sub}))
 jobid=${jobid[3]}
 
-echo "Submitted ${script} as ${jobid} . Follow progress here:"
+echo "Submitted ${sbatch_script} as ${jobid} . Follow progress here:"
 
 # Add rows to the database 'processing' table that will track the progress of this submission
 ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='restore' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
