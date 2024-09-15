@@ -495,7 +495,7 @@ def observation_epochs(obs_file):
         print(f'{row[0]} {row[1]}')
     conn.close()
 
-def epoch_observations(epoch):
+def epoch_observations(epoch, exclude_cal=False):
     """Retrieves the observations for a given epoch
 
     Args:
@@ -504,13 +504,23 @@ def epoch_observations(epoch):
     conn = gpmdb_connect()
     cur = conn.cursor()
 
-    # Find out if a row with this obs_id and cal_id already exists
-    cur.execute("""
-            SELECT obs_id FROM epoch
-            WHERE epoch = %s COLLATE utf8mb4_bin
-            """,
-            (epoch,),
-            )
+    # Get all obs_ids associated with the given epoch
+    if exclude_cal == True:
+        cur.execute("""
+                SELECT e.obs_id FROM epoch AS e
+                LEFT JOIN observation AS o ON e.obs_id = o.obs_id
+                WHERE e.epoch = %s COLLATE utf8mb4_bin
+                AND o.calibration = false
+                """,
+                (epoch,),
+                )
+    else:
+        cur.execute("""
+                SELECT obs_id FROM epoch
+                WHERE epoch = %s COLLATE utf8mb4_bin
+                """,
+                (epoch,),
+                )
 
     res = cur.fetchall()
     print('\n'.join([f"{row[0]}" for row in res]))
@@ -955,6 +965,7 @@ if __name__ == "__main__":
     ps.add_argument("--field", type=str, help="database field to update (update_apply_cal only)", default=None)
     ps.add_argument("--value", type=str, help="database value to insert into \"field\" (update_apply_cal).", default=None)
     ps.add_argument("--epoch", type=str, help="epoch name (e.g. Epoch0123), used for directive epoch_processing", default=None)
+    ps.add_argument("--exclude_cal", action='store_true', help="For some directives (currently only epoch_obs), do no include calibration observations in the returned list of obsids")
     ps.add_argument(
         "--status",
         type=str,
@@ -1055,7 +1066,7 @@ if __name__ == "__main__":
 
     elif args.directive.lower() == "epoch_obs":
         require(args, ["epoch"])
-        epoch_observations(args.epoch)
+        epoch_observations(args.epoch, exclude_cal=args.exclude_cal)
 
     elif args.directive.lower() == "check_obs_status":
         require(args, ["obs_id",])
