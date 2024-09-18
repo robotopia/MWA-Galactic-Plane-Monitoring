@@ -20,19 +20,23 @@ def main(fits_image, coords, err_coords=None, err_size=None):
 
     # Get pixels
     x, y = w.world_to_pixel(coords)
-    value = np.squeeze(hdul[0].data[:, :, int(np.round(y)), int(np.round(x))])
+    try:
+        value = np.squeeze(hdul[0].data[:, :, int(np.round(y)), int(np.round(x))])
 
-    if err_coords is not None and err_size is not None:
-        # Get error
-        err_x, err_y = w.world_to_pixel(err_coords)
-        rad = err_size//2
-        rms = sc(hdul[0].data[:, :, int(err_y)-rad:int(err_y)+rad, int(err_x)-rad:int(err_x)+rad])
+        if err_coords is not None and err_size is not None:
+            # Get error
+            err_x, err_y = w.world_to_pixel(err_coords)
+            rad = err_size//2
+            rms = sc(hdul[0].data[:, :, int(err_y)-rad:int(err_y)+rad, int(err_x)-rad:int(err_x)+rad])
 
-        print(hdul[0].header['DATE-OBS'], value, rms)
+            print(hdul[0].header['DATE-OBS'], value, rms)
 
-    else:
+        else:
 
-        print(hdul[0].header['DATE-OBS'], value)
+            print(hdul[0].header['DATE-OBS'], value)
+    except:
+        # This pixel is probably not in this image. Ignore it!
+        pass
 
     hdul.close()
 
