@@ -20,7 +20,7 @@ def main(fits_image, coords, err_coords=None, err_size=None):
 
     # Get pixels
     x, y = w.world_to_pixel(coords)
-    value = np.squeeze(hdul[0].data[:, :, int(np.round(x)), int(np.round(y))])
+    value = np.squeeze(hdul[0].data[:, :, int(np.round(y)), int(np.round(x))])
 
     if err_coords is not None and err_size is not None:
         # Get error
