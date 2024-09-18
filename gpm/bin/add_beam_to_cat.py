@@ -8,10 +8,8 @@ import numpy as np
 import astropy.units as u
 import sys
 
-stem = sys.argv[1]
-# Expecting something like 1407161328_deep-MFS-I-image-pb
-comp = stem+"_comp_warp-corrected.fits"
-beam = stem+"-I-beam.fits"
+comp = sys.argv[1]  # Expecting something like 1407161328_deep-MFS-I-image-pb_comp_warp-corrected.fits
+beam = sys.argv[2]  # Expecting something like 1407161328_deep-MFS-I-image-pb-I-beam.fits
 
 hc = fits.open(comp)
 tab = Table(hc[1].data)

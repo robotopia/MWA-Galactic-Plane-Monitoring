@@ -300,7 +300,12 @@ do
         test_fail $?
 
         # Add the primary beam values at the source positions to the catalogues
-        ${GPMBASE}/gpm/bin/add_beam_to_cat.py ${obsnum}_deep-MFS-I-image-pb
+        ${GPMBASE}/gpm/bin/add_beam_to_cat.py \
+            ${obsnum}_deep-MFS-I-image-pb_comp_warp-corrected.fits \
+            ${obsnum}_deep-MFS-I-image-pb-I-beam.fits
+        ${GPMBASE}/gpm/bin/add_beam_to_cat.py \
+            ${obsnum}_deep-MFS-V-image-pb_warp_comp.fits \
+            ${obsnum}_deep-MFS-I-image-pb-I-beam.fits
         test_fail $?
     fi
 done
