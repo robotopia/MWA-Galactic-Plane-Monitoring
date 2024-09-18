@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
-import sys
 import numpy as np
 from astropy.io import fits
 from astropy.wcs import WCS
-from astropy.coordinates import SkyCoord, EarthLocation, AltAz
+from astropy.coordinates import SkyCoord
 import astropy.units as u
 import argparse
 
@@ -15,7 +14,7 @@ def main(fits_image, coords):
 
     # Get pixels
     x, y = w.world_to_pixel(coords)
-    value = hdul[0].data[:, :, x, y]
+    value = np.squeeze(hdul[0].data[:, :, int(np.round(x)), int(np.round(y))])
 
     print(fits_image, value)
 
@@ -24,12 +23,12 @@ def main(fits_image, coords):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Pull out the value of an image at the specified coordinates")
     parser.add_argument("fits_image", help="The path to the FITS image to open")
-    parser.add_argument("ra", type=float, help="The RA in HH:MM:SS.S format")
-    parser.add_argument("dec", type=float, help="The declination in DD:MM:SS.S format")
+    parser.add_argument("coords", help="The coordinates in HH:MM:SS.S_DD:MM:SS.S format")
     args = parser.parse_args()
 
     # Parse the sky coords
-    coords = SkyCoord(args.ra, args.dec, unit=(u.hour, u.deg), frame="fk5")
+    ra, dec = args.coords.split("_")
+    coords = SkyCoord(ra, dec, unit=(u.hour, u.deg), frame="fk5")
 
     # Start main
     main(args.fits_image, coords)
