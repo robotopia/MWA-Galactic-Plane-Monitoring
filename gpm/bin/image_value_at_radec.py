@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Pull out the value of an image at the specified coordinates")
     parser.add_argument("fits_image", help="The path to the FITS image to open")
     parser.add_argument("source", help="The source name (which must exist in the database) to use for coordinates")
-    parser.add_argument("--error_ctr_coords", help="The coords (in 'HH:MM:SS.S_DD:MM:SS.S' format) for the centre of a region used to calculate the rms error. Default: same as COORDS")
+    #parser.add_argument("--error_ctr_coords", help="The coords (in 'HH:MM:SS.S_DD:MM:SS.S' format) for the centre of a region used to calculate the rms error. Default: same as COORDS")
     parser.add_argument("--error_region_size", default=200, type=int, help="The length of one side of a box (in pixels) used for the region used to calculate the rms error. Default: 200")
     args = parser.parse_args()
 
@@ -90,19 +90,14 @@ if __name__ == "__main__":
     cur.execute("SELECT raj2000, decj2000 FROM source WHERE name = %s", (args.source,))
 
     res = cur.fetchone()
-    if len(res) == 0:
+    if not res or len(res) == 0:
         raise Exception(f"No source with was found with the name \"{args.source}\"")
-    ra, dec = res[0]
+    ra, dec = res
 
     coords = SkyCoord(ra, dec, unit=(u.deg, u.deg), frame="fk5")
 
-    # Parse the sky coords for the error region
-    err_ctr_coords_str = args.error_ctr_coords or coords
-    err_ra, err_dec = err_ctr_coords_str.split("_")
-    err_coords = SkyCoord(err_ra, err_dec, unit=(u.hour, u.deg), frame="fk5")
-
     # Start main
-    main(args.fits_image, coords, err_coords=err_coords, err_size=args.error_region_size)
+    main(args.fits_image, coords, err_coords=coords, err_size=args.error_region_size)
 
     # Disconnect from the database
     conn.close()
