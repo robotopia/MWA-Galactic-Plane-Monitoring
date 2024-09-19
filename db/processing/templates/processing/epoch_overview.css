@@ -1,0 +1,85 @@
+.legend {
+  text-align: center;
+  padding: 2px;
+}
+.queued {
+  background-color: #00a;
+  color: #eee;
+}
+.started {
+  background-color: #880;
+}
+.finished {
+  background-color: #080;
+}
+.failed {
+  background-color: #c00;
+  color: #eee;
+}
+.out-of-date {
+  opacity: 0.5;
+}
+.calibration {
+  background-color: #c80;
+}
+td {
+  padding: 5px;
+}
+td:not(.selectable) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+th {
+  background-color: #448;
+  color: #eee;
+  padding: 5px;
+}
+.epoch-overview-row .datetime {
+  font-size: small;
+}
+.qa {
+  background-color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  text-align: center;
+  font-weight: 900;
+  font-family: Arial, Helvetica, sans-serif;
+  display: inline-block;
+  cursor: default;
+}
+.cal-usable {
+  color: #080;
+}
+.cal-unusable {
+  color: #c00;
+}
+.cal-unsure {
+  color: #c80;
+}
+td.selected-cell {
+  border: 3px solid #800;
+  padding: 2px;
+}
+#qa-context-menu {
+  border: 1px solid black;
+}
+.context-menu {
+  border: 1px solid black;
+  display: none;
+  flex-direction: column;
+  position: absolute;
+}
+.context-menuitem {
+  padding: 5px;
+  background-color: white;
+  cursor: pointer;
+  user-select: none;
+}
+.context-menuitem:hover {
+  background-color: beige;
+}
