@@ -62,10 +62,6 @@ class BackupAdmin(admin.ModelAdmin):
     list_filter = ['epoch']
     autocomplete_fields = ['obs']
 
-@admin.register(CalApparent)
-class CalApparentAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'obs', 'source', 'appflux', 'infov']
-
 @admin.register(Cluster)
 class ClusterAdmin(admin.ModelAdmin):
     list_display = ['name', 'hpc']
@@ -93,6 +89,10 @@ class HpcUserAdmin(admin.ModelAdmin):
 @admin.register(HpcUserSetting)
 class HpcUserSettingAdmin(admin.ModelAdmin):
     list_display = ['id', 'hpc_user', 'account', 'max_array_jobs']
+
+@admin.register(Lightcurve)
+class LightcurveAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'source', 'obs', 'flux_Jy', 'flux_Jy_err']
 
 @admin.register(Mosaic)
 class MosaicAdmin(admin.ModelAdmin):
@@ -125,7 +125,7 @@ class SlurmHeaderAdmin(admin.ModelAdmin):
 
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
-    list_display = ['source', 'raj2000', 'decj2000', 'flux', 'alpha', 'beta']
+    list_display = ['name', 'raj2000', 'decj2000']
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):

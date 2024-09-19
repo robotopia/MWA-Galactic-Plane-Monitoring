@@ -48,18 +48,6 @@ class Backup(models.Model):
         ordering = ['obs']
 
 
-class CalApparent(models.Model):
-    obs = models.OneToOneField('Observation', models.DO_NOTHING, primary_key=True)  # The composite primary key (obs_id, source) found, that is not supported. The first column is selected.
-    source = models.ForeignKey('Source', models.DO_NOTHING, db_column='source')
-    appflux = models.FloatField(blank=True, null=True)
-    infov = models.IntegerField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'calapparent'
-        unique_together = (('obs', 'source'),)
-
-
 class Cluster(models.Model):
     name = models.CharField(max_length=31)
     hpc = models.ForeignKey('Hpc', models.DO_NOTHING)
@@ -188,6 +176,21 @@ class HpcAuthUser(models.Model):
         db_table = 'hpc_auth_user'
 
 
+class Lightcurve(models.Model):
+    source = models.ForeignKey('Source', models.DO_NOTHING)
+    timestamp = models.DateTimeField(blank=True, null=True)
+    obs = models.ForeignKey('Observation', models.DO_NOTHING)
+    flux_Jy = models.FloatField()
+    flux_Jy_err = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'lightcurve'
+        constraints = [
+            models.UniqueConstraint(fields=['source', 'obs'], name='uniq_src_measurement'),
+        ]
+
+
 class Mosaic(models.Model):
     mos_id = models.AutoField(primary_key=True)
     obs = models.ForeignKey('Observation', models.DO_NOTHING, blank=True, null=True)
@@ -307,16 +310,13 @@ class SlurmHeader(models.Model):
 
 
 class Source(models.Model):
-    source = models.CharField(primary_key=True, max_length=255)
-    raj2000 = models.FloatField(db_column='RAJ2000', blank=True, null=True)  # Field name made lowercase.
-    decj2000 = models.FloatField(db_column='DecJ2000', blank=True, null=True)  # Field name made lowercase.
-    flux = models.FloatField(blank=True, null=True)
-    alpha = models.FloatField(blank=True, null=True)
-    beta = models.FloatField(blank=True, null=True)
+    name = models.CharField(max_length=255)
+    raj2000 = models.FloatField(db_column='raj2000')  # Field name made lowercase.
+    decj2000 = models.FloatField(db_column='decj2000')  # Field name made lowercase.
 
     class Meta:
         managed = False
-        db_table = 'sources'
+        db_table = 'source'
 
 
 
