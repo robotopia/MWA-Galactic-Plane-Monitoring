@@ -10,7 +10,7 @@ in_xx = sys.argv[1]
 in_yy = sys.argv[2]
 in_rms = sys.argv[3]
 
-border = 300  # WARNING!! This number may need to be changed if the image resolution changes
+border = 550  # WARNING!! This number may need to be changed if the image resolution changes
               # TODO: use argparse and make more robust
 
 out_weight = in_xx.replace("-XX-beam.fits", "_weight.fits")
