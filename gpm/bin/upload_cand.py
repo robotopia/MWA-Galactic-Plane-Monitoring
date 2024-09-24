@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import glob
 import argparse
 import urllib.request
@@ -13,13 +14,18 @@ from astropy.io import fits
 
 import logging
 
+__version__ = "1.1"
+__date__ = "2024-09-11"
+__author__ = ["Nick Swainston", "Paul Hancock"]
+
 logger = logging.getLogger(__name__)
 
 SYSTEM_ENV = os.environ.get("SYSTEM_ENV", None)
+# Use http until we can sort out the ssl certs
 if SYSTEM_ENV == "DEVELOPMENT":
-    BASE_URL = "http://127.0.0.1:8000"
+    BASE_URL = "http://0.0.0.0"
 else:
-    BASE_URL = "https://mwa-image-plane.duckdns.org"
+    BASE_URL = "http://mwa-image-plane.duckdns.org"
 
 
 class TokenAuth(requests.auth.AuthBase):
@@ -40,7 +46,7 @@ def getmeta(servicetype="metadata", service="obs", params=None):
     """
 
     # Append the service name to this base URL, eg 'con', 'obs', etc.
-    BASEURL = "http://ws.mwatelescope.org/"
+    MWA_URL = "http://ws.mwatelescope.org/"
 
     if params:
         # Turn the dictionary into a string with encoded 'name=value' pairs
@@ -50,7 +56,7 @@ def getmeta(servicetype="metadata", service="obs", params=None):
 
     try:
         result = json.load(
-            urllib.request.urlopen(BASEURL + servicetype + "/" + service + "?" + data)
+            urllib.request.urlopen(MWA_URL + servicetype + "/" + service + "?" + data)
         )
     except urllib.error.HTTPError as err:
         logger.error(
@@ -135,17 +141,16 @@ def upload_candidate(fits_files, image_gif_directory):
             for hi, dat in enumerate(cand):
                 fits_header = f"TTYPE{hi+1}"
                 header = hdul[1].header[fits_header]
-                logger.debug("")
                 logger.debug(f"{header}: {dat}")
                 if f"TCOMM{hi+1}" in hdul[1].header.keys():
                     logger.debug(hdul[1].header[f"TCOMM{hi+1}"])
                 if header == "obs_cent_freq":
                     # Skip because already have that data in obsid
                     pass
-                elif header == "obs_id":
+                elif header in ["obs_id", "observation_id"]:
                     # upload obsid
                     upload_obsid(dat)
-                    data[header] = dat
+                    data["obs_id"] = dat
                 elif header.endswith("ra_deg"):
                     # parse to hms
                     data[header] = dat
@@ -174,8 +179,10 @@ def upload_candidate(fits_files, image_gif_directory):
             # open the image file
             with open(image_path, "rb") as image, open(gif_path, "rb") as gif:
                 # upload to database
+                logger.debug(f"files are {image_path} and {gif_path}")
+                logger.debug("sending data %s", data)
                 r = session.post(url, data=data, files={"png": image, "gif": gif})
-            print(r.text)
+            # print(r.text)
             r.raise_for_status()
 
 
@@ -206,15 +213,21 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # set up the logger for stand-alone execution
-    formatter = logging.Formatter(
-        "%(asctime)s  %(name)s  %(lineno)-4d  %(levelname)-9s :: %(message)s"
-    )
+    formatter = logging.Formatter("%(asctime)s  %(name)s  %(levelname)s :: %(message)s")
     ch = logging.StreamHandler()
     ch.setFormatter(formatter)
     # Set up local logger
     logger.setLevel(args.loglvl)
     logger.addHandler(ch)
     logger.propagate = False
+
+    logger.info("Welcome to the GLEAM transient candidate uploader")
+    logger.debug(f"This is version {__version__} from {__date__}")
+    logger.debug(f"Working with BASE_URL={BASE_URL}")
+    if not os.environ.get("IMAGE_PLANE_TOKEN", None):
+        logger.error("Environment variable IMAGE_PLANE_TOKEN is not defined")
+        logger.error("Unable to connect to host")
+        sys.exit(1)
 
     if args.fits:
         fits_files = [args.fits]
