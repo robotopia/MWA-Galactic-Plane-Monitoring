@@ -19,7 +19,8 @@ def main(fits_image, coords, size, outplot):
     x, y = w.world_to_pixel(coords)
     #try:
     # Only bother writing out if the value at the target pixel is not nan
-    value = hdul[0].data[:, :, int(y), int(x)]
+    data = np.squeeze(hdul[0].data)
+    value = data[int(y), int(x)]
     if np.isnan(value):
         raise Exception("Centre of thumbnail is nan")
 
@@ -31,7 +32,7 @@ def main(fits_image, coords, size, outplot):
     extent = (wx0/15 + 24, wx1/15 + 24, wy0, wy1)
     aspect = 1/(np.cos(coords.dec)*15)
         
-    thumbnail = np.squeeze(hdul[0].data[:, :, y0:y1, x0:x1])
+    thumbnail = data[y0:y1, x0:x1]
 
     fig = plt.figure(figsize=(4,3.5))
     fig.add_subplot(111)
