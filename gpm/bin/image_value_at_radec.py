@@ -40,8 +40,8 @@ def gpmdb_connect():
 
 
 def sc(data):
-    std = np.std(data)
-    std = np.std(data[np.abs(data) < 3*std])
+    std = np.nanstd(data)
+    std = np.nanstd(data[np.abs(data) < 3*std])
     return std
 
 
