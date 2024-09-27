@@ -80,6 +80,12 @@ cat "${GPMBASE}/templates/tfilter.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
 output="${GPMLOG}/tfilter_${obsnum}.o%A"
 error="${GPMLOG}/tfilter_${obsnum}.e%A"
 
+if [[ -f ${obsnum} ]]
+then
+   output="${output}_%a"
+   error="${error}_%a"
+fi
+
 chmod 755 "${script}"
 
 # sbatch submissions need to start with a shebang
