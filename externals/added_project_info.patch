@@ -1,5 +1,5 @@
 diff --git a/transient_search.py b/transient_search.py
-index ae12af4..94c568d 100644
+index ae12af4..d26c8d1 100644
 --- a/transient_search.py
 +++ b/transient_search.py
 @@ -56,12 +56,13 @@ class Filter:
@@ -17,11 +17,18 @@ index ae12af4..94c568d 100644
      obs = Observation(path, obsid, obs_name)
  
      # Ignoring high RMS frames
-@@ -114,8 +115,9 @@ def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, o
-     # Prepare for upload
+@@ -84,6 +85,8 @@ def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, o
+ 
+     # Detect islands
+     isl_table, isl_labels, _ = isl.FindIslands(obs, filters, True, run_name=run_name)
++    isl_table.add_column(np.zeros(len(isl_table), dtype=np.dtype('<S20')), name='project')
++    isl_table['project'][:] = project
+ 
+     if true_mask is not None:
+         cands_coord = SkyCoord(isl_table['ra_deg'], isl_table['dec_deg'], unit=(u.deg, u.deg), frame="fk5")
+@@ -115,7 +118,7 @@ def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, o
      isl_table_selected.add_column(isl_table_selected['maj_rad_pix'], name='rad_pix')
      isl_table_selected.add_column(isl_table_selected['maj_rad_deg'], name='rad_deg')
-+    isl_table_selected.add_column(project, name='project')
  
 -    fits_fields = ['obs_id', 'filter_id', 'cand_id', 'x_pix', 'y_pix', 'ra_deg', 'dec_deg', 'area_pix', 'rad_pix', 'rad_deg', 'cent_sep_deg', 'peak_flux', 'beam', 'obs_cent_freq', 'det_stat', 'nks_sep_deg', 'nks_x_pix', 'nks_y_pix', 'nks_ra_deg', 'nks_dec_deg', 'nks_flux', 'nks_name', 'nks_flux_rat']
 +    fits_fields = ['obs_id', 'filter_id', 'cand_id', 'project', 'x_pix', 'y_pix', 'ra_deg', 'dec_deg', 'area_pix', 'rad_pix', 'rad_deg', 'cent_sep_deg', 'peak_flux', 'beam', 'obs_cent_freq', 'det_stat', 'nks_sep_deg', 'nks_x_pix', 'nks_y_pix', 'nks_ra_deg', 'nks_dec_deg', 'nks_flux', 'nks_name', 'nks_flux_rat']

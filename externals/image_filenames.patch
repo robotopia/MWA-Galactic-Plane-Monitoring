@@ -1,0 +1,22 @@
+diff --git a/diagnostic.py b/diagnostic.py
+index fb676cf..cfb0c0d 100644
+--- a/diagnostic.py
++++ b/diagnostic.py
+@@ -155,7 +155,7 @@ def DiagnosticPlot(path, obs, filters, candidate, isl_labels, run_name, deep_nam
+ 
+     fig.suptitle('obs_id: {0} cand_id: {1} cent_freq: {2} MHz coords: ({3}, {4}) ({5:.6}, {6:.6}) cube_rms: {7:.6} Jy num_cands / num_islands: {8}'.format(obs.obsid, candidate['cand_id'], int(obs.freq/1e6), skycoord.ra.to_string(u.hour), skycoord.dec.to_string(u.degree), skycoord.ra.deg, skycoord.dec.deg, obs.rms, obs.ncands), fontsize=12)
+ 
+-    fig.savefig(path.format(obs.obsid, f'{run_name}_{candidate["cand_id"]}.png'), bbox_inches="tight")
++    fig.savefig(path.format(obs.obsid, f'{run_name}_{candidate["cand_id"]:03d}.png'), bbox_inches="tight")
+     plt.close(fig)
+ 
+     # Cutout GIF
+@@ -175,7 +175,7 @@ def DiagnosticPlot(path, obs, filters, candidate, isl_labels, run_name, deep_nam
+     # Combining pngs to gif
+     os.system("convert {0} {1}".format(
+         path.format(obs.obsid, '??.png'),
+-        path.format(obs.obsid, f'{run_name}_{candidate["cand_id"]}.gif')))
++        path.format(obs.obsid, f'{run_name}_{candidate["cand_id"]:03d}.gif')))
+     # Removing png frames
+     madefiles = glob(path.format(obs.obsid, '??.png'))
+     for f in madefiles:
