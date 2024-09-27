@@ -1,0 +1,30 @@
+diff --git a/transient_search.py b/transient_search.py
+index ae12af4..94c568d 100644
+--- a/transient_search.py
++++ b/transient_search.py
+@@ -56,12 +56,13 @@ class Filter:
+ # run_name: prefix to add to filenames specifying what is being done. This is what's stored in the data table in column filter_id
+ # make_plots: boolean whether to make plots
+ # save_filtered: whether to save fits images of the filter results - normally False
++# project: which 'project' to assign this candidate to (needed for candidate webapp)
+ # obs_name: suffix name of the transient cube
+ # max_plots: max number of plots to create
+ # true_mask: something or other
+ # table_name: suffix name to give the final output table
+ 
+-def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, obs_name='transient.hdf5', max_plots=100, true_mask=None, table_name='islands_selected_meta'):
++def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, project, obs_name='transient.hdf5', max_plots=100, true_mask=None, table_name='islands_selected_meta'):
+     obs = Observation(path, obsid, obs_name)
+ 
+     # Ignoring high RMS frames
+@@ -114,8 +115,9 @@ def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, o
+     # Prepare for upload
+     isl_table_selected.add_column(isl_table_selected['maj_rad_pix'], name='rad_pix')
+     isl_table_selected.add_column(isl_table_selected['maj_rad_deg'], name='rad_deg')
++    isl_table_selected.add_column(project, name='project')
+ 
+-    fits_fields = ['obs_id', 'filter_id', 'cand_id', 'x_pix', 'y_pix', 'ra_deg', 'dec_deg', 'area_pix', 'rad_pix', 'rad_deg', 'cent_sep_deg', 'peak_flux', 'beam', 'obs_cent_freq', 'det_stat', 'nks_sep_deg', 'nks_x_pix', 'nks_y_pix', 'nks_ra_deg', 'nks_dec_deg', 'nks_flux', 'nks_name', 'nks_flux_rat']
++    fits_fields = ['obs_id', 'filter_id', 'cand_id', 'project', 'x_pix', 'y_pix', 'ra_deg', 'dec_deg', 'area_pix', 'rad_pix', 'rad_deg', 'cent_sep_deg', 'peak_flux', 'beam', 'obs_cent_freq', 'det_stat', 'nks_sep_deg', 'nks_x_pix', 'nks_y_pix', 'nks_ra_deg', 'nks_dec_deg', 'nks_flux', 'nks_name', 'nks_flux_rat']
+     meta_fields_int = ['min_rad_pix', 'maj_rad_pix', 'peak_frame']
+     meta_fields_float = ['rot_deg', 'beam_norm', 'tcg', 'spike', 'rms', 'tcg_norm', 'spike_norm', 'rms_norm', 'nks_corr', 'nks2_sep_deg', 'nks2_flux', 'nks2_corr', 'nks2_flux_rat']
+     meta_fields_str = ['nks2_name']

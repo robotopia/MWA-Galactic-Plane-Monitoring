@@ -36,6 +36,7 @@ def main():
     parser.add_argument('--save_filtered', type=bool, default=False, help="Save filter images? (default = False)")
     parser.add_argument('--max_plots', type=int, default=150, help="Only make a maximum of this many plots (default = 150)")
     parser.add_argument('--true_mask', type=bool, help="Not 100% sure what this does, but something to do with matching to the sky catalogue. Probably mainly useful for debugging. Only use this option if you know what you're doing!")
+    parser.add_argument('--project', default="gpm2024", help="The project name to assign to the candidates being uploaded. For this pipeline, this should be 'gpm2024' (default = 'gpm2024')")
 
     args = parser.parse_args()
 
@@ -50,6 +51,7 @@ def main():
         args.run_name,
         args.make_plots,
         args.save_filtered,
+        args.project,
         max_plots=args.max_plots,
         true_mask=args.true_mask)
 
