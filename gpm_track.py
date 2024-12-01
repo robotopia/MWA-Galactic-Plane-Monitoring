@@ -730,7 +730,11 @@ def observation_processing(obs_id):
     res = cur.fetchall()
     print("Submitted             Task              Status         JobID")
     print("----------------------------------------------------------------")
-    print('\n'.join([f"{datetime.datetime.fromtimestamp(row[0])}   {row[1]:15}   {row[2]:9} {row[3]:12}" for row in res]))
+    for row in res:
+        try:
+            print(f"{datetime.datetime.fromtimestamp(row[0]):19}   {row[1]:15}   {row[2]:9} {row[3]:12}")
+        except:
+            print(row)
     conn.close()
 
 
