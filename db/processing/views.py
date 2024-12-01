@@ -3,6 +3,19 @@ from django.http import HttpResponse, JsonResponse
 from . import models
 import json
 
+from astropy.coordinates import SkyCoord, EarthLocation
+from astropy.time import Time
+import astropy.units as u
+
+import numpy as np
+
+MWA = EarthLocation.of_site('MWA')
+MWA_ctr_freq_MHz = 200.32 # WARNING! This info is not in the database, but it should be!
+# The DM delay calculation will be wrong for observations not taken at this frequency!!!
+
+def dmdelay(dm, f_MHz):
+    return 4.148808e3 * dm / f_MHz**2
+
 # Create your views here.
 
 # The main view: see the state of an epoch's processing at a glance
@@ -111,19 +124,65 @@ def setEpochCal(request, pipeline, epoch, user):
 
 def sourceFinder(request):
 
+    context = {
+        'sources': models.Source.objects.all(),
+    }
+
     if request.method == 'POST':
 
-        context = {
-            'selected_source': request.POST['source'],
-            'P0': request.POST['P0'],
-            'PEPOCH': request.POST['PEPOCH'],
-            'DM': request.POST['DM'],
-        }
+        selected_source = models.Source.objects.filter(pk=request.POST['selected_source']).first()
 
-    else: # Assume GET is the only other option
+        if selected_source is not None:
 
-        context = {}
+            context['selected_source'] = selected_source
 
-    context['sources'] = models.Source.objects.all()
+            # Get the source's coordinates as an astropy SkyCoord object
+            selected_source_coord = SkyCoord(selected_source.raj2000, selected_source.decj2000, unit=(u.deg, u.deg), frame='icrs')
+
+            # Go through the available obsids, and convert them to barycentric times
+            observations = models.Observation.objects.all().order_by('obs')
+            obs_start_times = Time([observation.obs for observation in observations], scale='utc', format='gps', location=MWA)
+            durations = [observation.duration_sec for observation in observations] * u.s
+            epochs = [observation.epoch for observation in observations]
+            dm_delay = dmdelay(selected_source.dm, MWA_ctr_freq_MHz) / 86400
+            obs_end_times = obs_start_times + durations
+
+            # Convert the start times to pulse phases
+            obs_start_pulses, obs_start_phases = np.divmod((obs_start_times.tcb.mjd - selected_source.pepoch - dm_delay)*86400/selected_source.p0, 1)
+            obs_end_pulses, obs_end_phases = np.divmod((obs_end_times.tcb.mjd - selected_source.pepoch - dm_delay)*86400/selected_source.p0, 1)
+
+            # Criteria to meet:
+            # 1) The source is within the specified radius
+            maxsep = request.POST.get('maxsep')
+            if maxsep is not None and maxsep != '':
+                context['maxsep'] = maxsep
+                maxsep = float(maxsep) * u.deg
+            else:
+                maxsep = 360 * u.deg
+            ra_pointings = [observation.ra_pointing for observation in observations] * u.deg
+            dec_pointings = [observation.dec_pointing for observation in observations] * u.deg
+            pointings = SkyCoord(ra_pointings, dec_pointings, frame='icrs')
+            separations = selected_source_coord.separation(pointings)
+            close_enough = separations < maxsep
+
+            # 2a) The pulse (central) ToA occurs in the observation...
+            #     (in which case the pulse number at the start of the observation won't match
+            #     the pulse number at the end of the observation, because the way it's set up
+            #     with divmod(), the pulse number increments *at* the ToA.)
+            pulse_in_obs = obs_end_pulses > obs_start_pulses
+
+            # Assemble all the criteria together
+            criteria_met = np.logical_and(close_enough, pulse_in_obs)
+            criteria_met_idxs = np.where(criteria_met)[0]
+
+            context['matches'] = [
+                {
+                    'obs': observations[i.item()],
+                    'separation': separations[i.item()].value,
+                    'pulse_arrival_s': (1.0 - obs_start_phases[i.item()])*selected_source.p0,
+                    'epoch': epochs[i.item()],
+                }
+                for i in criteria_met_idxs
+            ]
 
     return render(request, 'processing/source_finder.html', context)

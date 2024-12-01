@@ -9,14 +9,70 @@
     <h1>Source finder</h1>
     <form method="post">
       {% csrf_token %}
-      <div>
-        <label for="source">Source:</label>
-        <select id="source">
+      <div class="form-group">
+        <label class="form-label" for="selected_source">Source:</label>
+        <select id="selected_source" name="selected_source" required>
           {% for source in sources %}
           <option value={{ source.pk }}>{{ source }}</option>
           {% endfor %}
         </select>
       </div>
+      <div class="form-group">
+        <span class="form-label">Period (s):</span>
+        <span>{{ selected_source.p0|floatformat:10 }}</span>
+      </div>
+      <div class="form-group">
+        <span class="form-label">PEPOCH (MJD):</span>
+        <span>{{ selected_source.pepoch }}</span>
+      </div>
+      <div class="form-group">
+        <span class="form-label">DM (pc/cm³):</span>
+        <span>{{ selected_source.dm }}</span>
+      </div>
+      <div class="form-group">
+        <span class="form-label">Pulse width (s):</span>
+        <span>{{ selected_source.width }}</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="maxsep">Max separation (deg):</label>
+        <input id="maxsep" type="number" name="maxsep" value="{{ maxsep }}" placeholder="15"/>
+      <div>
+        <input type="submit" value="Search"/>
+      </div>
     </form>
+
+    {% if matches %}
+    <h2>Matching observations</h2>
+    <table class="matches-table">
+      <tr>
+        <th>Epoch</th>
+        <th>ObsID</th>
+        <th>Separation (deg)</th>
+        <th>Pulse centre (seconds from obs start)</th>
+      </tr>
+      {% for match in matches %}
+      <tr>
+        <td>{{ match.epoch }}</td>
+        <td>{{ match.obs.obs }}</td>
+        <td>{{ match.separation|floatformat:1 }}</td>
+        <td>{{ match.pulse_arrival_s|floatformat:0 }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
   </body>
+</html>
+<style>
+.form-label {
+  width: 200px;
+  display: inline-block;
+  text-align: right;
+}
+.form-group {
+  padding: 5px;
+}
+.matches-table td, .matches-table th {
+  padding: 0px 5px;
+  text-align: center;
+}
 </style>

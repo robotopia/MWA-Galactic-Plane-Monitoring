@@ -313,6 +313,10 @@ class Source(models.Model):
     name = models.CharField(max_length=255)
     raj2000 = models.FloatField(db_column='raj2000')  # Field name made lowercase.
     decj2000 = models.FloatField(db_column='decj2000')  # Field name made lowercase.
+    p0 = models.FloatField(null=True, blank=True, verbose_name="Period (s)")
+    pepoch = models.FloatField(null=True, blank=True, verbose_name="PEPOCH (MJD)")
+    dm = models.FloatField(null=True, blank=True, verbose_name="DM (pc/cm³)")
+    width = models.FloatField(null=True, blank=True, verbose_name="Width (s)")
 
     def __str__(self) -> str:
         return self.name
