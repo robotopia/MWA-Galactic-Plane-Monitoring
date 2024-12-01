@@ -107,3 +107,23 @@ def setEpochCal(request, pipeline, epoch, user):
         observation.save()
 
     return redirect('epoch_overview', pipeline=pipeline, epoch=epoch, user=user)
+
+
+def sourceFinder(request):
+
+    if request.method == 'POST':
+
+        context = {
+            'selected_source': request.POST['source'],
+            'P0': request.POST['P0'],
+            'PEPOCH': request.POST['PEPOCH'],
+            'DM': request.POST['DM'],
+        }
+
+    else: # Assume GET is the only other option
+
+        context = {}
+
+    context['sources'] = models.Source.objects.all()
+
+    return render(request, 'processing/source_finder.html', context)

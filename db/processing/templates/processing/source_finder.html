@@ -1,0 +1,22 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Source finder</title>
+  </head>
+  <body>
+    <h1>Source finder</h1>
+    <form method="post">
+      {% csrf_token %}
+      <div>
+        <label for="source">Source:</label>
+        <select id="source">
+          {% for source in sources %}
+          <option value={{ source.pk }}>{{ source }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+  </body>
+</style>
