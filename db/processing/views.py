@@ -6,6 +6,7 @@ import json
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy.time import Time
 import astropy.units as u
+import jplephem
 
 import numpy as np
 
@@ -140,16 +141,25 @@ def sourceFinder(request):
             selected_source_coord = SkyCoord(selected_source.raj2000, selected_source.decj2000, unit=(u.deg, u.deg), frame='icrs')
 
             # Go through the available obsids, and convert them to barycentric times
+
             observations = models.Observation.objects.all().order_by('obs')
+
             obs_start_times = Time([observation.obs for observation in observations], scale='utc', format='gps', location=MWA)
+            ltt_bary = obs_start_times.light_travel_time(selected_source_coord, ephemeris='jpl') # Convert to barycentric time
+            obs_start_times += ltt_bary
+
             durations = [observation.duration_sec for observation in observations] * u.s
             epochs = [observation.epoch for observation in observations]
-            dm_delay = dmdelay(selected_source.dm, MWA_ctr_freq_MHz) / 86400
+            dm_delay = dmdelay(selected_source.dm or 0, MWA_ctr_freq_MHz) / 86400 # In days
             obs_end_times = obs_start_times + durations
 
+            # Get known detections
+            detections = selected_source.detections.all()
+            obs_with_detections = {detection.obs.obs: 'Y' if detection.detection else 'N' for detection in detections}
+
             # Convert the start times to pulse phases
-            obs_start_pulses, obs_start_phases = np.divmod((obs_start_times.tcb.mjd - selected_source.pepoch - dm_delay)*86400/selected_source.p0, 1)
-            obs_end_pulses, obs_end_phases = np.divmod((obs_end_times.tcb.mjd - selected_source.pepoch - dm_delay)*86400/selected_source.p0, 1)
+            obs_start_pulses, obs_start_phases = np.divmod((obs_start_times.mjd - selected_source.pepoch - dm_delay)*86400/selected_source.p0, 1)
+            obs_end_pulses, obs_end_phases = np.divmod((obs_end_times.mjd - selected_source.pepoch - dm_delay)*86400/selected_source.p0, 1)
 
             # Criteria to meet:
             # 1) The source is within the specified radius
@@ -168,8 +178,20 @@ def sourceFinder(request):
             # 2a) The pulse (central) ToA occurs in the observation...
             #     (in which case the pulse number at the start of the observation won't match
             #     the pulse number at the end of the observation, because the way it's set up
-            #     with divmod(), the pulse number increments *at* the ToA.)
+            #     with divmod(), the pulse number increments *at* the ToA)
             pulse_in_obs = obs_end_pulses > obs_start_pulses
+
+            # 2b) ...OR we've caught some or all of the first half of the pulse...
+            #     (in which case the phase at the end of the observation will be within half
+            #     a pulse width of the ToA)
+            got_first_half = obs_end_phases > (1.0 - selected_source.width/selected_source.p0/2.0)
+            pulse_in_obs = np.logical_or(pulse_in_obs, got_first_half)
+
+            # 2c) ...OR we've caught some or all of the second half of the pulse.
+            #     (in which case the phase at the start of the observation will be within half
+            #     a pulse width of the ToA)
+            got_second_half = obs_start_phases < (selected_source.width/selected_source.p0/2.0)
+            pulse_in_obs = np.logical_or(pulse_in_obs, got_second_half)
 
             # Assemble all the criteria together
             criteria_met = np.logical_and(close_enough, pulse_in_obs)
@@ -179,8 +201,9 @@ def sourceFinder(request):
                 {
                     'obs': observations[i.item()],
                     'separation': separations[i.item()].value,
-                    'pulse_arrival_s': (1.0 - obs_start_phases[i.item()])*selected_source.p0,
+                    'pulse_arrival_s': (1.0 - obs_start_phases[i.item()] - got_second_half[i.item()])*selected_source.p0,
                     'epoch': epochs[i.item()],
+                    'detected': obs_with_detections[observations[i.item()].obs] if observations[i.item()].obs in obs_with_detections.keys() else '',
                 }
                 for i in criteria_met_idxs
             ]

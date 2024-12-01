@@ -69,6 +69,7 @@ class ClusterAdmin(admin.ModelAdmin):
 @admin.register(Detection)
 class ClusterAdmin(admin.ModelAdmin):
     list_display = ['id', 'source', 'obs', 'detection']
+    autocomplete_fields = ['obs']
 
 @admin.register(Epoch)
 class EpochAdmin(admin.ModelAdmin):

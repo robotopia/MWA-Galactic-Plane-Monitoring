@@ -49,6 +49,7 @@
         <th>ObsID</th>
         <th>Separation (deg)</th>
         <th>Pulse centre (seconds from obs start)</th>
+        <th>Known detection?</th>
       </tr>
       {% for match in matches %}
       <tr>
@@ -56,6 +57,7 @@
         <td>{{ match.obs.obs }}</td>
         <td>{{ match.separation|floatformat:1 }}</td>
         <td>{{ match.pulse_arrival_s|floatformat:0 }}</td>
+        <td>{{ match.detected }}</td>
       </tr>
       {% endfor %}
     </table>
