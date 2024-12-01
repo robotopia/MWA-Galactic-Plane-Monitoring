@@ -66,6 +66,10 @@ class BackupAdmin(admin.ModelAdmin):
 class ClusterAdmin(admin.ModelAdmin):
     list_display = ['name', 'hpc']
 
+@admin.register(Detection)
+class ClusterAdmin(admin.ModelAdmin):
+    list_display = ['id', 'source', 'obs', 'detection']
+
 @admin.register(Epoch)
 class EpochAdmin(admin.ModelAdmin):
     list_display = ['obs', 'epoch', 'approx_datetime']

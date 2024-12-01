@@ -314,10 +314,22 @@ class Source(models.Model):
     raj2000 = models.FloatField(db_column='raj2000')  # Field name made lowercase.
     decj2000 = models.FloatField(db_column='decj2000')  # Field name made lowercase.
 
+    def __str__(self) -> str:
+        return self.name
+
     class Meta:
         managed = False
         db_table = 'source'
 
+
+class Detection(models.Model):
+    source = models.ForeignKey("Source", models.DO_NOTHING, related_name="detections")
+    obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='detections')
+    detection = models.BooleanField()
+
+    class Meta:
+        managed = False
+        db_table = 'detection'
 
 
 class Task(models.Model):
