@@ -35,7 +35,7 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="maxsep">Max separation (deg):</label>
-        <input id="maxsep" type="number" name="maxsep" value="{{ maxsep }}" placeholder="15"/>
+        <input id="maxsep" type="number" name="maxsep" value="{{ maxsep }}" placeholder="12"/>
       <div>
         <input type="submit" value="Search"/>
       </div>
@@ -53,11 +53,11 @@
       </tr>
       {% for match in matches %}
       <tr>
-        <td>{{ match.epoch }}</td>
-        <td>{{ match.obs.obs }}</td>
+        <td>{{ match.detection_by_obs.epoch }}</td>
+        <td>{{ match.detection_by_obs.obs_id }}</td>
         <td>{{ match.separation|floatformat:1 }}</td>
         <td>{{ match.pulse_arrival_s|floatformat:0 }}</td>
-        <td>{{ match.detected }}</td>
+        <td>{{ match.detection_by_obs.detected }}</td>
       </tr>
       {% endfor %}
     </table>

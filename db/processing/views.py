@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
+from django.db.models import Q
 from . import models
 import json
 
@@ -142,20 +143,18 @@ def sourceFinder(request):
 
             # Go through the available obsids, and convert them to barycentric times
 
-            observations = models.Observation.objects.all().order_by('obs')
+            detections_by_obs = models.DetectionByObs.objects.filter(
+                    Q(source_name__isnull=True) | Q(source_name=selected_source.name)) # Should produce unique obs_ids
 
-            obs_start_times = Time([observation.obs for observation in observations], scale='utc', format='gps', location=MWA)
+            obs_start_times = Time([detection_by_obs.obs_id for detection_by_obs in detections_by_obs],
+                                   scale='utc', format='gps', location=MWA)
             ltt_bary = obs_start_times.light_travel_time(selected_source_coord, ephemeris='jpl') # Convert to barycentric time
             obs_start_times += ltt_bary
 
-            durations = [observation.duration_sec for observation in observations] * u.s
-            epochs = [observation.epoch for observation in observations]
+            durations = [duration_by_obs.duration_sec for duration_by_obs in detections_by_obs] * u.s
+            epochs = [duration_by_obs.epoch for duration_by_obs in detections_by_obs]
             dm_delay = dmdelay(selected_source.dm or 0, MWA_ctr_freq_MHz) / 86400 # In days
             obs_end_times = obs_start_times + durations
-
-            # Get known detections
-            detections = selected_source.detections.all()
-            obs_with_detections = {detection.obs.obs: 'Y' if detection.detection else 'N' for detection in detections}
 
             # Convert the start times to pulse phases
             obs_start_pulses, obs_start_phases = np.divmod((obs_start_times.mjd - selected_source.pepoch - dm_delay)*86400/selected_source.p0, 1)
@@ -169,8 +168,8 @@ def sourceFinder(request):
                 maxsep = float(maxsep) * u.deg
             else:
                 maxsep = 360 * u.deg
-            ra_pointings = [observation.ra_pointing for observation in observations] * u.deg
-            dec_pointings = [observation.dec_pointing for observation in observations] * u.deg
+            ra_pointings = [detection_by_obs.ra_pointing for detection_by_obs in detections_by_obs] * u.deg
+            dec_pointings = [detection_by_obs.dec_pointing for detection_by_obs in detections_by_obs] * u.deg
             pointings = SkyCoord(ra_pointings, dec_pointings, frame='icrs')
             separations = selected_source_coord.separation(pointings)
             close_enough = separations < maxsep
@@ -199,11 +198,9 @@ def sourceFinder(request):
 
             context['matches'] = [
                 {
-                    'obs': observations[i.item()],
+                    'detection_by_obs': detections_by_obs[i.item()],
                     'separation': separations[i.item()].value,
                     'pulse_arrival_s': (1.0 - obs_start_phases[i.item()] - got_second_half[i.item()])*selected_source.p0,
-                    'epoch': epochs[i.item()],
-                    'detected': obs_with_detections[observations[i.item()].obs] if observations[i.item()].obs in obs_with_detections.keys() else '',
                 }
                 for i in criteria_met_idxs
             ]

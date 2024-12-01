@@ -108,6 +108,22 @@ class EpochOverview(models.Model):
         ordering = ['obs', 'user', 'task']
 
 
+class DetectionByObs(models.Model):
+    # This model points to a database VIEW
+    obs_id = models.IntegerField()
+    epoch = models.CharField(max_length=9)
+    source_name = models.CharField(max_length=255)
+    detected = models.CharField(max_length=1)
+    duration_sec = models.IntegerField(blank=True, null=True)
+    ra_pointing = models.FloatField(blank=True, null=True)
+    dec_pointing = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'detections_by_obs'
+        ordering = ['obs_id', 'source_name']
+
+
 class Hpc(models.Model):
     name = models.CharField(max_length=127)
 
