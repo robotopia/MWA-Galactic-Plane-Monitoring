@@ -13,7 +13,7 @@
         <label class="form-label" for="selected_source">Source:</label>
         <select id="selected_source" name="selected_source" required>
           {% for source in sources %}
-          <option value={{ source.pk }}>{{ source }}</option>
+          <option value={{ source.pk }} {% if source.pk == selected_source.pk %}selected{% endif %}>{{ source }}</option>
           {% endfor %}
         </select>
       </div>
