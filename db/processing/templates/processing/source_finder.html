@@ -43,20 +43,23 @@
 
     {% if matches %}
     <h2>Matching observations</h2>
+    <p><span style="color: #d00;">*</span>If pulse arrives <i>after</i> the end of the observation, then +1 should be added to the displayed pulse number (will fix this later)</p>
     <table class="matches-table">
       <tr>
         <th>Epoch</th>
         <th>ObsID</th>
         <th>Separation (deg)</th>
         <th>Pulse centre (seconds from obs start)</th>
+        <th>Pulse number<span style="color: #d00;">*</span></th>
         <th>Known detection?</th>
       </tr>
       {% for match in matches %}
       <tr>
         <td>{{ match.detection_by_obs.epoch }}</td>
-        <td>{{ match.detection_by_obs.obs_id }}</td>
+        <td><a href="https://ws.mwatelescope.org/observation/obs/?obs_id={{ match.detection_by_obs.obs_id }}">{{ match.detection_by_obs.obs_id }}</a></td>
         <td>{{ match.separation|floatformat:1 }}</td>
         <td>{{ match.pulse_arrival_s|floatformat:0 }}</td>
+        <td>{{ match.pulse_number|floatformat:0 }}</td>
         <td>{{ match.detection_by_obs.detected }}</td>
       </tr>
       {% endfor %}

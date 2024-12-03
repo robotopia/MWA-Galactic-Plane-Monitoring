@@ -201,6 +201,7 @@ def sourceFinder(request):
                     'detection_by_obs': detections_by_obs[i.item()],
                     'separation': separations[i.item()].value,
                     'pulse_arrival_s': (1.0 - obs_start_phases[i.item()] - got_second_half[i.item()])*selected_source.p0,
+                    'pulse_number': obs_end_pulses[i.item()], # <-- This is not always correct (gives pulse-1 for the case where only the beginning of the pulse is seen) FIXME!!
                 }
                 for i in criteria_met_idxs
             ]
