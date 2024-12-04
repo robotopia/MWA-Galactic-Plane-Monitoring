@@ -110,13 +110,22 @@ def setEpochCal(request, pipeline, epoch, user):
         return HttpResponse(status=400)
 
     cal_obs_pk = request.POST.get("cal_obs")
-    cal_obs = models.Observation.objects.filter(pk=cal_obs_pk, calibration=True).first()
 
-    if cal_obs is None:
-        return HttpResponse(f"Calibration observation {cal_obs_pk} not found", status=400)
-
+    # Get the observations that will be updated
     observations = models.Observation.objects.filter(epoch__epoch=epoch, calibration=False)
-    observations.update(cal_obs=cal_obs)
+
+    if cal_obs_pk == 'selfcal':
+
+        for observation in observations:
+            observation.cal_obs = observation
+
+    else:
+        cal_obs = models.Observation.objects.filter(pk=cal_obs_pk, calibration=True).first()
+
+        if cal_obs is None:
+            return HttpResponse(f"Calibration observation {cal_obs_pk} not found", status=400)
+
+        observations.update(cal_obs=cal_obs)
 
     for observation in observations:
         observation.save()
