@@ -2,13 +2,15 @@
 
 usage()
 {
-echo "obs_tfilter.sh [-d dep] [-a account] [-t] obsnum
+echo "obs_tfilter.sh [-d dep] [-a account] [-t] [-r runname] obsnum
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
   obsnum     : the obsid to process, or a text file of obsids (newline separated). 
-               A job-array task will be submitted to process the collection of obsids. " 1>&2;
-exit 1;
+               A job-array task will be submitted to process the collection of obsids.
+  -r runname : the name of the 'project' used when uploading candidates to the webapp.
+             : If not supplied, defaults to \$GPMRUNNAME, which is currently set to
+             : \"$GPMRUNNAME\". <--- If this is empty, set it in your profile." 1>&2;
 }
 
 pipeuser="${GPMUSER}"
@@ -16,8 +18,9 @@ pipeuser="${GPMUSER}"
 #initial variables
 dep=
 tst=
+runname="$GPMRUNNAME"
 # parse args and set options
-while getopts ':td:a:' OPTION
+while getopts ':td:a:r:' OPTION
 do
     case "$OPTION" in
     d)
@@ -29,8 +32,12 @@ do
     t)
         tst=1
         ;;
+    r)
+        runname="${OPTARG}"
+        ;;
     ? | : | h)
         usage
+	exit 0
         ;;
   esac
 done
@@ -44,7 +51,16 @@ queue="-p ${GPMSTANDARDQ}"
 
 if [[ -z ${obsnum} ]]
 then
-    usage
+  usage
+  exit 1
+fi
+
+# Check that runname is not empty
+if [[ -z $runname ]]
+then
+  echo "runname cannot be empty"
+  usage
+  exit 1
 fi
 
 # Establish job array options
@@ -75,7 +91,8 @@ fi
 
 script="${GPMSCRIPT}/tfilter_${obsnum}.sh"
 cat "${GPMBASE}/templates/tfilter.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                 -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
+                                              -e "s:RUNNAME:${runname}:g" \
+                                              -e "s:PIPEUSER:${pipeuser}:g" > "${script}" \
 
 output="${GPMLOG}/tfilter_${obsnum}.o%A"
 error="${GPMLOG}/tfilter_${obsnum}.e%A"

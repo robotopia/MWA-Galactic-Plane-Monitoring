@@ -3,6 +3,7 @@
 set -x
 
 obsnum=OBSNUM
+runname=RUNNAME # This sets the "project" name in the candidate webapp uploads.
 
 # If obsnum is a file, then we are in an array job
 if [[ -f "${obsnum}" ]]
@@ -38,11 +39,8 @@ cd "${datadir}" || exit 1
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 # Run the filters!
-$GPMBASE/gpm/bin/run_tfilter.py $PWD/${obsnum}_transient.hdf5 ${obsnum}
+$GPMBASE/gpm/bin/run_tfilter.py --project ${runname} $PWD/${obsnum}_transient.hdf5 ${obsnum}
 test_fail $?
-
-# The above run_tfilter.py call uses the default "run_name" of "gpm2024". This means that all output files from this script should have the filename pattern [obsid]_gpm2024*.
-runname=gpm2024
 
 # Create a subfolder to put all these files in.
 mkdir -p tfilter_results

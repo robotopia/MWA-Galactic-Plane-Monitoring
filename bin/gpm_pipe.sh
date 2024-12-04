@@ -25,6 +25,10 @@ echo "gpm_pipe [options] [-h] commands obsid_or_file
                            |              | segment has more then SFRAC flagged it is marked as bad.
                            |              | (default = 0.4)
                 postimage  | -P pol       | which polarisation to process (default: I)
+                tfilter    | -r runname   | The 'project' name to use when uploading candidates. If
+                           |              | not supplied, will default to \$GPMRUNNAME (currently set
+			   |              | to \"$GPMRUNNAME\". <-- If this is empty, set it in your
+                           |              | profile).
 
   commands    : A string of space-delimited commands to run, as a dependency chain, in the order in which they are listed.
                 e.g. \"image postimage\" will run \"obs_image.sh\" followed by \"obs_postimage.sh\". Available commands:
@@ -47,10 +51,11 @@ Soption=
 Poption=
 toption=
 voption=
+roption=
 init_depend=
 
 # parse args and set options
-while getopts 'd:hs:k:e:gc:ziF:S:P:ftv' OPTION
+while getopts 'd:hs:k:e:gc:ziF:S:P:r:ftv' OPTION
 do
     case "$OPTION" in
         z)
@@ -70,6 +75,8 @@ do
             voption="-v";;
         d)
             init_depend="-d ${OPTARG}";;
+        r)
+            roption="-r ${OPTARG}";;
         h)
             usage
             exit 1;;
@@ -131,7 +138,7 @@ do
         restore)
             options= ;;
         tfilter)
-            options="$toption" ;;
+            options="$toption $roption" ;;
         transient)
             options="$zoption $toption" ;;
         uvflag)

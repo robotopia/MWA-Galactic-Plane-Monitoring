@@ -71,6 +71,7 @@ export GPMLOG="${GPMBASE}/log_${GPMCLUSTER}"       # Path to output task logs, e
 export GPMSCRIPT="${GPMBASE}/script_${GPMCLUSTER}" # Path to place generated template scripts. e.g. "${GPMBASE}/script_${GPMCLUSTER}". It is recommended that this is cluster specific.
 export GPMTRACK='no-track'                       # Directive to inform task tracking for meta-database. 'track' will track task progression. Anything else will disable tracking. 
 
+export GPMRUNNAME=                                # The 'project' name used when uploading candidates to the webapp. Cannot be empty if 'tfilter' is being used
 
 export GPMSSH="${GPMBASE}/ssh_keys/gpm_${GPMUSER}"                      # Path to SSH private key to be used for archiving. If you direct it to a new generated key-pair 
 if [ ! -z "${GPMSSH}" ] && [ ! -f "${GPMSSH}" ]                       # ensure restricted folder/file permissions, e.g. cmod -R 700 "${GPMBASE}/ssh_keys"
