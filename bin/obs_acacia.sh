@@ -3,7 +3,10 @@
 usage()
 {
 echo "obs_acacia.sh [-d dep] [-t] [-a obstype] obsnum
-  -d dep     : job number for dependency (afterok)
+  -d dep     : job number for dependency
+  -D deptype : Force job dependency type
+               Default is \"afterok\" for single jobs, and \"aftercorr\"
+	       for array jobs.
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
   -a obstype : observation type, defining what gets uploaded. Options are:
@@ -22,12 +25,16 @@ pipeuser="${GPMUSER}"
 dep=
 tst=
 obstype=target
+deptype=
 # parse args and set options
-while getopts ':td:a:' OPTION
+while getopts ':td:D:a:' OPTION
 do
     case "$OPTION" in
     d)
         dep=${OPTARG}
+        ;;
+    D)
+        deptype=${OPTARG}
         ;;
     t)
         tst=1
@@ -56,12 +63,16 @@ fi
 
 if [[ ! -z ${dep} ]]
 then
-    if [[ -f ${obsnum} ]]
+    if [[ -z ${deptype} ]]
     then
-        depend="--dependency=aftercorr:${dep}"
-    else
-        depend="--dependency=afterok:${dep}"
+        if [[ -f ${obsnum} ]]
+        then
+            deptype=aftercorr
+        else
+            depend=afterok
+        fi
     fi
+    depend="--dependency=${deptype}:${dep}"
 fi
 
 # Establish job array options
