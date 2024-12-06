@@ -7,6 +7,7 @@ set -x
 pipeuser=PIPEUSER
 obsnum=OBSNUM
 debug=DEBUG
+obstype=OBSTYPE # "target", "calibration", or "warp"
 
 container="singularity exec ${GPMCONTAINER}"
 
@@ -36,12 +37,28 @@ fi
 }
 
 epoch="$(${container} ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
-obstype="$(${container} ${GPMBASE}/gpm_track.py obs_type --obs_id ${obsnum})"
 
 # start
 ${container} track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 cd "${GPMSCRATCH}/${epoch}/${obsnum}" || exit
+
+#----------------
+#Defining what to tar and the name and place of the tarfile
+if [ "$obstype" = "calibration" ]
+then
+    whatToTar=( ${obsnum}_*.png ${obsnum}_local_gleam_model_solutions*.bin ${obsnum}_ionodiff.csv )
+elif [ "$obstype" = "target" ]
+then
+    whatToTar=( ${obsnum}_deep-*-[IV]-image*fits ${obsnum}_deep-*-[IV]-model*fits ${obsnum}_transient* ${obsnum}.metafits )
+elif [ "$obstype" = "warp" ]
+then
+    whatToTar=( ${obsnum}_*warp*fits )
+else
+  echo "Unrecognised observation type \"$obstype\""
+  exit 1
+fi
+#----------------
 
 #-----------------
 #Defining variables that will hold the names related to your access, buckets and objects to be stored in Acacia
@@ -112,16 +129,7 @@ else
    cd $workingDir
 fi
 
-#----------------
-#Defining what to tar and the name and place of the tarfile
-if [ "$obstype" = "calibration" ]
-then
-    whatToTar=( ${obsnum}_*.png ${obsnum}_local_gleam_model_solutions*.bin ${obsnum}_ionodiff.csv )
-else # $obstype = "target"
-    whatToTar=( ${obsnum}_deep-*-[IV]-image*fits ${obsnum}_deep-*-[IV]-model*fits ${obsnum}_transient* ${obsnum}.metafits )
-fi
-
-tarFileName=${obsnum}.tar.gz
+tarFileName=${obsnum}_${obstype}.tar.gz
 auxiliaryDirForTars="$MYSCRATCH/tars"
 echo "Checking that the auxiliary directory exists"
 if ! [ -d $auxiliaryDirForTars ]; then
@@ -161,8 +169,10 @@ else
    echo "Final place in Acacia: ${fullPathInAcacia}/${tarFileName}"
    rm "${auxiliaryDirForTars}/${tarFileName}" #Comment this line when debugging workflow
 fi
+
 #---------------
-# Final checks ...
+# Recording this entry into the database
+${container} $GPMBASE/gpm_track.py set_acacia_path --obs_id ${obsnum} --obstype ${obstype} --acacia_path "${fullPathInAcacia}/${tarFileName}"
 
 #---------------
 #Successfully finished

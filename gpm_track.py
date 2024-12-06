@@ -42,7 +42,8 @@ DIRECTIVES = (
     "check_obs",
     "update_apply_cal",
     "obs_flagantennae",
-    "acacia_path",
+    "get_acacia_path",
+    "set_acacia_path",
     "ls_obs_for_cal",
     "obs_epoch",
     "obs_epochs",
@@ -655,11 +656,14 @@ def set_epoch_cal(cal_id, epoch):
     conn.close()
 
 
-def acacia_path(obs_file):
+def get_acacia_path(obs_file, obstype):
     """A select function that will get the acacia path for a specific observation ID
 
     Args:
-        obs_id (int): observation id to get the acacia path for
+        obs_file (str): file containing ObsIDs to get the acacia path for OR
+                        a string representing a single ObsID
+        obstype: either "target", "calibration", or "warp", representing the
+                 stored data product type.
     """
 
     # Retrieve the obs_ids from the provided obs_file
@@ -679,13 +683,42 @@ def acacia_path(obs_file):
 
     cur.execute(f"""
                 SELECT obs_id, epoch, tar_contains_folder, acacia FROM backup
-                WHERE obs_id IN ({format_string})
+                WHERE obstype = %s AND obs_id IN ({format_string})
                 """,
-                tuple(obs_ids),
+                tuple([obstype] + obs_ids),
     )
     res = cur.fetchall()
     for row in res:
         print(f'{row[0]} {row[1]} {row[2]} {row[3]}')
+    conn.close()
+
+
+def set_acacia_path(obs_id, obstype, acacia_path):
+    """An insert function that will set the acacia path for a specific observation ID and obstype
+
+    Args:
+        obs_id (int): ObsIDs to set the acacia path for
+        obstype: either "target", "calibration", or "warp", representing the
+                 stored data product type.
+        acacia_path: a string representing the location of the file on Acacia
+    """
+
+    tar_contains_folder = 0 # This is non-zero only for historical uploads. In the current version
+                            # of the pipeline, this should always be 0 = False
+
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute(f"""
+                INSERT INTO acacia (obs_id, tar_contains_folder, acacia, obstype)
+                VALUES (%s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                  tar_contains_folder = %s,
+                  acacia = %s
+                """,
+                (obs_id, tar_contains_folder, acacia_path, obstype, tar_contains_folder, acacia_path,),
+    )
+    conn.commit()
     conn.close()
 
 
@@ -969,6 +1002,8 @@ if __name__ == "__main__":
     ps.add_argument("--field", type=str, help="database field to update (update_apply_cal only)", default=None)
     ps.add_argument("--value", type=str, help="database value to insert into \"field\" (update_apply_cal).", default=None)
     ps.add_argument("--epoch", type=str, help="epoch name (e.g. Epoch0123), used for directive epoch_processing", default=None)
+    ps.add_argument("--obstype", type=str, help="observation type (for backup purposes). Can be \"target\" (=default), \"calibration\", or \"warp\"", default="target")
+    ps.add_argument("--acacia_path", type=str, help="The path to the backup files on Acacia (e.g. \"mwasci:gpm2024/Epoch0123/1234567890.tar.gz\"", default=None)
     ps.add_argument("--exclude_cal", action='store_true', help="For some directives (currently only epoch_obs), do no include calibration observations in the returned list of obsids")
     ps.add_argument(
         "--status",
@@ -1108,9 +1143,13 @@ if __name__ == "__main__":
         found = check_imported_obs_id(args.obs_id)
         logger.info(f"{args.obs_id=} was {found=}")
 
-    elif args.directive.lower() == "acacia_path":
-        require(args, ["obs_file"])
-        acacia_path(args.obs_file)
+    elif args.directive.lower() == "get_acacia_path":
+        require(args, ["obs_file", "obstype"])
+        get_acacia_path(args.obs_file, args.obstype)
+
+    elif args.directive.lower() == "set_acacia_path":
+        require(args, ["obs_id", "obstype", "acacia_path"])
+        set_acacia_path(args.obs_id, args.obstype, args.acacia_path)
 
     elif args.directive.lower() == "ls_obs_for_cal":
         require(args, ["cal_id"])

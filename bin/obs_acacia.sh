@@ -2,10 +2,15 @@
 
 usage()
 {
-echo "obs_acacia.sh [-d dep] [-t] obsnum
+echo "obs_acacia.sh [-d dep] [-t] [-a obstype] obsnum
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
+  -a obstype : observation type, defining what gets uploaded. Options are:
+               \"target\"      :  Upload initial image products
+	       \"warp\"        :  Upload 'warp' image products
+	       \"calibration\" :  Upload calibration solutions and images
+	       (Default = \"target\")
   obsnum     : the obsid to process, or a text file of obsids (newline separated). 
                A job-array task will be submitted to process the collection of obsids. " 1>&2;
 exit 1;
@@ -16,8 +21,9 @@ pipeuser="${GPMUSER}"
 #initial variables
 dep=
 tst=
+obstype=target
 # parse args and set options
-while getopts ':td:' OPTION
+while getopts ':td:a:' OPTION
 do
     case "$OPTION" in
     d)
@@ -25,6 +31,9 @@ do
         ;;
     t)
         tst=1
+        ;;
+    a)
+        obstype=${OPTARG}
         ;;
     ? | : | h)
         usage
@@ -73,7 +82,8 @@ fi
 
 script="${GPMSCRIPT}/acacia_${obsnum}.sh"
 cat "${GPMBASE}/templates/acacia.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                 -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
+                                             -e "s:PIPEUSER:${pipeuser}:g" \
+                                             -e "s:OBSTYPE:${obstype}:g" > "${script}"
 
 output="${GPMLOG}/acacia_${obsnum}.o%A"
 error="${GPMLOG}/acacia_${obsnum}.e%A"

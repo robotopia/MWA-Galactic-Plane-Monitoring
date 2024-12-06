@@ -29,6 +29,11 @@ echo "gpm_pipe [options] [-h] commands obsid_or_file
                            |              | not supplied, will default to \$GPMRUNNAME (currently set
 			   |              | to \"$GPMRUNNAME\". <-- If this is empty, set it in your
                            |              | profile).
+                acacia     | -a obstype   | which data products to upload to acacia. Options are:
+                           |              | \"target\"      :  Upload initial image products
+	                   |              | \"warp\"        :  Upload 'warp' image products
+	                   |              | \"calibration\" :  Upload calibration solutions and images
+	                   |              | (Default = \"target\")
 
   commands    : A string of space-delimited commands to run, as a dependency chain, in the order in which they are listed.
                 e.g. \"image postimage\" will run \"obs_image.sh\" followed by \"obs_postimage.sh\". Available commands:
@@ -52,12 +57,15 @@ Poption=
 toption=
 voption=
 roption=
+aoption=
 init_depend=
 
 # parse args and set options
-while getopts 'd:hs:k:e:gc:ziF:S:P:r:ftv' OPTION
+while getopts 'a:d:hs:k:e:gc:ziF:S:P:r:ftv' OPTION
 do
     case "$OPTION" in
+        a)
+            aoption="-a ${OPTARG}";;
         z)
             zoption="-z";;
         i)
@@ -122,7 +130,7 @@ do
     # Construct options
     case "$cmd" in
         acacia)
-            options="$toption" ;;
+            options="$toption $aoption" ;;
         autoflag)
             options="$toption" ;;
         autocal)

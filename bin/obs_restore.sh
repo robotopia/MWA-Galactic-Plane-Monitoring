@@ -2,13 +2,18 @@
 
 usage()
 {
-echo "obs_restore.sh [-d dep] [-t] obsnum
+echo "obs_restore.sh [-d dep] [-t] [-a obstype] obsnum
   Restores the given observation(s) from its backup location (Acacia) to disk.
   It both downloads and extracts the backed-up tar file.
 
-  -d dep : job number for dependency (afterok)
-  -t     : test. Don't submit job, just make the batch file
-           and then return the submission command
+  -d dep     : job number for dependency (afterok)
+  -t         : test. Don't submit job, just make the batch file
+               and then return the submission command
+  -a obstype : observation type, defining what gets uploaded. Options are:
+               \"target\"      :  Upload initial image products
+	       \"warp\"        :  Upload 'warp' image products
+	       \"calibration\" :  Upload calibration solutions and images
+	       (Default = \"target\")
 
   obsnum : the obsid to be restored, or a text file of obsids (newline separated).
          A job-array task will be submitted to process the collection of obsids. " 1>&2;
@@ -17,9 +22,10 @@ echo "obs_restore.sh [-d dep] [-t] obsnum
 #initial variables
 dep=
 tst=
+obstype=target
 
 # parse args and set options
-while getopts ':tzd:' OPTION
+while getopts ':tzd:a:' OPTION
 do
     case "$OPTION" in
     d)
@@ -30,6 +36,9 @@ do
         ;;
     t)
         tst=1
+        ;;
+    a)
+        obstype=${OPTARG}
         ;;
     h)
         usage
@@ -138,7 +147,7 @@ echo "
 # Load environment settings afresh -- IGNORE THIS FOR NOW (slated for a future version)
 #hpc_user_settings=\$(singularity exec $GPMCONTAINER $GPMBASE/gpm_track.py get_environment)
 
-acacia_path_info=\$(singularity exec $GPMCONTAINER $GPMBASE/gpm_track.py acacia_path --obs_file \$obsnum)
+acacia_path_info=\$(singularity exec $GPMCONTAINER $GPMBASE/gpm_track.py get_acacia_path --obs_file \$obsnum --obstype $obstype)
 
 read -r obsid epoch tar_contains_folder acacia_path <<< \"\$acacia_path_info\"
 
