@@ -58,8 +58,8 @@ class ApplyCalAdmin(admin.ModelAdmin):
 
 @admin.register(Backup)
 class BackupAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'obs', 'epoch', 'acacia']
-    list_filter = ['epoch']
+    list_display = ['pk', 'obs', 'obstype', 'epoch', 'acacia', 'tar_contains_folder']
+    list_filter = ['epoch', 'obstype']
     autocomplete_fields = ['obs']
 
 @admin.register(Cluster)

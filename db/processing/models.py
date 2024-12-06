@@ -38,13 +38,28 @@ class ApplyCal(models.Model):
 
 
 class Backup(models.Model):
-    obs = models.OneToOneField('Observation', models.DO_NOTHING, primary_key=True)
+    obs = models.ForeignKey('Observation', models.DO_NOTHING)
     epoch = models.CharField(max_length=9)
-    acacia = models.TextField()
+    acacia = models.CharField(max_length=127)
+    tar_contains_folder = models.BooleanField()
+    obstype = models.CharField(max_length=31)
 
     class Meta:
         managed = False
         db_table = 'backup'
+        ordering = ['obs', 'obstype']
+
+
+class BackupTable(models.Model):
+    obs = models.ForeignKey('Observation', models.DO_NOTHING)
+    epoch = models.CharField(max_length=9)
+    target = models.CharField(max_length=127)
+    warp = models.CharField(max_length=127)
+    calibration = models.CharField(max_length=127)
+
+    class Meta:
+        managed = False
+        db_table = 'backup_table'
         ordering = ['obs']
 
 

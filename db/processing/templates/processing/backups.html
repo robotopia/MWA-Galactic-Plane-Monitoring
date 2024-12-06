@@ -1,0 +1,35 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Backups for {{ epoch }}</title>
+  </head>
+  <body>
+    <h1>Backups</h1>
+    <table class="backups-table">
+      <tr>
+        <th>ObsID</th>
+        <th>Calibration</th>
+        <th>Target</th>
+        <th>Warp</th>
+      </tr>
+      {% for backup in backups %}
+      <tr>
+        <td class="center">{{ backup.obs }}</td>
+        <td>{{ backup.calibration|default_if_none:'' }} </td>
+        <td>{{ backup.target|default_if_none:'' }}</td>
+        <td>{{ backup.warp|default_if_none:'' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>
+<style>
+.backups-table td, .backups-table th {
+  padding: 0px 5px;
+}
+.backups-table td.center {
+  text-align: center;
+}
+</style>

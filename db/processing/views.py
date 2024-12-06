@@ -216,3 +216,15 @@ def sourceFinder(request):
             ]
 
     return render(request, 'processing/source_finder.html', context)
+
+
+def backupView(request, epoch):
+
+    backup_rows = models.BackupTable.objects.filter(epoch=epoch)
+
+    context = {
+        'backups': backup_rows,
+        'epoch': epoch,
+    }
+
+    return render(request, 'processing/backups.html', context)
