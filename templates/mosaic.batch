@@ -1,0 +1,34 @@
+#!/bin/bash -l
+
+#SBATCH --account=pawsey0272
+#SBATCH --partition=work
+#SBATCH --time=01:00:00
+#SBATCH --nodes=1
+#SBATCH --tasks-per-node=19
+#SBATCH --mem=150G
+
+if [[ -z "$1" ]]
+then
+  echo "usage: sbatch mosaic.batch [EPOCH]"
+  exit 1
+fi
+
+source /software/projects/pawsey0272/smcsweeney/MWA-Galactic-Plane-Monitoring/GP-Monitor-setonix.profile
+module load rclone/1.63.1
+
+epoch="$1"
+cd $epoch
+cp ../galcar.swarp .
+
+for file in 1*/*MFS-I*_warp.fits
+do
+  ln -s $file
+  ln -s ${file%_warp.fits}_weight.fits $(basename ${file%.fits}_weight.fits)
+done
+
+singularity exec -B $PWD $GPMCONTAINER swarp -c galcar.swarp *pb_warp.fits
+
+mv weighted_coadd.fits ${epoch}_mosaic.fits
+mv coadd.weight.fits ${epoch}_mosaic_weights.fits
+rclone copy ${epoch}_mosaic.fits mwasci:gpm2024/${epoch}
+rclone copy ${epoch}_mosaic_weights.fits mwasci:gpm2024/${epoch}
