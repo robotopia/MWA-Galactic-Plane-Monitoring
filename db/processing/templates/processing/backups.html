@@ -17,9 +17,9 @@
       {% for backup in backups %}
       <tr>
         <td class="center">{{ backup.obs }}</td>
-        <td>{{ backup.calibration|default_if_none:'' }} </td>
-        <td>{{ backup.target|default_if_none:'' }}</td>
-        <td>{{ backup.warp|default_if_none:'' }}</td>
+        <td><code>{{ backup.calibration|default_if_none:'' }}</code></td>
+        <td><code>{{ backup.target|default_if_none:'' }}</code></td>
+        <td><code>{{ backup.warp|default_if_none:'' }}</code></td>
       </tr>
       {% endfor %}
     </table>
