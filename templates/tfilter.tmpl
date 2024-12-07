@@ -39,7 +39,7 @@ cd "${datadir}" || exit 1
 track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 # Run the filters!
-$GPMBASE/gpm/bin/run_tfilter.py --project ${runname} $PWD/${obsnum}_transient.hdf5 ${obsnum}
+$GPMBASE/gpm/bin/run_tfilter.py --project ${runname} --run_name ${runname} $PWD/${obsnum}_transient.hdf5 ${obsnum}
 test_fail $?
 
 # Create a subfolder to put all these files in.
