@@ -53,7 +53,9 @@ def main():
         args.save_filtered,
         args.project,
         max_plots=args.max_plots,
-        true_mask=args.true_mask)
+        true_mask=args.true_mask,
+        deep_name="deep-MFS-I-image-pb",
+        )
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,121 @@
+diff --git a/FileIO.py b/FileIO.py
+index b9b00ec..9deb94b 100644
+--- a/FileIO.py
++++ b/FileIO.py
+@@ -42,8 +42,7 @@ def ReadHeader(fname):
+             obs_header['FREQ'] = obs_header['CRVAL3']
+             obs_header['TIMESTEP'] = df.attrs['TIME_INTERVAL']
+     else:
+-        print('Only support fits and hdf5 tables!')
+-        exit()
++        raise ValueError('Only support fits and hdf5 tables!')
+     
+     return obs_header
+ 
+@@ -67,8 +66,7 @@ def ReadImage(fname):
+             obs_header['FREQ'] = obs_header['CRVAL3']
+             obs_header['TIMESTEP'] = df.attrs['TIME_INTERVAL']
+     else:
+-        print('Only support fits and hdf5 tables!')
+-        exit()
++        raise ValueError('Only support fits and hdf5 tables!')
+     
+     return obs_data, obs_header
+ 
+@@ -77,15 +75,13 @@ def ReadTable(fname):
+     if obs_ext == '.fits': # Open fits file
+         hdul = fits.open(fname)
+         if len(hdul) < 2:
+-            print('Could not find table hdu!')
+-            exit()
++            raise ValueError('Could not find table hdu!')
+         tab_data = hdul[1].data
+         tab_header = hdul[1].header
+         img_header = hdul[0].header
+         hdul.close()
+     else:
+-        print('Only support fits tables!')
+-        exit()
++        raise ValueError('Only support fits tables!')
+         
+     return tab_data, tab_header, img_header
+ 
+diff --git a/diagnostic.py b/diagnostic.py
+index fb676cf..cfb0c0d 100644
+--- a/diagnostic.py
++++ b/diagnostic.py
+@@ -155,7 +155,7 @@ def DiagnosticPlot(path, obs, filters, candidate, isl_labels, run_name, deep_nam
+ 
+     fig.suptitle('obs_id: {0} cand_id: {1} cent_freq: {2} MHz coords: ({3}, {4}) ({5:.6}, {6:.6}) cube_rms: {7:.6} Jy num_cands / num_islands: {8}'.format(obs.obsid, candidate['cand_id'], int(obs.freq/1e6), skycoord.ra.to_string(u.hour), skycoord.dec.to_string(u.degree), skycoord.ra.deg, skycoord.dec.deg, obs.rms, obs.ncands), fontsize=12)
+ 
+-    fig.savefig(path.format(obs.obsid, f'{run_name}_{candidate["cand_id"]}.png'), bbox_inches="tight")
++    fig.savefig(path.format(obs.obsid, f'{run_name}_{candidate["cand_id"]:03d}.png'), bbox_inches="tight")
+     plt.close(fig)
+ 
+     # Cutout GIF
+@@ -175,7 +175,7 @@ def DiagnosticPlot(path, obs, filters, candidate, isl_labels, run_name, deep_nam
+     # Combining pngs to gif
+     os.system("convert {0} {1}".format(
+         path.format(obs.obsid, '??.png'),
+-        path.format(obs.obsid, f'{run_name}_{candidate["cand_id"]}.gif')))
++        path.format(obs.obsid, f'{run_name}_{candidate["cand_id"]:03d}.gif')))
+     # Removing png frames
+     madefiles = glob(path.format(obs.obsid, '??.png'))
+     for f in madefiles:
+diff --git a/island.py b/island.py
+index a2472de..181e5ec 100644
+--- a/island.py
++++ b/island.py
+@@ -4,7 +4,7 @@ import numpy as np
+ from scipy import ndimage
+ from astropy import units as u
+ from astropy.wcs.utils import pixel_to_skycoord
+-from gleam_x.bin.beam_value_at_radec import beam_value, parse_metafits
++from beam_value_at_radec import beam_value, parse_metafits
+ from astropy import units as u
+ import lowner_john_ellipse as ellipse
+ import matplotlib.pyplot as plt
+diff --git a/transient_search.py b/transient_search.py
+index ae12af4..c315c1f 100644
+--- a/transient_search.py
++++ b/transient_search.py
+@@ -56,12 +56,13 @@ class Filter:
+ # run_name: prefix to add to filenames specifying what is being done. This is what's stored in the data table in column filter_id
+ # make_plots: boolean whether to make plots
+ # save_filtered: whether to save fits images of the filter results - normally False
++# project: which 'project' to assign this candidate to (needed for candidate webapp)
+ # obs_name: suffix name of the transient cube
+ # max_plots: max number of plots to create
+ # true_mask: something or other
+ # table_name: suffix name to give the final output table
+ 
+-def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, obs_name='transient.hdf5', max_plots=100, true_mask=None, table_name='islands_selected_meta'):
++def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, project, obs_name='transient.hdf5', max_plots=100, true_mask=None, table_name='islands_selected_meta', deep_name="deep-MFS-image-pb"):
+     obs = Observation(path, obsid, obs_name)
+ 
+     # Ignoring high RMS frames
+@@ -84,6 +85,8 @@ def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, o
+ 
+     # Detect islands
+     isl_table, isl_labels, _ = isl.FindIslands(obs, filters, True, run_name=run_name)
++    isl_table.add_column(np.zeros(len(isl_table), dtype=np.dtype('<S20')), name='project')
++    isl_table['project'][:] = project
+ 
+     if true_mask is not None:
+         cands_coord = SkyCoord(isl_table['ra_deg'], isl_table['dec_deg'], unit=(u.deg, u.deg), frame="fk5")
+@@ -109,13 +112,13 @@ def TransientSearch(path, obsid, filters, run_name, make_plots, save_filtered, o
+     if make_plots:
+         if len(isl_table_selected) <= max_plots:
+             for candidate in isl_table_selected:
+-                diagnostic.DiagnosticPlot(path, obs, filters, candidate, isl_labels, run_name)
++                diagnostic.DiagnosticPlot(path, obs, filters, candidate, isl_labels, run_name, deep_name=deep_name)
+ 
+     # Prepare for upload
+     isl_table_selected.add_column(isl_table_selected['maj_rad_pix'], name='rad_pix')
+     isl_table_selected.add_column(isl_table_selected['maj_rad_deg'], name='rad_deg')
+ 
+-    fits_fields = ['obs_id', 'filter_id', 'cand_id', 'x_pix', 'y_pix', 'ra_deg', 'dec_deg', 'area_pix', 'rad_pix', 'rad_deg', 'cent_sep_deg', 'peak_flux', 'beam', 'obs_cent_freq', 'det_stat', 'nks_sep_deg', 'nks_x_pix', 'nks_y_pix', 'nks_ra_deg', 'nks_dec_deg', 'nks_flux', 'nks_name', 'nks_flux_rat']
++    fits_fields = ['obs_id', 'filter_id', 'cand_id', 'project', 'x_pix', 'y_pix', 'ra_deg', 'dec_deg', 'area_pix', 'rad_pix', 'rad_deg', 'cent_sep_deg', 'peak_flux', 'beam', 'obs_cent_freq', 'det_stat', 'nks_sep_deg', 'nks_x_pix', 'nks_y_pix', 'nks_ra_deg', 'nks_dec_deg', 'nks_flux', 'nks_name', 'nks_flux_rat']
+     meta_fields_int = ['min_rad_pix', 'maj_rad_pix', 'peak_frame']
+     meta_fields_float = ['rot_deg', 'beam_norm', 'tcg', 'spike', 'rms', 'tcg_norm', 'spike_norm', 'rms_norm', 'nks_corr', 'nks2_sep_deg', 'nks2_flux', 'nks2_corr', 'nks2_flux_rat']
+     meta_fields_str = ['nks2_name']
