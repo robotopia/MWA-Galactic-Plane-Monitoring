@@ -69,7 +69,7 @@ then
         then
             deptype=aftercorr
         else
-            depend=afterok
+            deptype=afterok
         fi
     fi
     depend="--dependency=${deptype}:${dep}"
