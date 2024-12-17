@@ -96,7 +96,7 @@ then
     GPMNCPULINE="--ntasks-per-node=1"
 fi
 
-sub="sbatch --begin=now+1minutes --export=ALL --time=00:05:00 --mem=200M -M ${GPMCOMPUTER} --output=${output} --error=${error} "
+sub="sbatch --begin=now+1minutes --export=ALL --time=00:05:00 -M ${GPMCOMPUTER} --output=${output} --error=${error} "
 sub="${sub}  ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 
 if [[ ! -z ${tst} ]]

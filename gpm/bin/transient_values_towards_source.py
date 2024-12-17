@@ -71,6 +71,11 @@ def main(transient_cube_dir, obsid, coord, output_path=None):
     plt.tight_layout()
     plt.savefig(output_path)
 
+    output_txt = output_path[:-4] + ".txt"
+    dt = 4 # seconds per timestep. WARNING WARNING HARDCODED VALUE
+    t = timesteps*dt + int(obsid)
+    np.savetxt(output_txt, np.stack((t, values, np.full(values.shape, obs.rms))).T, fmt="%d %.18e %.18e")
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Pull out the value of an image at the specified coordinates")
     parser.add_argument("transient_cube_dir", help="The (absolute!) directory containing the transient cube to open")
