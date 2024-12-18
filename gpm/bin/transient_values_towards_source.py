@@ -72,6 +72,7 @@ def main(transient_cube_dir, obsid, coord, output_path=None):
     plt.savefig(output_path)
 
     output_txt = output_path[:-4] + ".txt"
+    print("---WARNING!!!---\nTimestep assumed to be 4 seconds\n----------------")
     dt = 4 # seconds per timestep. WARNING WARNING HARDCODED VALUE
     t = timesteps*dt + int(obsid)
     np.savetxt(output_txt, np.stack((t, values, np.full(values.shape, obs.rms))).T, fmt="%d %.18e %.18e")
