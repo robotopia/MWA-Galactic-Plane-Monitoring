@@ -3,6 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Q
 from . import models
 import json
+from collections import defaultdict
 
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy.time import Time
@@ -27,15 +28,23 @@ def EpochOverviewView(request, pipeline, epoch, user):
     if not request.user.hpc_users.filter(name=user):
         return HttpResponse('Unauthorized access', status=401)
 
-    observations = models.Observation.objects.all()
-    observations = [o for o in observations if o.epoch.epoch == epoch]
-    overviews = {o: {eo.task: {"status": eo.status, "cal_obs": eo.cal_obs, "cal_usable": eo.cal_usable, "cal_notes": eo.cal_notes if eo.cal_notes else "", "date": eo.submission_time} for eo in o.epoch_overviews.all() if eo.user == user and eo.epoch == epoch} for o in observations}
+    epoch_overviews = models.EpochOverview.objects.filter(epoch=epoch, user=user).prefetch_related('obs')
+    overviews = defaultdict(lambda: {})
+
+    for eo in epoch_overviews:
+        overviews[eo.obs][eo.task] = {
+            'status': eo.status,
+            'cal_obs': eo.cal_obs,
+            'cal_usable': eo.cal_usable,
+            'cal_notes': eo.cal_notes if eo.cal_notes else "",
+            'date': eo.submission_time,
+        }
 
     context = {
         'pipeline': pipeline,
         'epoch': epoch,
         'user': user,
-        'overviews': overviews,
+        'overviews': dict(overviews),
     }
 
     try:
