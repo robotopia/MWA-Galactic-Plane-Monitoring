@@ -57,6 +57,8 @@ def main(transient_cube_dir, obsid, coord, output_path=None):
 
     # Get pixels
     x, y = skycoord_to_pixel(coord, obs.wcs)
+    if x < 0 or y < 0 or x > obs.shape[2] or y > obs.shape[1]:
+        raise Exception("Pixel outside of image")
     values = np.squeeze(obs.data[:, int(np.round(y)), int(np.round(x))])
     timesteps = np.arange(len(values))
 
