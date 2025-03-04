@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: ubuntu:20.04
+From: ubuntu:22.04
 
 %help
 A container for the key pieces of software that make up the GLEAM-X processing pipeline, including:
@@ -102,13 +102,13 @@ update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 pip3 install --no-cache-dir \
             cython \
-            scipy==1.6.1 \
-            astropy==4.3 \
-            lmfit==1.0.2 \
-            tifffile==2021.8.30 \
-            jedi==0.17.2 \
-            pandas==1.2.1 \
-            numpy==1.20
+            scipy \
+            astropy \
+            lmfit \
+            tifffile \
+            jedi \
+            pandas \
+            numpy
 
 pip3 install --no-cache-dir \
             ipython \
@@ -131,8 +131,11 @@ pip3 install --no-cache-dir \
             git+https://gitlab.com/Sunmish/flux_warp.git \
             git+https://github.com/tjgalvin/fits_warp.git \
             git+https://github.com/MWATelescope/mwa-calplots.git \
-            git+https://github.com/tjgalvin/mwa_pb_lookup.git \
-            git+https://github.com/robotopia/MWA-Galactic-Plane-Monitoring.git
+            git+https://github.com/tjgalvin/mwa_pb_lookup.git
+
+git clone --no-remote-submodules https://github.com/robotopia/MWA-Galactic-Plane-Monitoring.git
+cd MWA-Galactic-Plane-Monitoring
+pip install .
 
 # ------------------------------------------------
 
