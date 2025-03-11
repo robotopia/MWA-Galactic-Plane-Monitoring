@@ -100,7 +100,7 @@ else
 fi
 
 #Get the list of ASVO jobs
-asvo_json=$(singularity exec $GPMCONTAINER giant-squid list ${obsids} --json $obsid --states ready --states processing --states queued)
+asvo_json=$(singularity exec $GPMCONTAINER giant-squid list ${obsids} --json $obsid --states ready --states preprocessing --states queued)
 
 # Tast #2: separate the list into three sublists:
 #   1. State = Ready                     -->  Submit download job
