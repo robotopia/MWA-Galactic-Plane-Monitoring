@@ -91,7 +91,7 @@ fi
 
 # start the real program
 
-script="${GPMSCRIPT}/acacia_${obsnum}.sh"
+script="${GPMSCRIPT}/acacia_${obstype}_${obsnum}.sh"
 cat "${GPMBASE}/templates/acacia.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
                                              -e "s:PIPEUSER:${pipeuser}:g" \
                                              -e "s:OBSTYPE:${obstype}:g" > "${script}"
