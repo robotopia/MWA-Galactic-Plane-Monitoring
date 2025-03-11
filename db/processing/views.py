@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from . import models
 import json
@@ -22,6 +23,7 @@ def dmdelay(dm, f_MHz):
 # Create your views here.
 
 # The main view: see the state of an epoch's processing at a glance
+@login_required
 def EpochOverviewView(request, pipeline, epoch, user):
 
     # Check that the logged in (Django) user is allowed access to the specified hpc_user
