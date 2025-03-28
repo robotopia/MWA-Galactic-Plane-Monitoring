@@ -64,7 +64,7 @@ def gpmdb_config():
     port = os.environ["GPMDBPORT"]
     user = os.environ["GPMDBUSER"]
     passwd = os.environ["GPMDBPASS"]
-    database = "gp_monitor"
+    database = "gpm-processing"
 
     return {
         "host": host,
