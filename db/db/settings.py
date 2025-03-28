@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'db.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'gp_monitor',
+        'NAME': 'gpm-processing',
         'USER':os.environ['GPMDBUSER'],
         'PASSWORD':os.environ['GPMDBPASS'],
         'HOST':os.environ['GPMDBHOST'],
