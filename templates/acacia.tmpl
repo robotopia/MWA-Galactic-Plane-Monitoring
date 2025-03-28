@@ -47,6 +47,7 @@ cd "${GPMSCRATCH}/${epoch}/${obsnum}" || exit
 #Defining what to tar and the name and place of the tarfile
 if [ "$obstype" = "calibration" ]
 then
+    touch ${obsnum}_ionodiff.csv # Sometimes this file doesn't get made??
     whatToTar=( ${obsnum}_*.png ${obsnum}_local_gleam_model_solutions*.bin ${obsnum}_ionodiff.csv )
 elif [ "$obstype" = "target" ]
 then
