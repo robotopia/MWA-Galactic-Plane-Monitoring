@@ -35,7 +35,7 @@ echo "taskid: ${taskid}"
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
@@ -72,7 +72,7 @@ calmodel="${obsnum}_local_gleam_model.txt"
 MWAPATH="${GPMMWAPB}"
 
 # start
-track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 if [[ ! -e ${metafits} ]] || [[ ! -s ${metafits} ]]
 then
@@ -186,5 +186,5 @@ test_fail $?
 #    test_fail 1
 #fi
 
-track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
 

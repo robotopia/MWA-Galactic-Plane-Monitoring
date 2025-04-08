@@ -6,7 +6,7 @@ import os
 import mysql.connector as mysql
 
 __author__ = "Tim Galvin"
-dbname = "gp_monitor"
+dbname = "gpm-processing"
 
 # TODO: Remove this database_configuration business
 try:
@@ -20,7 +20,7 @@ except:
         user = os.environ["GPMDBUSER"]
         passwd = os.environ["GPMDBPASS"]
 
-        dbconfig = {"host": host, "port": port, "user": user, "password": passwd}
+        dbconfig = {"host": host, "port": port, "user": user, "password": passwd, "database": dbname}
 
     except:
         dbconfig = None
@@ -35,7 +35,7 @@ dbconn = "mysql://{0}:{1}@{2}:{3}/{4}".format(
 )
 
 
-def connect(switch_db=True):
+def connect(switch_db=False):
     """Returns an activate connection to the mysql gpm database
     
     Keyword Paramters:
@@ -49,6 +49,6 @@ def connect(switch_db=True):
     conn = mysql.connect(**dbconfig)
 
     if switch_db:
-        conn.cursor().execute("USE {0}".format(dbname))
+        conn.cursor().execute("USE '{0}'".format(dbname))
 
     return conn

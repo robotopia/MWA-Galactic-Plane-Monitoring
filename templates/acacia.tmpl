@@ -31,7 +31,7 @@ echo "taskid: ${taskid}"
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    ${container} track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    ${container} $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
@@ -39,7 +39,7 @@ fi
 epoch="$(${container} ${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
 
 # start
-${container} track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+${container} $GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 cd "${GPMSCRATCH}/${epoch}/${obsnum}" || exit
 
@@ -179,4 +179,4 @@ ${container} $GPMBASE/gpm_track.py set_acacia_path --obs_id ${obsnum} --obstype 
 #Successfully finished
 echo "Done"
 
-${container} track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+${container} $GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"

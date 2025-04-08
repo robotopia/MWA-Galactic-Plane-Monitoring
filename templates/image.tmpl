@@ -25,7 +25,7 @@ echo "taskid: ${taskid}"
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
@@ -55,7 +55,7 @@ msigma=5
 tsigma=3
 
 # Update database
-track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 # TODO: replace with find
 metafits="$(ls -t ${obsnum}*metafits* | head -1)"
@@ -200,8 +200,8 @@ wsclean \
 #    {name}-deep-{chan:04d}-{pol}-image.fits
 
 test_fail $?
-track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-track_task.py obs_status --obs_id="${obsnum}" --status='imaged'
+$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py obs_status --obs_id="${obsnum}" --status='imaged'
 
 ### TODO fix wsclean2gleam.py so it more cleverly handles lack of polarisation
 # Rename files

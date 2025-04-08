@@ -29,7 +29,7 @@ echo "taskid: ${taskid}"
 function test_fail {
     if [[ $1 != 0 ]]
     then
-        track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+        $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
         exit "$1"
     fi
 }
@@ -45,7 +45,7 @@ else
 fi
 
 # Update database
-track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
 datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
@@ -213,5 +213,5 @@ taql "select ctod(TIME), gsum(ntrue(amplitude(DATA[,::3])==0.0)), gsum(ntrue(FLA
 rm "${obsnum}"_transient-t????-*.fits
 #rm "${obsnum}_transient_concatenated_table.fits"
 
-track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
 

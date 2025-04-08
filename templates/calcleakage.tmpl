@@ -24,7 +24,7 @@ echo "taskid: ${taskid}"
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
@@ -35,7 +35,7 @@ datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
 cd "${datadir}" || exit 1
 
 # Update database
-track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 # The default output name of calc_leakage (below) appends _fixed to the stem
 # of the fixed V image:
@@ -85,6 +85,6 @@ do
 done
 
 test_fail $?
-track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-track_task.py obs_status --obs_id="${obsnum}" --status='leakage fixed'
+$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py obs_status --obs_id="${obsnum}" --status='leakage fixed'
 

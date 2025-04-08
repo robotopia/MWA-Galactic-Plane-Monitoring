@@ -25,7 +25,7 @@ echo "taskid: ${taskid}"
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
@@ -36,7 +36,7 @@ datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
 cd "${datadir}" || exit 1
 
 # Update database
-track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
+$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 # Run the filters!
 $GPMBASE/gpm/bin/run_tfilter.py --project ${runname} --run_name ${runname} $PWD/${obsnum}_transient.hdf5 ${obsnum}
@@ -52,5 +52,5 @@ mv ${obsnum}_${runname}*png \
 $GPMBASE/gpm/bin/upload_cand.py --data_directory tfilter_results
 test_fail $?
 
-track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-#track_task.py obs_status --obs_id="${obsnum}" --status='tfiltered'
+$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+#$GPMBASE/gpm/bin/track_task.py obs_status --obs_id="${obsnum}" --status='tfiltered'
