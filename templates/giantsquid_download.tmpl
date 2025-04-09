@@ -6,12 +6,12 @@ set -x
 obsnum=$1
 
 # Mark start of download in database
-$GPMBASE/gpm/bin/track_task.py start --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --start_time="$(date +%s)"
+$GPMBASE/gpm_track.py start --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --host_cluster="${GPMCLUSTER}" --start_time="$(date +%s)"
 
 if [[ -z $obsnum ]]
 then
     echo "No obsid passed to giant-squid download script. Not downloading anything."
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
+    $GPMBASE/gpm_track.py fail --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --host_cluster="${GPMCLUSTER}" --finish_time="$(date +%s)"
     exit 1
 fi
 
@@ -22,7 +22,7 @@ project=$(${GPMBASE}/gpm_track.py obs_epoch --obs_id $obsnum)
 if [[ -z $project ]]
 then
     echo "'project' is empty. Perhaps the connection to the database failed...?"
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
+    $GPMBASE/gpm_track.py fail --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --host_cluster="${GPMCLUSTER}" --finish_time="$(date +%s)"
     exit 1
 fi
 
@@ -33,7 +33,7 @@ mkdir -p "${project}/${obsnum}" && cd "${project}/${obsnum}"
 if [[ -d "${obsnum}.ms" ]]
 then
     echo "${obsnum}.ms already exists; please remove directory before trying to (re)download."
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
+    $GPMBASE/gpm_track.py fail --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --host_cluster="${GPMCLUSTER}" --finish_time="$(date +%s)"
     exit 1
 fi
 
@@ -48,12 +48,12 @@ grep -v birli_manifest.sha1sum birli_manifest.sha1sum | sha1sum -c
 # Check if the download was successful
 if [[ $? -ne 0 ]] # i.e. if it failed
 then
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
+    $GPMBASE/gpm_track.py fail --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --host_cluster="${GPMCLUSTER}" --finish_time="$(date +%s)"
     exit 1
 fi
 
 # The tar file has been successfully extracted, so remove it
 rm ${obsnum}_*_ms.tar
 
-$GPMBASE/gpm/bin/track_task.py finish --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --finish_time="$(date +%s)"
+$GPMBASE/gpm_track.py finish --jobid="${SLURM_ARRAY_JOB_ID}" --taskid="${SLURM_ARRAY_TASK_ID}" --host_cluster="${GPMCLUSTER}" --finish_time="$(date +%s)"
 

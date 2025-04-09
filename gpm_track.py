@@ -986,6 +986,7 @@ if __name__ == "__main__":
     ps.add_argument("--jobid", type=int, help="Job id from slurm", default=None)
     ps.add_argument("--taskid", type=int, help="Task id from slurm", default=None)
     ps.add_argument("--task", type=str, help="task being run", default=None)
+    ps.add_argument("--host_cluster", type=str, help="the cluster running the task", default=None)
     ps.add_argument("--submission_time", type=int, help="submission time", default=None)
     ps.add_argument("--start_time", type=int, help="job start time", default=None)
     ps.add_argument("--finish_time", type=int, help="job finish time", default=None)
