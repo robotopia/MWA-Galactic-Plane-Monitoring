@@ -99,25 +99,25 @@ CREATE VIEW epoch AS
 This view shows just the most recent tasks that users has processed.
 
 ```
-CREATE VIEW epoch_overview AS
+CREATE OR REPLACE VIEW epoch_overview AS
     WITH s1 AS
         (SELECT processing.job_id AS job_id,
                 processing.obs_id AS obs_id,
-                processing.user AS user,
-                processing.task AS task,
+                processing.hpc_user_id AS hpc_user_id,
+                processing.task_id AS task_id,
                 processing.cal_obs_id AS cal_obs_id,
                 processing.submission_time AS submission_time,
                 processing.status AS status,
                 RANK() OVER
                     (PARTITION BY processing.obs_id,
-                                  processing.user,
-                                  processing.task
-                         ORDER BY processing.submission_time desc) AS Rank FROM processing)
+                                  processing.hpc_user_id,
+                                  processing.task_id
+                         ORDER BY processing.submission_time desc) AS MyRank FROM processing)
     SELECT s1.job_id AS job_id,
            s1.obs_id AS obs_id,
            epoch.epoch AS epoch,
-           s1.user AS user,
-           s1.task AS task,
+           s1.hpc_user_id AS hpc_user_id,
+           s1.task_id AS task_id,
            FROM_UNIXTIME(s1.submission_time) AS submission_time,
            s1.status AS status,
            s1.cal_obs_id AS cal_obs_id,
@@ -126,7 +126,7 @@ CREATE VIEW epoch_overview AS
         FROM s1
             LEFT JOIN epoch ON s1.obs_id = epoch.obs_id
             LEFT JOIN apply_cal ac ON (s1.obs_id = ac.obs_id) and (s1.cal_obs_id = ac.cal_obs_id)
-        WHERE s1.Rank = 1;
+        WHERE s1.MyRank = 1;
 ```
 
 ### `overview_summary`
@@ -134,11 +134,12 @@ CREATE VIEW epoch_overview AS
 This view shows how many of the most recently added tasks (i.e. the tasks that are shown in [`epoch_overview`](#epoch-overview)) for each combination of `epoch` and `user`.
 
 ```
-CREATE VIEW overview_summary AS
-  SELECT epoch, count(*) AS completed, user, p.pipeline
+CREATE OR REPLACE VIEW overview_summary AS
+  SELECT epoch, count(*) AS completed, hu.name AS user, p.pipeline
     FROM epoch_overview AS eo
-    LEFT JOIN pipeline_step AS p ON eo.task = p.task
+    LEFT JOIN pipeline_step AS p ON eo.task_id = p.task_id
     LEFT JOIN observation AS o ON eo.obs_id = o.obs_id
+    LEFT JOIN hpc_user AS hu ON eo.hpc_user_id = hu.id
     WHERE eo.status = 'finished'
         AND o.calibration = false
     GROUP BY epoch, user, pipeline;
@@ -210,7 +211,7 @@ CREATE VIEW epoch_stats AS
 
 ### `slurm_summary`
 
-This view summarises the SLURM directive values for each user/task/cluster combination.
+This view summarises the SLURM directive values for each user/array task/cluster combination.
 
 ```
 CREATE VIEW slurm_summary AS
