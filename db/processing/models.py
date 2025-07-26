@@ -110,8 +110,8 @@ class EpochOverview(models.Model):
     obs = models.ForeignKey('Observation', models.DO_NOTHING, related_name="epoch_overviews")
     cal_obs = models.ForeignKey('Observation', models.DO_NOTHING, blank=True, null=True, related_name="cal_epoch_overviews")
     epoch = models.CharField(max_length=9)
-    user = models.TextField(blank=True, null=True)
-    task = models.TextField(blank=True, null=True)
+    hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="epoch_overviews")
+    task = models.ForeignKey("Task", on_delete=models.DO_NOTHING, related_name="epoch_overviews")
     submission_time = models.DateTimeField(blank=True, null=True)
     status = models.TextField(blank=True, null=True)
     cal_usable = models.BooleanField(blank=True, null=True)
@@ -120,7 +120,7 @@ class EpochOverview(models.Model):
     class Meta:
         managed = False
         db_table = 'epoch_overview'
-        ordering = ['obs', 'user', 'task']
+        ordering = ['obs', 'hpc_user', 'task']
 
 
 class DetectionByObs(models.Model):
@@ -150,6 +150,20 @@ class Hpc(models.Model):
         db_table = 'hpc'
         verbose_name = 'HPC'
         verbose_name_plural = 'HPCs'
+
+
+class HpcPath(models.Model):
+    path = models.CharField(max_length=511)
+    hpc = models.ForeignKey("Hpc", on_delete=models.DO_NOTHING, related_name="paths")
+
+    def __str__(self) -> str:
+        return self.path
+
+    class Meta:
+        managed = False
+        db_table = 'hpc_path'
+        verbose_name = 'HPC path'
+        verbose_name_plural = 'HPC paths'
 
 
 class HpcUser(models.Model):
@@ -299,26 +313,28 @@ class PipelineStep(models.Model):
 
 
 class Processing(models.Model):
-    job_id = models.IntegerField(primary_key=True)  # The composite primary key (job_id, task_id, host_cluster) found, that is not supported. The first column is selected.
-    task_id = models.IntegerField()
-    host_cluster = models.CharField(max_length=255)
+    job_id = models.IntegerField(blank=True, null=True)
+    array_task_id = models.IntegerField(blank=True, null=True)
+    cluster = models.ForeignKey("Cluster", on_delete=models.DO_NOTHING, related_name="array_jobs")
     submission_time = models.IntegerField(blank=True, null=True)
-    task = models.TextField(blank=True, null=True)
-    user = models.TextField(blank=True, null=True)
+    task = models.ForeignKey("Task", on_delete=models.DO_NOTHING, related_name="array_jobs")
+    hpc_user = models.ForeignKey("HpcUser", on_delete=models.DO_NOTHING, blank=True, null=True, related_name="array_jobs")
     start_time = models.IntegerField(blank=True, null=True)
     end_time = models.IntegerField(blank=True, null=True)
-    obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='processings')
-    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_processings')
+    obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='array_jobs')
+    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_array_jobs')
     status = models.TextField(blank=True, null=True)
     batch_file = models.TextField(blank=True, null=True)
+    batch_file_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_batch_file")
     stderr = models.TextField(blank=True, null=True)
+    stderr_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stderr")
     stdout = models.TextField(blank=True, null=True)
+    stdout_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stdout")
     output_files = models.TextField(blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'processing'
-        unique_together = (('job_id', 'task_id', 'host_cluster'),)
         ordering = ['-submission_time']
         verbose_name_plural = "Processing"
 

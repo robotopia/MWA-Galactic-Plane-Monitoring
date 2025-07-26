@@ -79,13 +79,18 @@ class EpochAdmin(admin.ModelAdmin):
 
 @admin.register(EpochOverview)
 class EpochOverviewAdmin(admin.ModelAdmin):
-    list_display = ['job_id', 'obs', 'epoch', 'user', 'task', 'submission_time', 'status']
-    list_filter = ['user', YearListFilter, 'task', 'status', 'epoch']
+    list_display = ['job_id', 'obs', 'epoch', 'hpc_user', 'task', 'submission_time', 'status']
+    list_filter = ['hpc_user', YearListFilter, 'task', 'status', 'epoch']
     date_hierarchy = 'submission_time'
 
 @admin.register(Hpc)
 class HpcAdmin(admin.ModelAdmin):
     list_display = ['id', 'name']
+
+@admin.register(HpcPath)
+class HpcPathAdmin(admin.ModelAdmin):
+    list_display = ['id', 'hpc', 'path']
+    list_filter = ['hpc']
 
 @admin.register(HpcUser)
 class HpcUserAdmin(admin.ModelAdmin):
@@ -120,8 +125,8 @@ class TaskClusterSettingAdmin(admin.ModelAdmin):
 
 @admin.register(Processing)
 class ProcessingAdmin(admin.ModelAdmin):
-    list_display = ['job_id', 'obs_id', 'user', 'task', 'submission_time', 'status']
-    list_filter = ['user', 'task', YearListFilter, EpochListFilter]
+    list_display = ['job_id', 'obs_id', 'hpc_user', 'task', 'submission_time', 'status']
+    list_filter = ['hpc_user', 'task', YearListFilter, EpochListFilter]
 
 @admin.register(SlurmHeader)
 class SlurmHeaderAdmin(admin.ModelAdmin):
