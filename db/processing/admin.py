@@ -128,11 +128,6 @@ class ProcessingAdmin(admin.ModelAdmin):
     list_display = ['job_id', 'obs_id', 'hpc_user', 'task', 'submission_time', 'status']
     list_filter = ['hpc_user', 'task', YearListFilter, EpochListFilter]
 
-@admin.register(SlurmHeader)
-class SlurmHeaderAdmin(admin.ModelAdmin):
-    list_display = ['hpc_user', 'task', 'cluster']
-    readonly_fields = ['hpc_user', 'task', 'cluster', 'header']
-
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
     list_display = ['name', 'raj2000', 'decj2000']

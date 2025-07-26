@@ -24,17 +24,17 @@ def dmdelay(dm, f_MHz):
 
 # The main view: see the state of an epoch's processing at a glance
 @login_required
-def EpochOverviewView(request, pipeline, epoch, user):
+def EpochOverviewView(request, pipeline, epoch, hpc_username):
 
     # Check that the logged in (Django) user is allowed access to the specified hpc_user
-    if not request.user.hpc_users.filter(name=user):
+    if not request.user.hpc_users.filter(name=hpc_username):
         return HttpResponse('Unauthorized access', status=401)
 
-    epoch_overviews = models.EpochOverview.objects.filter(epoch=epoch, user=user).prefetch_related('obs')
+    epoch_overviews = models.EpochOverview.objects.filter(epoch=epoch, hpc_user__name=hpc_username).prefetch_related('obs')
     overviews = defaultdict(lambda: {})
 
     for eo in epoch_overviews:
-        overviews[eo.obs][eo.task] = {
+        overviews[eo.obs][eo.task.name] = {
             'status': eo.status,
             'cal_obs': eo.cal_obs,
             'cal_usable': eo.cal_usable,
@@ -45,7 +45,7 @@ def EpochOverviewView(request, pipeline, epoch, user):
     context = {
         'pipeline': pipeline,
         'epoch': epoch,
-        'user': user,
+        'hpc_username': hpc_username,
         'overviews': dict(overviews),
     }
 

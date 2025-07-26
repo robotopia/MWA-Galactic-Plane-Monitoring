@@ -3,7 +3,7 @@ from django.urls import re_path, path, include
 from . import views
 
 urlpatterns = [
-    re_path(r'^(?P<pipeline>\w+)/(?P<epoch>[EB]poch[0-9]+)/(?P<user>\w+)$', views.EpochOverviewView, name="epoch_overview"),
+    re_path(r'^(?P<pipeline>\w+)/(?P<epoch>[EB]poch[0-9]+)/(?P<hpc_username>\w+)$', views.EpochOverviewView, name="epoch_overview"),
     re_path(r'^overview/(?P<pipeline>\w+)/(?P<user>\w+)$', views.EpochsView, name="epochs"),
     re_path(r'^set_epoch_cal/(?P<pipeline>\w+)/(?P<epoch>[EB]poch[0-9]+)/(?P<user>\w+)$', views.setEpochCal, name="set_epoch_cal"),
     re_path(r'^source_finder$', views.sourceFinder, name="source_finder"),

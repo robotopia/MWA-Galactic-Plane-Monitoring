@@ -299,8 +299,7 @@ class Observation(models.Model):
 class PipelineStep(models.Model):
     pipeline = models.CharField(max_length=31)
     step_order = models.IntegerField()
-    task = models.TextField()
-    task_id = models.ForeignKey("Task", models.DO_NOTHING, db_column='task_id', related_name="pipeline_steps")
+    task = models.ForeignKey("Task", models.DO_NOTHING, related_name="pipeline_steps")
 
     def __str__(self) -> str:
         return f"{self.task} ({self.pipeline})"
@@ -337,23 +336,6 @@ class Processing(models.Model):
         db_table = 'processing'
         ordering = ['-submission_time']
         verbose_name_plural = "Processing"
-
-
-class SlurmHeader(models.Model):
-    hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="slurm_headers")
-    task = models.ForeignKey("Task", models.DO_NOTHING, related_name="slurm_headers")
-    cluster = models.ForeignKey("Cluster", models.DO_NOTHING, related_name="slurm_headers")
-    header = models.TextField(primary_key=True)
-
-    def __str__(self) -> str:
-        return f"SLURM header ({self.hpc_user} / {self.task} / {self.cluster})"
-
-    class Meta:
-        managed = False
-        db_table = 'slurm_header'
-        ordering = ['hpc_user', 'task', 'cluster']
-        verbose_name = 'SLURM header'
-        verbose_name_plural = 'SLURM headers'
 
 
 class Source(models.Model):

@@ -7,7 +7,7 @@
   </head>
   <body>
     <div>
-      <p>Back to <a href="{% url 'epochs' pipeline=pipeline user=user %}">list of epochs</a></p>
+      <p>Back to <a href="{% url 'epochs' pipeline=pipeline user=hpc_username %}">list of epochs</a></p>
       <p>See this epoch's <a href="{% url 'backup_view' epoch=epoch %}">backups</a></p>
       Legend:
       <span class="queued legend">Queued</span>
@@ -17,7 +17,7 @@
       <span class="calibration legend">Calibration</span>
       <span class="finished legend out-of-date">Finished, out-of-date</span>
     </div>
-    <form method="post" action="{% url 'set_epoch_cal' pipeline=pipeline epoch=epoch user=user %}">
+    <form method="post" action="{% url 'set_epoch_cal' pipeline=pipeline epoch=epoch user=hpc_username %}">
       {% csrf_token %}
       <label for="set_epoch_cal">Assign this cal obs to all observations in this epoch (or type 'selfcal' to assign each observation its own ID):</label>
       <input id="set_epoch_cal" name="cal_obs" required/>
