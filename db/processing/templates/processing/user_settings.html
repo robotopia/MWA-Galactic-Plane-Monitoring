@@ -1,0 +1,42 @@
+{% extends 'processing/main.html' %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>Settings</h1>
+
+<form method="post">
+  {% csrf_token %}
+  <div style="padding: 10px;">
+    <label for="site-theme">Theme:</label>
+    <select id="site_theme" name='site_theme'>
+      {% for site_theme in request.user.session_settings.SITE_THEMES %}
+      <option value='{{ site_theme.0 }}' {% if request.user.session_settings.site_theme == site_theme.0 %}selected{% endif %}>{{ site_theme.1 }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="pipelines">Selected pipeline:</label>
+    <select id="pipelines" name="selected_pipeline">
+      <option value=''>----------</option>
+      {% for pipeline in pipelines %}
+      <option value='{{ pipeline }}' {% if request.user.session_settings.selected_pipeline == pipeline %}selected{% endif %}>{{ pipeline }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="hpc_users">Selected HPC user:</label>
+    <select id="hpc_users" name="selected_hpc_user">
+      {% for hpc_user in request.user.hpc_users.all %}
+      <option value='{{ hpc_user.pk }}' {% if request.user.session_settings.selected_hpc_user == hpc_user %}selected{% endif %}>{{ hpc_user.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <input type="submit" class="btn btn-primary" name="action" value="Save"/>
+</form>
+
+{% endblock %}

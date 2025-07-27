@@ -62,14 +62,14 @@ def EpochsView(request):
         session_settings = models.UserSessionSetting(user=request.user)
         session_settings.save()
 
-    # UP TO HERE!!!!!!!!
+    while not session_settings.selected_hpc_user or not session_settings.selected_pipeline:
+        response = redirect('user_session_settings')
+        session_settings = request.user.session_settings.first()
 
-    # TODO: FIX ME so that this view doesn't require a pipeline or a "user" (i.e. hpc_user name)
-    # Check that the logged in (Django) user is allowed access to the specified hpc_user
-    if not request.user.hpc_users.filter(name=user):
-        return HttpResponse('Unauthorized access', status=401)
-
-    epoch_completions = models.EpochCompletion.objects.filter(pipeline=pipeline, user=user)
+    epoch_completions = models.EpochCompletion.objects.filter(
+        pipeline=session_settings.pipeline,
+        hpc_username=session_settings.selected_hpc_user.name
+    )
     partially_complete_epochs = {e.epoch: e.completed/e.total*100 for e in epoch_completions}
     all_epochs = [e['epoch'] for e in models.Epoch.objects.all().order_by('epoch').values('epoch').distinct()]
     completion_data = {e: partially_complete_epochs[e] if e in partially_complete_epochs else 0.0 for e in all_epochs}
@@ -248,3 +248,39 @@ def backupView(request, epoch):
     }
 
     return render(request, 'processing/backups.html', context)
+
+
+@login_required
+def userSessionSettings(request):
+
+    # Create a UserSetting for this user if needed
+    if not hasattr(request.user, 'session_settings'):
+        session_settings = models.UserSessionSetting(user=request.user)
+        session_settings.save()
+
+    pipelines = sorted(list(
+        {pipeline_step.pipeline for pipeline_step in models.PipelineStep.objects.all()}
+    ))
+
+    if request.method == 'POST':
+        try:
+            selected_hpc_user = models.HpcUser.objects.get(pk=request.POST.get('selected_hpc_user'))
+            request.user.session_settings.selected_hpc_user = selected_hpc_user
+        except:
+            pass
+        request.user.session_settings.site_theme = request.POST.get('site_theme')
+        request.user.session_settings.selected_pipeline = request.POST.get('selected_pipeline')
+        request.user.session_settings.save()
+
+        '''
+        if request.POST.get('action') == 'Generate new API token':
+            try:
+                Token.objects.filter(user=request.user).delete()
+            except:
+                pass
+            Token.objects.create(user=request.user)
+        '''
+
+    #token = Token.objects.filter(user=request.user).first()
+
+    return render(request, 'processing/user_settings.html', {'pipelines': pipelines})

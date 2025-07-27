@@ -401,9 +401,16 @@ class TaskClusterSetting(models.Model):
 
 
 class UserSessionSetting(models.Model):
-    user = models.ForeignKey(User, models.CASCADE, related_name="session_settings")
+
+    SITE_THEMES = [
+        ('l', 'Light'),
+        ('d', 'Dark'),
+    ]
+
+    user = models.OneToOneField(User, models.CASCADE, related_name="session_settings")
     selected_pipeline = models.CharField(max_length=31, blank=True, null=True)
     selected_hpc_user = models.ForeignKey("HpcUser", models.SET_NULL, blank=True, null=True, related_name="session_settings")
+    site_theme = models.CharField(max_length=1, choices=SITE_THEMES, default='l', help_text="Choice of light or dark theme for the website")
 
     def __str__(self) -> str:
         return f"Session settings for {self.user}"
