@@ -55,8 +55,9 @@ def EpochOverviewView(request, pipeline, epoch, hpc_username):
         return HttpResponse(f"Pipeline '{pipeline}' not found", status=404)
 
 
-def EpochsView(request, pipeline, user):
+def EpochsView(request):
 
+    # TODO: FIX ME so that this view doesn't require a pipeline or a "user" (i.e. hpc_user name)
     # Check that the logged in (Django) user is allowed access to the specified hpc_user
     if not request.user.hpc_users.filter(name=user):
         return HttpResponse('Unauthorized access', status=401)
@@ -144,6 +145,7 @@ def setEpochCal(request, pipeline, epoch, user):
     return redirect('epoch_overview', pipeline=pipeline, epoch=epoch, user=user)
 
 
+@login_required
 def sourceFinder(request):
 
     context = {

@@ -127,11 +127,25 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+if DEBUG:
+    STATIC_URL = 'static/'
+    STATIC_ROOT = os.getenv("STATIC_ROOT")
+
+    MEDIA_URL = 'media/'
+    MEDIA_ROOT = os.getenv("MEDIA_ROOT")
+else:
+    # In production
+    STATIC_URL = 'static/'
+    STATIC_ROOT = '/var/www/gpm/static/'
+
+    MEDIA_URL = 'media/'
+    MEDIA_ROOT = '/var/www/gpm/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/processing/source_finder'
+LOGIN_URL = '/processing/login'
+LOGOUT_REDIRECT_URL = '/processing/login'

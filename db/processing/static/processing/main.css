@@ -1,0 +1,54 @@
+:root {
+    --color-kiwi: #57d897;
+    --color-forest: #98b71d;
+    --color-darkforest: #3d880c;
+}
+
+body {
+  padding: 10px;
+}
+
+h1, h2, h3, h4, h5 {
+    letter-spacing: .1rem;
+}
+
+.nav-link, .navbar-brand {
+    text-transform: uppercase;
+    font-family: proxima-nova,Helvetica,Arial,sans-serif;
+    letter-spacing: .12rem;
+}
+
+.nav-link:hover, .navbar-brand:hover, .nav-link-active {
+    text-shadow: 0px 0px 5px var(--color-kiwi);
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--bs-secondary-bg) !important;
+    --bs-btn-color: var(--bs-secondary-color) !important;
+    --bs-btn-border-color: var(--color-darkforest) !important;
+    --bs-btn-hover-border-color: var(--color-forest) !important;
+    --bs-btn-hover-bg: var(--bs-secondary-bg) !important;
+    --bs-btn-hover-color: var(--bs-secondary-color) !important;
+    text-shadow: 0px 0px 5px var(--color-darkforest);
+}
+
+.btn-primary:hover {
+    text-shadow: 0px 0px 5px var(--color-forest);
+    transition: text-shadow 0.01s, border-color 0.01s;
+}
+
+/* From: https://a11y-guidelines.orange.com/en/articles/accessible-hiding/ */
+.visually-hidden {
+    position: absolute;
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0,0,0,0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+
