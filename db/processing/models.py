@@ -95,7 +95,7 @@ class EpochCompletion(models.Model):
 
     epoch = models.CharField(max_length=9, primary_key=True)
     completed = models.IntegerField()
-    user = models.TextField()
+    hpc_username = models.TextField()
     pipeline = models.TextField()
     total = models.IntegerField()
 
@@ -296,6 +296,18 @@ class Observation(models.Model):
         ordering = ['-obs']
 
 
+class Pipeline(models.Model):
+    name = models.CharField(max_length=31, unique=True)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+    class Meta:
+        managed = False
+        db_table = 'pipeline'
+        ordering = ['name']
+
+
 class PipelineStep(models.Model):
     pipeline = models.CharField(max_length=31)
     step_order = models.IntegerField()
@@ -365,6 +377,33 @@ class Detection(models.Model):
         db_table = 'detection'
 
 
+class Semester(models.Model):
+    name = models.CharField(max_length=31, unique=True)
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+    class Meta:
+        managed = False
+        db_table = 'semester'
+        ordering = ['name']
+
+
+class SemesterPlan(models.Model):
+    semester = models.ForeignKey("Semester", models.CASCADE, related_name="semester_plans")
+    obs = models.ForeignKey("Observation", models.CASCADE, related_name="semester_plans")
+    pipeline = models.ForeignKey("Pipeline", models.CASCADE, related_name="semester_plans")
+
+    def __str__(self) -> str:
+        return f"{self.semester} - {self.obs}"
+
+    class Meta:
+        managed = False
+        db_table = 'semester_plan'
+        unique_together = ['semester', 'obs']
+        ordering = ['semester', 'obs']
+
+
 class Task(models.Model):
     name = models.CharField(max_length=31)
     script_name = models.CharField(max_length=31)
@@ -409,6 +448,7 @@ class UserSessionSetting(models.Model):
 
     user = models.OneToOneField(User, models.CASCADE, related_name="session_settings")
     selected_pipeline = models.CharField(max_length=31, blank=True, null=True)
+    selected_semester = models.ForeignKey("Semester", models.SET_NULL, blank=True, null=True, related_name="session_settings")
     selected_hpc_user = models.ForeignKey("HpcUser", models.SET_NULL, blank=True, null=True, related_name="session_settings")
     site_theme = models.CharField(max_length=1, choices=SITE_THEMES, default='l', help_text="Choice of light or dark theme for the website")
 

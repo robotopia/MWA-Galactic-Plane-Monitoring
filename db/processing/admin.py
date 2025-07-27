@@ -114,6 +114,10 @@ class ObservationAdmin(admin.ModelAdmin):
     list_filter = ['calibration', YearListFilter, EpochListFilter]
     search_fields = ['obs']
 
+@admin.register(Pipeline)
+class PipelineAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'name']
+
 @admin.register(PipelineStep)
 class PipelineStepAdmin(admin.ModelAdmin):
     list_display = ['pk', 'pipeline', 'step_order', 'task']
@@ -128,6 +132,15 @@ class ProcessingAdmin(admin.ModelAdmin):
     list_display = ['job_id', 'obs_id', 'hpc_user', 'task', 'submission_time', 'status']
     list_filter = ['hpc_user', 'task', YearListFilter, EpochListFilter]
 
+@admin.register(Semester)
+class SemesterAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'name']
+
+@admin.register(SemesterPlan)
+class SemesterPlanAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'semester', 'obs', 'pipeline']
+    list_filter = ['semester', 'pipeline']
+
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
     list_display = ['name', 'raj2000', 'decj2000']
@@ -138,6 +151,7 @@ class TaskAdmin(admin.ModelAdmin):
 
 @admin.register(UserSessionSetting)
 class UserSessionSettingAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'user', 'selected_pipeline', 'selected_hpc_user']
+    list_display = ['pk', 'user', 'selected_hpc_user', 'selected_semester', 'selected_pipeline']
+    list_filter = ['user', 'selected_hpc_user', 'selected_semester']
 
 

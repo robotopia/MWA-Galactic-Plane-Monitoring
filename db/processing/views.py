@@ -55,19 +55,21 @@ def EpochOverviewView(request, pipeline, epoch, hpc_username):
         return HttpResponse(f"Pipeline '{pipeline}' not found", status=404)
 
 
+@login_required
 def EpochsView(request):
 
-    session_settings = request.user.session_settings.first()
+    session_settings = request.user.session_settings
     if not session_settings:
         session_settings = models.UserSessionSetting(user=request.user)
         session_settings.save()
 
-    while not session_settings.selected_hpc_user or not session_settings.selected_pipeline:
+    while not session_settings.selected_hpc_user or not session_settings.selected_semester:
         response = redirect('user_session_settings')
-        session_settings = request.user.session_settings.first()
+        session_settings = request.user.session_settings
 
+    # UP TO HERE: Trying to revamp how this is estimated by using "semesters"
     epoch_completions = models.EpochCompletion.objects.filter(
-        pipeline=session_settings.pipeline,
+        pipeline=session_settings.selected_pipeline,
         hpc_username=session_settings.selected_hpc_user.name
     )
     partially_complete_epochs = {e.epoch: e.completed/e.total*100 for e in epoch_completions}
@@ -75,8 +77,6 @@ def EpochsView(request):
     completion_data = {e: partially_complete_epochs[e] if e in partially_complete_epochs else 0.0 for e in all_epochs}
 
     context = {
-        'pipeline': pipeline,
-        'user': user,
         'completion_data': completion_data,
     }
 
@@ -258,18 +258,18 @@ def userSessionSettings(request):
         session_settings = models.UserSessionSetting(user=request.user)
         session_settings.save()
 
-    pipelines = sorted(list(
-        {pipeline_step.pipeline for pipeline_step in models.PipelineStep.objects.all()}
-    ))
-
     if request.method == 'POST':
         try:
             selected_hpc_user = models.HpcUser.objects.get(pk=request.POST.get('selected_hpc_user'))
             request.user.session_settings.selected_hpc_user = selected_hpc_user
         except:
             pass
+        try:
+            selected_semester = models.Semester.objects.get(pk=request.POST.get('selected_semester'))
+            request.user.session_settings.selected_semester = selected_semester
+        except:
+            pass
         request.user.session_settings.site_theme = request.POST.get('site_theme')
-        request.user.session_settings.selected_pipeline = request.POST.get('selected_pipeline')
         request.user.session_settings.save()
 
         '''
@@ -283,4 +283,8 @@ def userSessionSettings(request):
 
     #token = Token.objects.filter(user=request.user).first()
 
-    return render(request, 'processing/user_settings.html', {'pipelines': pipelines})
+    context = {
+        'semesters': models.Semester.objects.all(),
+    }
+
+    return render(request, 'processing/user_settings.html', context)

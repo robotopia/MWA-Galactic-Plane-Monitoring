@@ -18,20 +18,19 @@
   </div>
 
   <div style="padding: 10px;">
-    <label for="pipelines">Selected pipeline:</label>
-    <select id="pipelines" name="selected_pipeline">
-      <option value=''>----------</option>
-      {% for pipeline in pipelines %}
-      <option value='{{ pipeline }}' {% if request.user.session_settings.selected_pipeline == pipeline %}selected{% endif %}>{{ pipeline }}</option>
+    <label for="hpc_users">Selected HPC user:</label>
+    <select id="hpc_users" name="selected_hpc_user">
+      {% for hpc_user in request.user.hpc_users.all %}
+      <option value='{{ hpc_user.pk }}' {% if request.user.session_settings.selected_hpc_user == hpc_user %}selected{% endif %}>{{ hpc_user }}</option>
       {% endfor %}
     </select>
   </div>
 
   <div style="padding: 10px;">
-    <label for="hpc_users">Selected HPC user:</label>
-    <select id="hpc_users" name="selected_hpc_user">
-      {% for hpc_user in request.user.hpc_users.all %}
-      <option value='{{ hpc_user.pk }}' {% if request.user.session_settings.selected_hpc_user == hpc_user %}selected{% endif %}>{{ hpc_user.name }}</option>
+    <label for="semesters">Selected semester:</label>
+    <select id="semesters" name="selected_semester">
+      {% for semester in semesters %}
+      <option value='{{ semester.pk }}' {% if request.user.session_settings.selected_semester == semester %}selected{% endif %}>{{ semester }}</option>
       {% endfor %}
     </select>
   </div>

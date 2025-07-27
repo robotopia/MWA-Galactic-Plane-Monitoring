@@ -17,9 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
+from processing import views
 
 urlpatterns = [
     path('processing/', include("processing.urls")),
     path('admin/', admin.site.urls),
-    #path('accounts/login/', auth_views.LoginView.as_view()),
+    path('', views.EpochsView),
 ]

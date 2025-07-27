@@ -4,19 +4,11 @@
 
 {% block body %}
 
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Epochs</title>
-  </head>
-  <body>
-    <h1>GPM Epochs</h1>
-    <ul>
-      {% for epoch, completion in completion_data.items %}
-      <li><a href="{% url 'epoch_overview' pipeline=pipeline epoch=epoch user=user %}">{{ epoch }}</a> - {{ completion|floatformat:0 }}%</li>
-      {% endfor %}
-    </ul>
-  </body>
-</html>
+<h1>Epochs for {{ request.user.session_settings.selected_semester }} </h1>
+<ul>
+  {% for epoch, completion in completion_data.items %}
+  <li><a href="{% url 'epoch_overview' pipeline=request.user.session_settings.selected_pipeline epoch=epoch hpc_username=request.user.session_settings.selected_hpc_user.name %}">{{ epoch }}</a> - {{ completion|floatformat:0 }}%</li>
+  {% endfor %}
+</ul>
 
 {% endblock %}
