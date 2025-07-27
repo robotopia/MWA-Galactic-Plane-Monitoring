@@ -400,3 +400,15 @@ class TaskClusterSetting(models.Model):
         ordering = ['task', 'cluster']
 
 
+class UserSessionSetting(models.Model):
+    user = models.ForeignKey(User, models.CASCADE, related_name="session_settings")
+    selected_pipeline = models.CharField(max_length=31, blank=True, null=True)
+    selected_hpc_user = models.ForeignKey("HpcUser", models.SET_NULL, blank=True, null=True, related_name="session_settings")
+
+    def __str__(self) -> str:
+        return f"Session settings for {self.user}"
+
+    class Meta:
+        managed = False
+        db_table = 'user_session_setting'
+        ordering = ['user']

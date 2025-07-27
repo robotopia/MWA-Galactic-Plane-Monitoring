@@ -136,4 +136,8 @@ class SourceAdmin(admin.ModelAdmin):
 class TaskAdmin(admin.ModelAdmin):
     list_display = ['pk', 'name', 'script_name']
 
+@admin.register(UserSessionSetting)
+class UserSessionSettingAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'user', 'selected_pipeline', 'selected_hpc_user']
+
 

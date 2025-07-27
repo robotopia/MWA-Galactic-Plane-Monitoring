@@ -57,6 +57,13 @@ def EpochOverviewView(request, pipeline, epoch, hpc_username):
 
 def EpochsView(request):
 
+    session_settings = request.user.session_settings.first()
+    if not session_settings:
+        session_settings = models.UserSessionSetting(user=request.user)
+        session_settings.save()
+
+    # UP TO HERE!!!!!!!!
+
     # TODO: FIX ME so that this view doesn't require a pipeline or a "user" (i.e. hpc_user name)
     # Check that the logged in (Django) user is allowed access to the specified hpc_user
     if not request.user.hpc_users.filter(name=user):
