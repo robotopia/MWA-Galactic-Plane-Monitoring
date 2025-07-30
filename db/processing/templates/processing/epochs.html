@@ -4,10 +4,10 @@
 
 {% block body %}
 
-<h1>Epochs for {{ request.user.session_settings.selected_semester }} </h1>
+<h1>Epochs for {{ request.user.session_settings.selected_semester }} (<a href="{% url 'user_session_settings' %}">change</a>)</h1>
 <ul>
-  {% for epoch, completion in completion_data.items %}
-  <li><a href="{% url 'epoch_overview' pipeline=request.user.session_settings.selected_pipeline epoch=epoch hpc_username=request.user.session_settings.selected_hpc_user.name %}">{{ epoch }}</a> - {{ completion|floatformat:0 }}%</li>
+  {% for semester_plan_completion in semester_plan_completions %}
+  <li>{{ semester_plan_completion.epoch }} - {{ semester_plan_completion.percent_finished|floatformat:0 }}%</li>
   {% endfor %}
 </ul>
 

@@ -459,3 +459,21 @@ class UserSessionSetting(models.Model):
         managed = False
         db_table = 'user_session_setting'
         ordering = ['user']
+
+
+class SemesterPlanCompletion(models.Model):
+
+    # This model is just a convenient way to access a SQL VIEW
+
+    semester = models.ForeignKey("Semester", models.DO_NOTHING)
+    epoch = models.CharField(max_length=9)
+    fraction_finished = models.FloatField()
+
+    @property
+    def percent_finished(self):
+        return self.fraction_finished*100
+
+    class Meta:
+        managed = False
+        db_table = 'semester_plan_completion'
+        ordering = ['semester', 'epoch']

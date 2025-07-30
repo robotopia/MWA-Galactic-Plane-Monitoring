@@ -63,21 +63,17 @@ def EpochsView(request):
         session_settings = models.UserSessionSetting(user=request.user)
         session_settings.save()
 
-    while not session_settings.selected_hpc_user or not session_settings.selected_semester:
-        response = redirect('user_session_settings')
-        session_settings = request.user.session_settings
+    #while not session_settings.selected_hpc_user or not session_settings.selected_semester:
+    #    response = redirect('user_session_settings')
+    #    session_settings = request.user.session_settings
 
     # UP TO HERE: Trying to revamp how this is estimated by using "semesters"
-    epoch_completions = models.EpochCompletion.objects.filter(
-        pipeline=session_settings.selected_pipeline,
-        hpc_username=session_settings.selected_hpc_user.name
+    semester_plan_completions = models.SemesterPlanCompletion.objects.filter(
+        semester=session_settings.selected_semester,
     )
-    partially_complete_epochs = {e.epoch: e.completed/e.total*100 for e in epoch_completions}
-    all_epochs = [e['epoch'] for e in models.Epoch.objects.all().order_by('epoch').values('epoch').distinct()]
-    completion_data = {e: partially_complete_epochs[e] if e in partially_complete_epochs else 0.0 for e in all_epochs}
 
     context = {
-        'completion_data': completion_data,
+        'semester_plan_completions': semester_plan_completions,
     }
 
     return render(request, 'processing/epochs.html', context)
