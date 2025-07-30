@@ -247,7 +247,7 @@ def backupView(request, epoch):
 
 
 @login_required
-def userSessionSettings(request):
+def UserSessionSettings(request):
 
     # Create a UserSetting for this user if needed
     if not hasattr(request.user, 'session_settings'):
@@ -277,10 +277,14 @@ def userSessionSettings(request):
             Token.objects.create(user=request.user)
         '''
 
+        if request.POST.get('next'):
+            return redirect(request.POST.get('next'))
+
     #token = Token.objects.filter(user=request.user).first()
 
     context = {
         'semesters': models.Semester.objects.all(),
+        'next': request.GET.get('next'),
     }
 
     return render(request, 'processing/user_settings.html', context)
