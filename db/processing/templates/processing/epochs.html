@@ -7,7 +7,7 @@
 <h1>Epochs for {{ request.user.session_settings.selected_semester }}<sup><a href="{% url 'user_session_settings' %}?next={% url 'epochs' %}"><i class="fa fa-edit"></i></a></sup></h1>
 <ul>
   {% for semester_plan_completion in semester_plan_completions %}
-  <li>{{ semester_plan_completion.epoch }} - {{ semester_plan_completion.percent_finished|floatformat:0 }}%</li>
+  <li>{{ semester_plan_completion.epoch }} - {{ semester_plan_completion.percent_finished|floatformat:0 }}% ({{ semester_plan_completion.nfinished }}/{{ semester_plan_completion.ntotal }})</li>
   {% endfor %}
 </ul>
 

@@ -467,6 +467,8 @@ class SemesterPlanCompletion(models.Model):
 
     semester = models.ForeignKey("Semester", models.DO_NOTHING)
     epoch = models.CharField(max_length=9)
+    nfinished = models.IntegerField()
+    ntotal = models.IntegerField()
     fraction_finished = models.FloatField()
 
     @property
