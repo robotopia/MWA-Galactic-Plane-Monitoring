@@ -24,15 +24,17 @@ def dmdelay(dm, f_MHz):
 
 # The main view: see the state of an epoch's processing at a glance
 @login_required
-def EpochOverviewView(request, pipeline, epoch, hpc_username):
+def EpochOverviewView(request, epoch):
 
-    # Check that the logged in (Django) user is allowed access to the specified hpc_user
-    if not request.user.hpc_users.filter(name=hpc_username):
-        return HttpResponse('Unauthorized access', status=401)
+    hpc_user = request.user.session_settings.selected_hpc_user
 
-    epoch_overviews = models.EpochOverview.objects.filter(epoch=epoch, hpc_user__name=hpc_username).prefetch_related('obs')
+    epoch_overviews = models.EpochOverview.objects.filter(epoch=epoch, hpc_user=hpc_user).prefetch_related('obs')
     overviews = defaultdict(lambda: {})
 
+    '''
+    for eo in epoch_overviews:
+        overviews[eo.obs][eo.task.name] = eo
+    '''
     for eo in epoch_overviews:
         overviews[eo.obs][eo.task.name] = {
             'status': eo.status,
@@ -43,16 +45,12 @@ def EpochOverviewView(request, pipeline, epoch, hpc_username):
         }
 
     context = {
-        'pipeline': pipeline,
         'epoch': epoch,
-        'hpc_username': hpc_username,
+        'hpc_user': hpc_user,
         'overviews': dict(overviews),
     }
 
-    try:
-        return render(request, f'processing/{pipeline}_epoch_overview.html', context)
-    except:
-        return HttpResponse(f"Pipeline '{pipeline}' not found", status=404)
+    return render(request, f'processing/epoch_overview.html', context)
 
 
 @login_required
@@ -114,11 +112,8 @@ def changeQaStateView(request):
     return HttpResponse(status=200)
 
 
-def setEpochCal(request, pipeline, epoch, user):
-
-    # Check that the logged in (Django) user is allowed access to the specified hpc_user
-    if not request.user.hpc_users.filter(name=user):
-        return HttpResponse('Unauthorized access', status=401)
+@login_required
+def setEpochCal(request, epoch):
 
     # Request method must be 'POST'
     if not request.method == 'POST':
@@ -145,7 +140,7 @@ def setEpochCal(request, pipeline, epoch, user):
     for observation in observations:
         observation.save()
 
-    return redirect('epoch_overview', pipeline=pipeline, epoch=epoch, user=user)
+    return redirect('epoch_overview', epoch=epoch)
 
 
 @login_required
