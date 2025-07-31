@@ -12,6 +12,7 @@ import astropy.units as u
 import jplephem
 
 import numpy as np
+from datetime import datetime
 
 MWA = EarthLocation.of_site('MWA')
 MWA_ctr_freq_MHz = 200.32 # WARNING! This info is not in the database, but it should be!
@@ -27,27 +28,20 @@ def dmdelay(dm, f_MHz):
 def EpochOverviewView(request, epoch):
 
     hpc_user = request.user.session_settings.selected_hpc_user
+    semester = request.user.session_settings.selected_semester
 
-    epoch_overviews = models.EpochOverview.objects.filter(epoch=epoch, hpc_user=hpc_user).prefetch_related('obs')
-    overviews = defaultdict(lambda: {})
+    details = models.SemesterPlanProcessingDetail.objects.filter(semester=semester, epoch=epoch, hpc_user=hpc_user)
+    details_by_obs = defaultdict(list)
 
-    '''
-    for eo in epoch_overviews:
-        overviews[eo.obs][eo.task.name] = eo
-    '''
-    for eo in epoch_overviews:
-        overviews[eo.obs][eo.task.name] = {
-            'status': eo.status,
-            'cal_obs': eo.cal_obs,
-            'cal_usable': eo.cal_usable,
-            'cal_notes': eo.cal_notes if eo.cal_notes else "",
-            'date': eo.submission_time,
-        }
+    for detail in details:
+        detail.submission_datetime = datetime.fromtimestamp(detail.processing.submission_time)
+        details_by_obs[detail.obs].append(detail)
+    print(f'{details_by_obs = }')
 
     context = {
         'epoch': epoch,
         'hpc_user': hpc_user,
-        'overviews': dict(overviews),
+        'details_by_obs': dict(details_by_obs),
     }
 
     return render(request, f'processing/epoch_overview.html', context)

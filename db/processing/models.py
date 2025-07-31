@@ -463,7 +463,7 @@ class UserSessionSetting(models.Model):
 
 class SemesterPlanCompletion(models.Model):
 
-    # This model is just a convenient way to access a SQL VIEW
+    # This model is just a convenient way to access an SQL VIEW
 
     semester = models.ForeignKey("Semester", models.DO_NOTHING)
     epoch = models.CharField(max_length=9)
@@ -479,3 +479,21 @@ class SemesterPlanCompletion(models.Model):
         managed = False
         db_table = 'semester_plan_completion'
         ordering = ['semester', 'epoch']
+
+
+class SemesterPlanProcessingDetail(models.Model):
+
+    # This model is just a convenient way to access an SQL VIEW
+
+    semester = models.ForeignKey("Semester", models.DO_NOTHING)
+    epoch = models.CharField(max_length=9)
+    obs = models.ForeignKey("Observation", models.DO_NOTHING)
+    processing = models.ForeignKey("Processing", models.DO_NOTHING)
+    hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING)
+    task = models.ForeignKey("Task", models.DO_NOTHING)
+    pipeline_step = models.ForeignKey("PipelineStep", models.DO_NOTHING)
+
+    class Meta:
+        managed = False
+        db_table = 'semester_plan_processing_detail'
+        ordering = ['semester', 'obs', 'pipeline_step']
