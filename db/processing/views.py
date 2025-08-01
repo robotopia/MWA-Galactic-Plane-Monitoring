@@ -104,11 +104,19 @@ def ProcessingObsTaskView(request, obs_id, task_id):
         hpc_user=request.user.session_settings.selected_hpc_user,
         obs=obs,
         task=task,
-    )
+    ).order_by('submission_time')
+
+    semester_plan_processing_detail = models.SemesterPlanProcessingDetail.objects.filter(
+        semester=request.user.session_settings.selected_semester,
+        hpc_user=request.user.session_settings.selected_hpc_user,
+        task=task,
+        obs=obs,
+    ).first()
 
     context = {
         'obs': obs,
         'task': task,
+        'semester_plan_processing_detail': semester_plan_processing_detail,
         'processings': processings,
     }
 

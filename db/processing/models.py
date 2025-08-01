@@ -312,6 +312,12 @@ class PipelineStep(models.Model):
     pipeline = models.ForeignKey("Pipeline", models.DO_NOTHING, related_name="steps")
     step_order = models.IntegerField()
     task = models.ForeignKey("Task", models.DO_NOTHING, related_name="pipeline_steps")
+    cmd_line_options = models.CharField(max_length=127)
+    obs_script = models.CharField(max_length=255)
+
+    @property
+    def command(self):
+        return f'obs_{self.obs_script}.sh {self.cmd_line_options or ""}'
 
     def __str__(self) -> str:
         return f"{self.task} ({self.pipeline})"
@@ -342,6 +348,7 @@ class Processing(models.Model):
     stdout = models.TextField(blank=True, null=True)
     stdout_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stdout")
     output_files = models.TextField(blank=True, null=True)
+    commit = models.CharField(max_length=256)
 
     @property
     def batch_file_full_path(self):
