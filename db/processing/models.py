@@ -349,11 +349,11 @@ class Processing(models.Model):
 
     @property
     def stdout_full_path(self):
-        return f'{self.stdout_path.path}/{self.stdout}'
+        return f'{self.stdout_path.path}/{self.stdout.replace("%j", str(self.array_task_id))}'
 
     @property
     def stderr_full_path(self):
-        return f'{self.stderr_path.path}/{self.stderr}'
+        return f'{self.stderr_path.path}/{self.stderr.replace("%j", str(self.array_task_id))}'
 
     class Meta:
         managed = False

@@ -102,3 +102,10 @@ td.selected-cell {
 .context-menuitem:hover {
   background-color: beige;
 }
+
+.proc-obs-task {
+  padding: 5px;
+  margin: 10px 0px;
+  background-color: #ddd;
+  border: 1px solid black;
+}
