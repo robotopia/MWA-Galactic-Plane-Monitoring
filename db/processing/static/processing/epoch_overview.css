@@ -24,6 +24,10 @@
 }
 td {
   padding: 5px;
+  border: 2px solid white;
+}
+td span {
+  #font-size: 24px;
 }
 td:not(.selectable) {
   -webkit-touch-callout: none;

@@ -309,7 +309,7 @@ class Pipeline(models.Model):
 
 
 class PipelineStep(models.Model):
-    pipeline = models.CharField(max_length=31)
+    pipeline = models.ForeignKey("Pipeline", models.DO_NOTHING, related_name="steps")
     step_order = models.IntegerField()
     task = models.ForeignKey("Task", models.DO_NOTHING, related_name="pipeline_steps")
 
