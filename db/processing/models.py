@@ -343,6 +343,18 @@ class Processing(models.Model):
     stdout_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stdout")
     output_files = models.TextField(blank=True, null=True)
 
+    @property
+    def batch_file_full_path(self):
+        return f'{self.batch_file_path.path}/{self.batch_file}'
+
+    @property
+    def stdout_full_path(self):
+        return f'{self.stdout_path.path}/{self.stdout}'
+
+    @property
+    def stderr_full_path(self):
+        return f'{self.stderr_path.path}/{self.stderr}'
+
     class Meta:
         managed = False
         db_table = 'processing'

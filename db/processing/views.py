@@ -30,13 +30,13 @@ def EpochOverviewView(request, epoch):
     hpc_user = request.user.session_settings.selected_hpc_user
     semester = request.user.session_settings.selected_semester
 
-    details = models.SemesterPlanProcessingDetail.objects.filter(semester=semester, epoch=epoch, hpc_user=hpc_user)
+    details = models.SemesterPlanProcessingDetail.objects.filter(semester=semester, epoch=epoch).filter(
+        Q(hpc_user=hpc_user) | Q(hpc_user__isnull=True)
+    )
     details_by_obs = defaultdict(list)
 
     for detail in details:
-        detail.submission_datetime = datetime.fromtimestamp(detail.processing.submission_time)
         details_by_obs[detail.obs].append(detail)
-    print(f'{details_by_obs = }')
 
     context = {
         'epoch': epoch,
@@ -71,7 +71,53 @@ def EpochsView(request):
     return render(request, 'processing/epochs.html', context)
 
 
+@login_required
+def RemoteFileView(request, remote_path):
+
+    hpc_user = request.user.session_settings.selected_hpc_user
+
+    # TODO: Get file contents (by SSH?)
+    file_contents = """Dummy file contents:
+    line 1
+    line 2
+    line 3
+    """
+    # -----------------
+
+    context = {
+        'remote_path': remote_path,
+        'file_contents': file_contents,
+    }
+
+    return render(request, 'processing/remote_file.html', context)
+
+
+@login_required
+def ProcessingObsTaskView(request, obs_id, task_id):
+
+    obs = models.Observation.objects.get(obs=obs_id)
+    task = models.Task.objects.get(id=task_id)
+    if obs is None or task is None:
+        return HttpResponse(status=404)
+
+    processings = models.Processing.objects.filter(
+        hpc_user=request.user.session_settings.selected_hpc_user,
+        obs=obs,
+        task=task,
+    )
+
+    context = {
+        'obs': obs,
+        'task': task,
+        'processings': processings,
+    }
+
+    return render(request, 'processing/processing_obs_task.html', context)
+
+
+
 # Change the quality assurance label for a given obs
+@login_required
 def changeQaStateView(request):
 
     # Request method must be 'PUT'

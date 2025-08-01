@@ -1,0 +1,25 @@
+{% extends 'processing/main.html' %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>Processing for {{ obs }}:{{ task }}</h1>
+
+{% for processing in processings %}
+<div class="proc-obs-task">
+  <p>
+  <b>SLURM Job:</b> {{ processing.job_id }}
+  <b>Array job:</b> {{ processing.array_task_id }}
+  <br>
+  <b>Submitted:</b> {{ processing.submission_time }}
+  <b>Started:</b> {{ processing.start_time }}
+  <b>Finished:</b> {{ processing.end_time }}
+  <br>
+  <b>{{ processing.status|upper }}</b>
+  <a href="{% url 'remote_file' remote_path=processing.batch_file_full_path %}">Batch file</a>
+  </p>
+</div>
+{% endfor %}
+
+{% endblock %}
