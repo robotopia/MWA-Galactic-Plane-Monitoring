@@ -5,6 +5,13 @@
 {% block body %}
 
 <h1>Epochs for {{ request.user.session_settings.selected_semester }}<sup><a href="{% url 'user_session_settings' %}?next={% url 'epochs' %}"><i class="fa fa-edit"></i></a></sup></h1>
+
+<form action="{% url 'find_observation' %}">
+  {% csrf_token %}
+  <label for="find_observation">Find ObsID:</label>
+  <input id="find_observation" name="obs_id"/>
+</form>
+
 <ul>
   {% for semester_plan_completion in semester_plan_completions %}
   <li><a href="{% url 'epoch_overview' epoch=semester_plan_completion.epoch %}">{{ semester_plan_completion.epoch }}</a> - {{ semester_plan_completion.percent_finished|floatformat:0 }}% ({{ semester_plan_completion.nfinished }}/{{ semester_plan_completion.ntotal }})</li>

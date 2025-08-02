@@ -376,6 +376,12 @@ class Processing(models.Model):
     def stderr_full_path(self):
         return f'{self.stderr_path.path}/{self.stderr.replace("%j", str(self.array_task_id))}'
 
+    @property
+    def slurm_id(self) -> str:
+        if self.array_task_id:
+            return f'{self.job_id}_{self.array_task_id}'
+        return f'{self.job_id}'
+
     class Meta:
         managed = False
         db_table = 'processing'

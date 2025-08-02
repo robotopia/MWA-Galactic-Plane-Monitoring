@@ -50,6 +50,16 @@ def EpochOverviewView(request, epoch):
 
 
 @login_required
+def FindObservation(request):
+
+    epoch = models.Epoch.objects.filter(obs__obs=request.GET.get('obs_id')).first()
+
+    if epoch:
+        return redirect('epoch_overview', epoch=epoch.epoch)
+    else:
+        return redirect('epochs')
+
+@login_required
 def EpochsView(request):
 
     session_settings = request.user.session_settings
@@ -74,6 +84,28 @@ def EpochsView(request):
 
 
 @login_required
+def RemoteCommandView(request):
+
+    command = request.GET.get('command')
+    cluster_id = request.GET.get('cluster_id')
+    hpc_user_id = request.GET.get('hpc_user_id')
+    session_settings = request.user.session_settings
+
+    cluster = models.Cluster.objects.get(pk=int(cluster_id)) if cluster_id else None
+    hpc_user = models.HpcUser.objects.filter(auth_users=request.user, pk=int(hpc_user_id)).first() if hpc_user_id else None
+
+    file_contents, stderr = session_settings.ssh_single_command(command, cluster=cluster, hpc_user=hpc_user)
+
+    context = {
+        'remote_path': command,
+        'file_contents': file_contents,
+        'stderr': stderr,
+    }
+
+    return render(request, 'processing/remote_file.html', context)
+
+
+@login_required
 def RemoteFileView(request):
 
     remote_path = request.GET.get('remote_path')
@@ -85,7 +117,6 @@ def RemoteFileView(request):
     hpc_user = models.HpcUser.objects.filter(auth_users=request.user, pk=int(hpc_user_id)).first() if hpc_user_id else None
 
     file_contents, stderr = session_settings.ssh_single_command(f'cat {remote_path}', cluster=cluster, hpc_user=hpc_user)
-    print(f'{stderr = }')
 
     context = {
         'remote_path': remote_path,
