@@ -19,6 +19,7 @@
 <div class="proc-obs-task">
   <b>Processing code version:</b> {{ processing.commit|default:"[Not recorded]" }}
   <br>
+  <b>Cluster:</b> {{ processing.cluster.name }}
   <b>SLURM Job:</b> {{ processing.job_id }}
   <b>Array job:</b> {{ processing.array_task_id }}
   <br>
@@ -27,9 +28,9 @@
   <b>Finished:</b> {{ processing.end_time }}
   <br>
   <span class="{{ processing.status }}"><b>{{ processing.status|upper }}</b></span>
-  <a href="{% url 'remote_file' remote_path=processing.batch_file_full_path %}">Batch file</a>
-  <a href="{% url 'remote_file' remote_path=processing.stdout_full_path %}">STDOUT</a>
-  <a href="{% url 'remote_file' remote_path=processing.stderr_full_path %}">STDERR</a>
+  <a href="{% url 'remote_file' %}?remote_path={{ processing.batch_file_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">Batch file</a>
+  <a href="{% url 'remote_file' %}?remote_path={{ processing.stdout_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">STDOUT</a>
+  <a href="{% url 'remote_file' %}?remote_path={{ processing.stderr_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">STDERR</a>
   [TODO: sinfo]
   <br>
 </div>

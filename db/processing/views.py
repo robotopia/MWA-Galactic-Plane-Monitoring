@@ -14,6 +14,8 @@ import jplephem
 import numpy as np
 from datetime import datetime
 
+import subprocess
+
 MWA = EarthLocation.of_site('MWA')
 MWA_ctr_freq_MHz = 200.32 # WARNING! This info is not in the database, but it should be!
 # The DM delay calculation will be wrong for observations not taken at this frequency!!!
@@ -72,21 +74,23 @@ def EpochsView(request):
 
 
 @login_required
-def RemoteFileView(request, remote_path):
+def RemoteFileView(request):
 
-    hpc_user = request.user.session_settings.selected_hpc_user
+    remote_path = request.GET.get('remote_path')
+    cluster_id = request.GET.get('cluster_id')
+    hpc_user_id = request.GET.get('hpc_user_id')
+    session_settings = request.user.session_settings
 
-    # TODO: Get file contents (by SSH?)
-    file_contents = """Dummy file contents:
-    line 1
-    line 2
-    line 3
-    """
-    # -----------------
+    cluster = models.Cluster.objects.get(pk=int(cluster_id)) if cluster_id else None
+    hpc_user = models.HpcUser.objects.filter(auth_users=request.user, pk=int(hpc_user_id)).first() if hpc_user_id else None
+
+    file_contents, stderr = session_settings.ssh_single_command(f'cat {remote_path}', cluster=cluster, hpc_user=hpc_user)
+    print(f'{stderr = }')
 
     context = {
         'remote_path': remote_path,
         'file_contents': file_contents,
+        'stderr': stderr,
     }
 
     return render(request, 'processing/remote_file.html', context)
@@ -308,6 +312,18 @@ def UserSessionSettings(request):
             request.user.session_settings.selected_semester = selected_semester
         except:
             pass
+        try:
+            selected_cluster = models.Cluster.objects.get(pk=request.POST.get('selected_cluster'))
+            request.user.session_settings.selected_cluster = selected_cluster
+        except:
+            pass
+
+        # Reset password if they filled out the box
+        if len(request.POST.get('hpc_password')) > 0:
+            hpc_user = request.user.session_settings.selected_hpc_user
+            hpc_user.set_hpc_password(request.POST.get('hpc_password'))
+            hpc_user.save()
+
         request.user.session_settings.site_theme = request.POST.get('site_theme')
         request.user.session_settings.save()
 
@@ -325,8 +341,16 @@ def UserSessionSettings(request):
 
     #token = Token.objects.filter(user=request.user).first()
 
+    # Organise clusters by HPC user
+    clusters_by_hpc_user = defaultdict(list)
+    hpc_users = request.user.hpc_users.all()
+    for hpc_user in hpc_users:
+        clusters = models.Cluster.objects.filter(hpc__hpc_users=hpc_user)
+        clusters_by_hpc_user[hpc_user.pk] = [{'pk': cluster.pk, 'name': cluster.name} for cluster in clusters]
+
     context = {
         'semesters': models.Semester.objects.all(),
+        'clusters_by_hpc_user': dict(clusters_by_hpc_user),
         'next': request.GET.get('next'),
     }
 

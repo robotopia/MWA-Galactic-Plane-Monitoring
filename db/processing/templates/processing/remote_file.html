@@ -6,6 +6,10 @@
 
 <pre><code>{{ remote_path }}</code></pre>
 
-<pre><code>{{ file_contents }}</code></pre>
+{% if stderr %}
+<pre style="border: 1px solid black; padding: 5px; color: red;"><code>{{ stderr }}</code></pre>
+{% endif %}
+
+<pre style="border: 1px solid black; padding: 5px;"><code>{{ file_contents }}</code></pre>
 
 {% endblock %}

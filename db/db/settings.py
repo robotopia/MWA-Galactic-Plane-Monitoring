@@ -149,3 +149,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/processing/source_finder'
 LOGIN_URL = '/processing/login'
 LOGOUT_REDIRECT_URL = '/processing/login'
+
+# Fernet encryption
+ENCRYPTION_KEY = os.environ['FERNET_KEY'].encode()

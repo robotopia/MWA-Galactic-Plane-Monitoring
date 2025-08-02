@@ -8,6 +8,8 @@
 
 <form method="post">
   {% csrf_token %}
+  <h2>Appearance</h2>
+
   <div style="padding: 10px;">
     <label for="site-theme">Theme:</label>
     <select id="site_theme" name='site_theme'>
@@ -17,14 +19,7 @@
     </select>
   </div>
 
-  <div style="padding: 10px;">
-    <label for="hpc_users">Selected HPC user:</label>
-    <select id="hpc_users" name="selected_hpc_user">
-      {% for hpc_user in request.user.hpc_users.all %}
-      <option value='{{ hpc_user.pk }}' {% if request.user.session_settings.selected_hpc_user == hpc_user %}selected{% endif %}>{{ hpc_user }}</option>
-      {% endfor %}
-    </select>
-  </div>
+  <h2>Processing</h2>
 
   <div style="padding: 10px;">
     <label for="semesters">Selected semester:</label>
@@ -35,9 +30,55 @@
     </select>
   </div>
 
-  <input name="next" hidden value="{{ next }}"\>
+  <h2>HPC</h2>
+
+  <div style="padding: 10px;">
+    <label for="hpc_users">HPC user:</label>
+    <select id="hpc_users" name="selected_hpc_user">
+      {% for hpc_user in request.user.hpc_users.all %}
+      <option value='{{ hpc_user.pk }}' {% if request.user.session_settings.selected_hpc_user == hpc_user %}selected{% endif %}>{{ hpc_user }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="clusters">Cluster:</label>
+    <select id="clusters" name="selected_cluster">
+      {% for cluster in clusters %}
+      <option value='{{ cluster.pk }}' {% if request.user.session_settings.selected_cluster == cluster %}selected{% endif %}>{{ cluster.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for "hpc_password">Reset HPC password for selected HPC user:</label>
+    <input type="password" name="hpc_password" id="hpc_password" placeholder="[New password]"/>
+    <p style="font-size: 12px;">(Passwords are all encrypted in the database)</p>
+  </div>
+
+  <input name="next" hidden value="{{ next|default:'' }}"\>
 
   <input type="submit" class="btn btn-primary" name="action" value="Save"/>
 </form>
+
+<script>
+  const clusters_dropdown = document.getElementById('clusters');
+  const hpc_users_dropdown = document.getElementById('hpc_users');
+  const clusters_by_hpc_user = {{ clusters_by_hpc_user|safe }};
+
+  // Update clusters dropdown depending on selected HPC user
+  function update_clusters () {
+    clusters_dropdown.innerHTML = '';
+    for (const cluster of clusters_by_hpc_user[hpc_users_dropdown.value]) {
+      const option = document.createElement('option');
+      option.value = cluster.pk;
+      option.text = cluster.name;
+      clusters_dropdown.appendChild(option);
+    }
+    clusters_dropdown.value = "{{ request.user.session_settings.selected_cluster.pk }}";
+  }
+
+  update_clusters();
+</script>
 
 {% endblock %}

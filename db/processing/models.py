@@ -7,8 +7,14 @@
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.conf import settings
+from cryptography.fernet import Fernet
+import base64
+import os
+import paramiko
 
 User = get_user_model()
+fernet = Fernet(settings.ENCRYPTION_KEY)
 
 class AntennaFlag(models.Model):
     start_obs_id = models.IntegerField()
@@ -68,6 +74,7 @@ class Cluster(models.Model):
     hpc = models.ForeignKey('Hpc', models.DO_NOTHING)
     copy_queue = models.CharField(max_length=31, null=True, blank=True)
     work_queue = models.CharField(max_length=31, null=True, blank=True)
+    hostname = models.CharField(max_length=127, null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.name} ({self.hpc})"
@@ -176,6 +183,13 @@ class HpcUser(models.Model):
         through_fields=('hpc_user', 'auth_user'),
         related_name='hpc_users',
     )
+    hpc_password = models.BinaryField(max_length=127)
+
+    def set_hpc_password(self, raw_password: str):
+        self.hpc_password = fernet.encrypt(raw_password.encode())
+
+    def get_password(self) -> str:
+        return fernet.decrypt(self.hpc_password).decode()
 
     def __str__(self) -> str:
         return f"{self.name}@{self.hpc}"
@@ -468,8 +482,33 @@ class UserSessionSetting(models.Model):
     user = models.OneToOneField(User, models.CASCADE, related_name="session_settings")
     selected_pipeline = models.CharField(max_length=31, blank=True, null=True)
     selected_semester = models.ForeignKey("Semester", models.SET_NULL, blank=True, null=True, related_name="session_settings")
-    selected_hpc_user = models.ForeignKey("HpcUser", models.SET_NULL, blank=True, null=True, related_name="session_settings")
+    selected_hpc_user = models.ForeignKey("HpcUser", models.RESTRICT, blank=True, null=True, related_name="session_settings")
+    selected_cluster = models.ForeignKey("Cluster", models.SET_NULL, blank=True, null=True, related_name="session_settings")
     site_theme = models.CharField(max_length=1, choices=SITE_THEMES, default='l', help_text="Choice of light or dark theme for the website")
+
+    def ssh_connect(self, cluster=None, hpc_user=None):
+        self.client = paramiko.SSHClient()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.client.connect(
+            hostname=cluster.hostname if cluster else self.selected_cluster.hostname,
+            username=hpc_user.name if hpc_user else self.selected_hpc_user.name,
+            password=hpc_user.get_password() if hpc_user else self.selected_hpc_user.get_password(),
+        )
+
+    def ssh_command(self, command):
+        stdin, stdout, stderr = self.client.exec_command(command)
+        return stdout.read().decode(), stderr.read().decode()
+
+    def ssh_disconnect(self):
+        if hasattr(self, 'client'):
+            self.client.close()
+            del self.client
+
+    def ssh_single_command(self, command, **kwargs):
+        self.ssh_connect(**kwargs)
+        stdout, stderr = self.ssh_command(command)
+        self.ssh_disconnect()
+        return stdout, stderr
 
     def __str__(self) -> str:
         return f"Session settings for {self.user}"
