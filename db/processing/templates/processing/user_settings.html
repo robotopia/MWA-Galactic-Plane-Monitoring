@@ -56,6 +56,12 @@
     <p style="font-size: 12px;">(Passwords are all encrypted in the database)</p>
   </div>
 
+  <div style="padding: 10px;">
+    <label for "rclone_secret_access_key">Reset rclone secret access key for selected HPC user:</label>
+    <input type="password" name="rclone_secret_access_key" id="rclone_secret_access_key" placeholder="[New key]"/>
+    <p style="font-size: 12px;">(Keys are all encrypted in the database)</p>
+  </div>
+
   <input name="next" hidden value="{{ next|default:'' }}"\>
 
   <input type="submit" class="btn btn-primary" name="action" value="Save"/>

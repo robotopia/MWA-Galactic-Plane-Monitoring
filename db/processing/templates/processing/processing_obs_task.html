@@ -28,10 +28,10 @@
   <b>Finished:</b> {{ processing.end_time }}
   <br>
   <span class="{{ processing.status }}"><b>{{ processing.status|upper }}</b></span>
-  <a href="{% url 'remote_file' %}?remote_path={{ processing.batch_file_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">Batch file</a> -
-  <a href="{% url 'remote_file' %}?remote_path={{ processing.stdout_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">STDOUT</a> -
-  <a href="{% url 'remote_file' %}?remote_path={{ processing.stderr_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">STDERR</a> -
-  <a href="{% url 'remote_command' %}?command=seff {{ processing.slurm_id }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">seff</a>
+  {% if processing.batch_file %}- <a href="{% url 'remote_file' %}?remote_path={{ processing.batch_file_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">Batch file</a>{% endif %}
+  {% if processing.stdout %}- <a href="{% url 'remote_file' %}?remote_path={{ processing.stdout_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">STDOUT</a>{% endif %}
+  {% if processing.stderr %}- <a href="{% url 'remote_file' %}?remote_path={{ processing.stderr_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">STDERR</a>{% endif %}
+  {% if processing.job_id %}- <a href="{% url 'remote_command' %}?command=seff {{ processing.slurm_id }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">seff</a>{% endif %}
   <br>
 </div>
 {% endfor %}

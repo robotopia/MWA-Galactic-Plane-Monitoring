@@ -143,10 +143,12 @@ def ProcessingObsTaskView(request, obs_id, task_id):
 
     semester_plan_processing_detail = models.SemesterPlanProcessingDetail.objects.filter(
         semester=request.user.session_settings.selected_semester,
-        hpc_user=request.user.session_settings.selected_hpc_user,
         task=task,
         obs=obs,
+    ).filter(
+        Q(hpc_user=request.user.session_settings.selected_hpc_user) | Q(hpc_user__isnull=True)
     ).first()
+    print(f'{semester_plan_processing_detail = }')
 
     context = {
         'obs': obs,
@@ -349,10 +351,16 @@ def UserSessionSettings(request):
         except:
             pass
 
-        # Reset password if they filled out the box
+        # Reset HPC password if they filled out the box
         if len(request.POST.get('hpc_password')) > 0:
             hpc_user = request.user.session_settings.selected_hpc_user
             hpc_user.set_hpc_password(request.POST.get('hpc_password'))
+            hpc_user.save()
+
+        # Reset rclone secret access key if they filled out the box
+        if len(request.POST.get('rclone_secret_access_key')) > 0:
+            hpc_user = request.user.session_settings.selected_hpc_user
+            hpc_user.set_hpc_password(request.POST.get('rclone_secret_access_key'))
             hpc_user.save()
 
         request.user.session_settings.site_theme = request.POST.get('site_theme')

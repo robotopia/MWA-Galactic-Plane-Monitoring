@@ -184,12 +184,19 @@ class HpcUser(models.Model):
         related_name='hpc_users',
     )
     hpc_password = models.BinaryField(max_length=127)
+    rclone_secret_access_key = models.BinaryField(max_length=127)
 
     def set_hpc_password(self, raw_password: str):
         self.hpc_password = fernet.encrypt(raw_password.encode())
 
-    def get_password(self) -> str:
+    def get_hpc_password(self) -> str:
         return fernet.decrypt(self.hpc_password).decode()
+
+    def set_rclone_secret_access_key(self, raw_key: str):
+        self.rclone_secret_access_key = fernet.encrypt(raw_key.encode())
+
+    def get_rclone_secret_access_key(self) -> str:
+        return fernet.decrypt(self.rclone_secret_access_key).decode()
 
     def __str__(self) -> str:
         return f"{self.name}@{self.hpc}"
@@ -498,7 +505,7 @@ class UserSessionSetting(models.Model):
         self.client.connect(
             hostname=cluster.hostname if cluster else self.selected_cluster.hostname,
             username=hpc_user.name if hpc_user else self.selected_hpc_user.name,
-            password=hpc_user.get_password() if hpc_user else self.selected_hpc_user.get_password(),
+            password=hpc_user.get_hpc_password() if hpc_user else self.selected_hpc_user.get_password(),
         )
 
     def ssh_command(self, command):
