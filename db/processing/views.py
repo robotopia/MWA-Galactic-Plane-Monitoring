@@ -98,11 +98,6 @@ def EpochsView(request):
         session_settings = models.UserSessionSetting(user=request.user)
         session_settings.save()
 
-    #while not session_settings.selected_hpc_user or not session_settings.selected_semester:
-    #    response = redirect('user_session_settings')
-    #    session_settings = request.user.session_settings
-
-    # UP TO HERE: Trying to revamp how this is estimated by using "semesters"
     semester_plan_completions = models.SemesterPlanCompletion.objects.filter(
         semester=session_settings.selected_semester,
     )
