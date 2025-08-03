@@ -150,5 +150,7 @@ LOGIN_REDIRECT_URL = '/processing/source_finder'
 LOGIN_URL = '/processing/login'
 LOGOUT_REDIRECT_URL = '/processing/login'
 
+HPC_LOGIN_URL = '/processing/hpc_login'
+
 # Fernet encryption
 ENCRYPTION_KEY = os.environ['FERNET_KEY'].encode()

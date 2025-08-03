@@ -1,6 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, resolve_url
 from django.http import HttpResponse, JsonResponse
+from django.utils.http import urlencode
 from django.contrib.auth.decorators import login_required
+from processing.hpc_login import hpc_login_required
 from django.db.models import Q
 from . import models
 import json
@@ -50,6 +52,35 @@ def EpochOverviewView(request, epoch):
 
 
 @login_required
+def HPCLogin(request):
+
+    def default_return(error=None):
+        context = {
+            'next': request.GET.get('next', '/'),
+            'error': error,
+        }
+        return render(request, 'registration/hpc_login.html', context)
+
+    if request.method == 'POST':
+        try:
+            hpc_user = models.HpcUser.objects.get(pk=int(request.POST.get('hpc_user_id')))
+        except:
+            return default_return("Invalid HPC account")
+
+        session_settings = request.user.session_settings
+        password = request.POST.get('password')
+        session_settings.hpc_connect(password)
+        if session_settings.hpc_is_connected:
+            session_settings.selected_hpc_user = hpc_user
+            session_settings.save()
+            return redirect(request.GET.get('next'))
+        else:
+            return default_return("Invalid HPC credentials")
+
+    return default_return()
+
+
+@login_required
 def FindObservation(request):
 
     epoch = models.Epoch.objects.filter(obs__obs=request.GET.get('obs_id')).first()
@@ -83,48 +114,59 @@ def EpochsView(request):
     return render(request, 'processing/epochs.html', context)
 
 
-@login_required
-def RemoteCommandView(request):
+# This "view" doesn't have a corresponding URL. It is only to be called
+# from other views which have already validated the commands.
+def RemoteCommand(request, command, hpc_user=None, cluster=None):
 
-    command = request.GET.get('command')
-    cluster_id = request.GET.get('cluster_id')
-    hpc_user_id = request.GET.get('hpc_user_id')
     session_settings = request.user.session_settings
 
-    cluster = models.Cluster.objects.get(pk=int(cluster_id)) if cluster_id else None
-    hpc_user = models.HpcUser.objects.filter(auth_users=request.user, pk=int(hpc_user_id)).first() if hpc_user_id else None
+    stdout, stderr = session_settings.ssh_command(command, cluster=cluster, hpc_user=hpc_user)
 
-    file_contents, stderr = session_settings.ssh_single_command(command, cluster=cluster, hpc_user=hpc_user)
-
-    context = {
-        'remote_path': command,
-        'file_contents': file_contents,
+    result = {
+        'command': command,
+        'stdout': stdout,
         'stderr': stderr,
     }
 
-    return render(request, 'processing/remote_file.html', context)
+    return result
 
 
 @login_required
-def RemoteFileView(request):
+@hpc_login_required
+def LogView(request, processing_id, logfile_type):
+    '''
+    logfile_type is one of ['batch', 'stdout', 'stderr', 'seff']
+    '''
 
-    remote_path = request.GET.get('remote_path')
-    cluster_id = request.GET.get('cluster_id')
-    hpc_user_id = request.GET.get('hpc_user_id')
+    try:
+        processing = models.Processing.objects.get(pk=int(processing_id))
+    except:
+        return HttpResponse(status=404)
+
+    if processing.hpc_user not in request.user.hpc_users.all():
+        return HttpResponse(status=404)
+
+    if logfile_type == 'batch':
+        command = f'cat {processing.batch_file_full_path}'
+    elif logfile_type == 'stdout':
+        command = f'cat {processing.stdout_full_path}'
+    elif logfile_type == 'stderr':
+        command = f'cat {processing.stderr_full_path}'
+    elif logfile_type == 'seff':
+        command = f'seff {processing.slurm_id}'
+    else:
+        return HttpResponse(status=404)
+
     session_settings = request.user.session_settings
-
-    cluster = models.Cluster.objects.get(pk=int(cluster_id)) if cluster_id else None
-    hpc_user = models.HpcUser.objects.filter(auth_users=request.user, pk=int(hpc_user_id)).first() if hpc_user_id else None
-
-    file_contents, stderr = session_settings.ssh_single_command(f'cat {remote_path}', cluster=cluster, hpc_user=hpc_user)
+    stdout, stderr = session_settings.hpc_command(command)
 
     context = {
-        'remote_path': remote_path,
-        'file_contents': file_contents,
+        'command': command,
+        'stdout': stdout,
         'stderr': stderr,
     }
 
-    return render(request, 'processing/remote_file.html', context)
+    return render(request, 'processing/log_view.html', context)
 
 
 @login_required
@@ -337,7 +379,10 @@ def UserSessionSettings(request):
     if request.method == 'POST':
         try:
             selected_hpc_user = models.HpcUser.objects.get(pk=request.POST.get('selected_hpc_user'))
-            request.user.session_settings.selected_hpc_user = selected_hpc_user
+            if selected_hpc_user != request.user.session_settings.selected_hpc_user:
+                # Selected HPC user has been switched, so disconnect the old one
+                request.user.session_settings.hpc_disconnect()
+                request.user.session_settings.selected_hpc_user = selected_hpc_user
         except:
             pass
         try:
@@ -350,18 +395,6 @@ def UserSessionSettings(request):
             request.user.session_settings.selected_cluster = selected_cluster
         except:
             pass
-
-        # Reset HPC password if they filled out the box
-        if len(request.POST.get('hpc_password')) > 0:
-            hpc_user = request.user.session_settings.selected_hpc_user
-            hpc_user.set_hpc_password(request.POST.get('hpc_password'))
-            hpc_user.save()
-
-        # Reset rclone secret access key if they filled out the box
-        if len(request.POST.get('rclone_secret_access_key')) > 0:
-            hpc_user = request.user.session_settings.selected_hpc_user
-            hpc_user.set_hpc_password(request.POST.get('rclone_secret_access_key'))
-            hpc_user.save()
 
         request.user.session_settings.site_theme = request.POST.get('site_theme')
         request.user.session_settings.save()

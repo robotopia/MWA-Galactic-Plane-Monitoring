@@ -2,6 +2,8 @@
 
 {% load static %}
 
+{% load unix_filters %}
+
 {% block extrahead %}
 <link rel="stylesheet" href="{% static 'processing/epoch_overview.css' %}">
 {% endblock %}
@@ -23,15 +25,15 @@
   <b>SLURM Job:</b> {{ processing.job_id }}
   <b>Array job:</b> {{ processing.array_task_id }}
   <br>
-  <b>Submitted:</b> {{ processing.submission_time }}
-  <b>Started:</b> {{ processing.start_time }}
-  <b>Finished:</b> {{ processing.end_time }}
+  <b>Submitted:</b> {{ processing.submission_time|unix_to_datetime|date:"Y-m-d H:i:s" }}
+  <b>Started:</b> {{ processing.start_time|unix_to_datetime|date:"Y-m-d H:i:s" }}
+  <b>Finished:</b> {{ processing.end_time|unix_to_datetime|date:"Y-m-d H:i:s" }}
   <br>
   <span class="{{ processing.status }}"><b>{{ processing.status|upper }}</b></span>
-  {% if processing.batch_file %}- <a href="{% url 'remote_file' %}?remote_path={{ processing.batch_file_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">Batch file</a>{% endif %}
-  {% if processing.stdout %}- <a href="{% url 'remote_file' %}?remote_path={{ processing.stdout_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">STDOUT</a>{% endif %}
-  {% if processing.stderr %}- <a href="{% url 'remote_file' %}?remote_path={{ processing.stderr_full_path }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">STDERR</a>{% endif %}
-  {% if processing.job_id %}- <a href="{% url 'remote_command' %}?command=seff {{ processing.slurm_id }}&cluster_id={{ processing.cluster.id }}&hpc_user_id={{ processing.hpc_user_id }}">seff</a>{% endif %}
+  {% if processing.batch_file %}- <a href="{% url 'log_view' processing_id=processing.id logfile_type='batch' %}">Batch file</a>{% endif %}
+  {% if processing.stdout %}- <a href="{% url 'log_view' processing_id=processing.id logfile_type='stdout' %}">STDOUT</a>{% endif %}
+  {% if processing.stderr %}- <a href="{% url 'log_view' processing_id=processing.id logfile_type='stderr' %}">STDERR</a>{% endif %}
+  {% if processing.job_id %}- <a href="{% url 'log_view' processing_id=processing.id logfile_type='seff' %}">seff</a>{% endif %}
   <br>
 </div>
 {% endfor %}

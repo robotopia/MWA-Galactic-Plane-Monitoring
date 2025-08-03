@@ -8,13 +8,13 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from cryptography.fernet import Fernet
 import base64
 import os
 import paramiko
 
 User = get_user_model()
-fernet = Fernet(settings.ENCRYPTION_KEY)
+
+hpc_clients = {}  # Global state for users "logged into" HPC. Key = HpcUser object, Value = paramikroe.SSHClient object
 
 class AntennaFlag(models.Model):
     start_obs_id = models.IntegerField()
@@ -183,20 +183,6 @@ class HpcUser(models.Model):
         through_fields=('hpc_user', 'auth_user'),
         related_name='hpc_users',
     )
-    hpc_password = models.BinaryField(max_length=127)
-    rclone_secret_access_key = models.BinaryField(max_length=127)
-
-    def set_hpc_password(self, raw_password: str):
-        self.hpc_password = fernet.encrypt(raw_password.encode())
-
-    def get_hpc_password(self) -> str:
-        return fernet.decrypt(self.hpc_password).decode()
-
-    def set_rclone_secret_access_key(self, raw_key: str):
-        self.rclone_secret_access_key = fernet.encrypt(raw_key.encode())
-
-    def get_rclone_secret_access_key(self) -> str:
-        return fernet.decrypt(self.rclone_secret_access_key).decode()
 
     def __str__(self) -> str:
         return f"{self.name}@{self.hpc}"
@@ -221,7 +207,7 @@ class HpcUserSetting(models.Model):
     scriptdir = models.CharField(max_length=1023, null=True, blank=True,
                               help_text="The path where to place the script files")
     container = models.CharField(max_length=1023, null=True, blank=True,
-                              help_text="The path where to the singularity container")
+                              help_text="The path of the singularity container")
 
     def __str__(self) -> str:
         return f"{self.hpc_user}"
@@ -499,29 +485,41 @@ class UserSessionSetting(models.Model):
     selected_cluster = models.ForeignKey("Cluster", models.SET_NULL, blank=True, null=True, related_name="session_settings")
     site_theme = models.CharField(max_length=1, choices=SITE_THEMES, default='l', help_text="Choice of light or dark theme for the website")
 
-    def ssh_connect(self, cluster=None, hpc_user=None):
-        self.client = paramiko.SSHClient()
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.client.connect(
-            hostname=cluster.hostname if cluster else self.selected_cluster.hostname,
-            username=hpc_user.name if hpc_user else self.selected_hpc_user.name,
-            password=hpc_user.get_hpc_password() if hpc_user else self.selected_hpc_user.get_password(),
-        )
+    @property
+    def hpc_is_connected(self):
+        hpc_user = self.selected_hpc_user
+        return hpc_user in hpc_clients.keys() and (hpc_clients[hpc_user].get_transport() and hpc_clients[hpc_user].get_transport().is_active())
 
-    def ssh_command(self, command):
-        stdin, stdout, stderr = self.client.exec_command(command)
+    def hpc_connect(self, password):
+        hpc_user = self.selected_hpc_user
+        cluster = self.selected_cluster
+
+        if hpc_user not in hpc_clients.keys():
+            hpc_clients[hpc_user] = paramiko.SSHClient()
+            hpc_clients[hpc_user].set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        client = hpc_clients[hpc_user]
+
+        if not self.hpc_is_connected:
+            hpc_clients[hpc_user].connect(
+                hostname=cluster.hostname,
+                username=hpc_user.name,
+                password=password,
+            )
+
+    def hpc_command(self, command):
+        hpc_user = self.selected_hpc_user
+
+        stdin, stdout, stderr = hpc_clients[hpc_user].exec_command(command)
+
         return stdout.read().decode(), stderr.read().decode()
 
-    def ssh_disconnect(self):
-        if hasattr(self, 'client'):
-            self.client.close()
-            del self.client
+    def hpc_disconnect(self):
+        hpc_user = self.selected_hpc_user
 
-    def ssh_single_command(self, command, **kwargs):
-        self.ssh_connect(**kwargs)
-        stdout, stderr = self.ssh_command(command)
-        self.ssh_disconnect()
-        return stdout, stderr
+        if hpc_user in hpc_clients.keys():
+            hpc_clients[hpc_user].close()
+            hpc_clients.pop(hpc_user)
 
     def __str__(self) -> str:
         return f"Session settings for {self.user}"
