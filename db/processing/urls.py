@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     re_path(r'^(?P<epoch>[EB]poch[0-9]+)$', views.EpochOverviewView, name="epoch_overview"),
     re_path(r'^session_settings$', views.UserSessionSettings, name="user_session_settings"),
+    re_path(r'^hpc_user_settings/(?P<hpc_user_id>[0-9]+)$', views.HpcUserSettingsView, name="hpc_user_settings"),
     re_path(r'^overview$', views.EpochsView, name="epochs"),
     re_path(r'^find_observation$', views.FindObservation, name="find_observation"),
     re_path(r'^log/(?P<processing_id>[0-9]+)/(?P<logfile_type>\w+)$', views.LogView, name="log_view"),

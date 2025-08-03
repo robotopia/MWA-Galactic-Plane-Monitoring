@@ -39,6 +39,7 @@
       <option value='{{ hpc_user.pk }}' {% if request.user.session_settings.selected_hpc_user == hpc_user %}selected{% endif %}>{{ hpc_user }}</option>
       {% endfor %}
     </select>
+    <a href="{% url 'hpc_user_settings' hpc_user_id=request.user.session_settings.selected_hpc_user.id %}?next={% url 'user_session_settings' %}">Change processing settings for {{ request.user.session_settings.selected_hpc_user }}</a>
   </div>
 
   <div style="padding: 10px;">
@@ -49,20 +50,6 @@
       {% endfor %}
     </select>
   </div>
-
-  <!--
-  <div style="padding: 10px;">
-    <label for "hpc_password">Reset HPC password for selected HPC user:</label>
-    <input type="password" name="hpc_password" id="hpc_password" placeholder="[New password]"/>
-    <p style="font-size: 12px;">(Passwords are all encrypted in the database)</p>
-  </div>
-
-  <div style="padding: 10px;">
-    <label for "rclone_secret_access_key">Reset rclone secret access key for selected HPC user:</label>
-    <input type="password" name="rclone_secret_access_key" id="rclone_secret_access_key" placeholder="[New key]"/>
-    <p style="font-size: 12px;">(Keys are all encrypted in the database)</p>
-  </div>
-  -->
 
   <input name="next" hidden value="{{ next|default:'' }}"\>
 

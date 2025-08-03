@@ -26,7 +26,7 @@
                 <div class="collapse navbar-collapse" id="navbarMainMenu">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'epochs' %}">{{ request.user.session_settings.selected_semester.name|default:'[No semester selected]' }}</a>
+                            <a class="nav-link" href="{% url 'epochs' %}">{{ request.user.session_settings.selected_semester.name|default:'GPM/NIGHT' }}</a>
                         </li>
                         <li>
                             <a class="nav-link" href="{% url 'source_finder' %}">Source finder</a>
@@ -56,6 +56,9 @@
                             <ul class="dropdown-menu dropdown-menu-{% if request.user.session_settings %}{{ request.user.session_settings.get_site_theme_display|lower|default_if_none:'light' }}{% else %}light{% endif %} dropdown-menu-end">
                                 <li><a class="dropdown-item" href="{% url 'password_change' %}">Change password</a></li>
                                 <li><a class="dropdown-item" href="{% url 'user_session_settings' %}">Settings</a></li>
+                                {% if request.user.session_settings.selected_hpc_user %}
+                                <li><a class="dropdown-item" href="{% url 'hpc_user_settings' hpc_user_id=request.user.session_settings.selected_hpc_user.id %}">HPC settings ({{ request.user.session_settings.selected_hpc_user }})</a></li>
+                                {% endif %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <form method="post" action="{% url 'logout' %}">

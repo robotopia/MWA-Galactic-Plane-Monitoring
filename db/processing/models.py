@@ -195,7 +195,7 @@ class HpcUser(models.Model):
 
 
 class HpcUserSetting(models.Model):
-    hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="hpc_user_settings")
+    hpc_user = models.OneToOneField("HpcUser", models.CASCADE, related_name="hpc_user_settings")
     account = models.CharField(max_length=31, null=True, blank=True)
     max_array_jobs = models.IntegerField(null=True, blank=True)
     basedir = models.CharField(max_length=1023, null=True, blank=True,
