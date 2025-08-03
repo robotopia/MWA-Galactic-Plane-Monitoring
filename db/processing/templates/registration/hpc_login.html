@@ -1,0 +1,36 @@
+{% extends 'processing/main.html' %}
+
+{% block body %}
+
+{% if error %}
+<p><span style="color: red;">{{ error }}</span></p>
+{% endif %}
+
+{% if next %}
+<p>Please provide valid HPC credentials to access this page.</p>
+{% endif %}
+
+<div class="container">
+  <div class="row justify-content-md-center">
+    <div class="col-lg-6">
+      <form method="post" action="{% url 'hpc_login' %}{% if next %}?next={{ next }}{% endif %}">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="hpc_user" class="form-label">HPC account:</label>
+          <select id="hpc_user" name="hpc_user_id" class="form-control">
+            {% for hpc_user in request.user.hpc_users.all %}
+            <option value="{{ hpc_user.id }}" {% if hpc_user == request.user.session_settings.selected_hpc_user %}selected{% endif %}>{{ hpc_user }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password:</label>
+          <input type="password" id="password" name="password" class="form-control"/>
+        </div>
+        <button id="login-button" type="submit" class="btn btn-primary">Login</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
