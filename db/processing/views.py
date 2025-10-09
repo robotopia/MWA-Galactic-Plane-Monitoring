@@ -93,8 +93,9 @@ def FindObservation(request):
 @login_required
 def EpochsView(request):
 
-    session_settings = request.user.session_settings
-    if not session_settings:
+    try:
+        session_settings = request.user.session_settings
+    except:
         session_settings = models.UserSessionSetting(user=request.user)
         session_settings.save()
 
