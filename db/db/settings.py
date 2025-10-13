@@ -131,10 +131,10 @@ USE_TZ = True
 
 if DEBUG:
     STATIC_URL = 'static/'
-    STATIC_ROOT = os.getenv("STATIC_ROOT")
+    STATIC_ROOT = BASE_DIR / 'static'
 
     MEDIA_URL = 'media/'
-    MEDIA_ROOT = os.getenv("MEDIA_ROOT")
+    MEDIA_ROOT = BASE_DIR / 'media'
 else:
     # In production
     STATIC_URL = 'static/'
