@@ -272,11 +272,23 @@ def create_jobs(job_id, host_cluster, obs_ids, user, batch_file, stderr, stdout,
                stderrs[i], stdouts[i], task, os.environ['GPMGITVERSION'], cal_obs_ids[i][0],)
               for i in range(ntasks)]
             
+    '''
+    cur.execute(
+        """
+            SELECT hpc_user_id, logdir, scriptdir
+            FROM hpc_user_setting AS hus
+            LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
+            WHERE hu.name = %s
+        """
+    '''
 
     cur.executemany(
         """
                 INSERT INTO processing
-                (job_id, task_id, host_cluster, obs_id, user, batch_file, stderr, stdout, task, commit, cal_obs_id)
+                (job_id, array_task_id, cluster_id, obs_id, hpc_user_id,
+                 batch_file, stderr, stdout,
+                 batch_file_path_id, stderr_path_id, stdout_path_id,
+                 task_id, commit, cal_obs_id)
                 VALUES 
                 ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s )
                 """,

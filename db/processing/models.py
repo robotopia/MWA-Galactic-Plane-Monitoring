@@ -198,13 +198,13 @@ class HpcUserSetting(models.Model):
     hpc_user = models.OneToOneField("HpcUser", models.CASCADE, related_name="hpc_user_settings")
     account = models.CharField(max_length=31, null=True, blank=True)
     max_array_jobs = models.IntegerField(null=True, blank=True)
-    basedir = models.CharField(max_length=1023, null=True, blank=True,
+    basedir = models.ForeignKey("HpcPath", null=True, blank=True,
                                help_text="The path where the software repository is installed")
-    scratchdir = models.CharField(max_length=1023, null=True, blank=True,
+    scratchdir = models.ForeignKey("HpcPath", null=True, blank=True,
                                   help_text="The 'scratch' path where the data are processed")
-    logdir = models.CharField(max_length=1023, null=True, blank=True,
+    logdir = models.ForeignKey(max_length=1023, null=True, blank=True,
                               help_text="The path where to place the log files")
-    scriptdir = models.CharField(max_length=1023, null=True, blank=True,
+    scriptdir = models.ForeignKey(max_length=1023, null=True, blank=True,
                               help_text="The path where to place the script files")
     container = models.CharField(max_length=1023, null=True, blank=True,
                               help_text="The path of the singularity container")
