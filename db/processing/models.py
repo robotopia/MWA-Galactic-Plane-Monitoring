@@ -203,15 +203,19 @@ class HpcUserSetting(models.Model):
     account = models.CharField(max_length=31, null=True, blank=True)
     max_array_jobs = models.IntegerField(null=True, blank=True)
     basedir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
-                               help_text="The path where the software repository is installed")
+                                help_text="The path where the software repository is installed",
+                                related_name="hpc_user_settings_as_base")
     scratchdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
-                                  help_text="The 'scratch' path where the data are processed")
+                                   help_text="The 'scratch' path where the data are processed",
+                                   related_name="hpc_user_settings_as_scratch")
     logdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
-                              help_text="The path where to place the log files")
+                               help_text="The path where to place the log files",
+                               related_name="hpc_user_settings_as_log")
     scriptdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
-                              help_text="The path where to place the script files")
+                                  help_text="The path where to place the script files",
+                                  related_name="hpc_user_settings_as_script")
     container = models.CharField(max_length=1023, null=True, blank=True,
-                              help_text="The path of the singularity container")
+                                 help_text="The path of the singularity container")
 
     def __str__(self) -> str:
         return f"{self.hpc_user}"

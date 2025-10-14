@@ -8,6 +8,12 @@ from . import models
 import json
 from collections import defaultdict
 
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+import rest_framework.exceptions as rest_exceptions
+from rest_framework.authtoken.models import Token
+
 from astropy.coordinates import SkyCoord, EarthLocation
 from astropy.time import Time
 import astropy.units as u
@@ -395,19 +401,17 @@ def UserSessionSettings(request):
         request.user.session_settings.site_theme = request.POST.get('site_theme')
         request.user.session_settings.save()
 
-        '''
         if request.POST.get('action') == 'Generate new API token':
             try:
                 Token.objects.filter(user=request.user).delete()
             except:
                 pass
             Token.objects.create(user=request.user)
-        '''
 
         if request.POST.get('next'):
             return redirect(request.POST.get('next'))
 
-    #token = Token.objects.filter(user=request.user).first()
+    token = Token.objects.filter(user=request.user).first()
 
     # Organise clusters by HPC user
     clusters_by_hpc_user = defaultdict(list)
@@ -420,6 +424,7 @@ def UserSessionSettings(request):
         'semesters': models.Semester.objects.all(),
         'clusters_by_hpc_user': dict(clusters_by_hpc_user),
         'next': request.GET.get('next'),
+        'token': token,
     }
 
     return render(request, 'processing/user_settings.html', context)

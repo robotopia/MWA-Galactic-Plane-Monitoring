@@ -51,6 +51,11 @@
     </select>
   </div>
 
+  <div style="padding: 10px;">
+    <input type="submit" style="padding: 3px;" name="action" value="Generate new API token"/>
+    <span style="padding: 5px; border: 1px solid black;">{{ token }}</span>
+  </div>
+
   <input name="next" hidden value="{{ next|default:'' }}"\>
 
   <input type="submit" class="btn btn-primary" name="action" value="Save"/>
