@@ -54,10 +54,7 @@ DIRECTIVES = (
     "last_obs",
     "recent_obs",
     "obs_type",
-    "get_logdir",
-    "get_scriptdir",
-    "get_account",
-    "get_scratchdir",
+    "get_hpc_settings",
     "write_slurm_script",
 )
 
@@ -877,86 +874,25 @@ def calibrations():
     conn.close()
 
 
-def get_logdir():
-    """Gets the GPM log directory from the HPC user environment information from the hpc_user_setting table
+def get_hpc_settings():
+    """Gets the HPC settings from the hpc_user_setting table
     """
     conn = gpmdb_connect()
     cur = conn.cursor()
 
-    cur.execute("""
-        SELECT hp.path
-        FROM hpc_user_setting AS hus
-        LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
-        LEFT JOIN hpc_path AS hp ON hus.logdir_id = hp.id
-        LEFT JOIN hpc AS h ON hu.hpc_id = h.id
-        WHERE hu.name = %s AND h.name = %s
-        """,
-        (os.environ["GPMUSER"], os.environ["GPMHPC"])
+    cur.execute("SELECT * FROM hpc_settings_by_token WHERE token = %s",
+        (os.environ["GPMDBTOKEN"],)
     )
     res = cur.fetchone()
-    print(res[0])
-    conn.close()
-
-
-def get_scriptdir():
-    """Gets the GPM script directory from the HPC user environment information from the hpc_user_setting table
-    """
-    conn = gpmdb_connect()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT hp.path
-        FROM hpc_user_setting AS hus
-        LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
-        LEFT JOIN hpc_path AS hp ON hus.scriptdir_id = hp.id
-        LEFT JOIN hpc AS h ON hu.hpc_id = h.id
-        WHERE hu.name = %s AND h.name = %s
-        """,
-        (os.environ["GPMUSER"], os.environ["GPMHPC"])
-    )
-    res = cur.fetchone()
-    print(res[0])
-    conn.close()
-
-
-def get_account():
-    """Gets the GPM account from the HPC user environment information from the hpc_user_setting table
-    """
-    conn = gpmdb_connect()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT hus.account
-        FROM hpc_user_setting AS hus
-        LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
-        LEFT JOIN hpc AS h ON hu.hpc_id = h.id
-        WHERE hu.name = %s AND h.name = %s
-        """,
-        (os.environ["GPMUSER"], os.environ["GPMHPC"])
-    )
-    res = cur.fetchone()
-    print(res[0])
-    conn.close()
-
-
-def get_scratchdir():
-    """Gets the GPM scratch directory from the HPC user environment information from the hpc_user_setting table
-    """
-    conn = gpmdb_connect()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT hp.path
-        FROM hpc_user_setting AS hus
-        LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
-        LEFT JOIN hpc_path AS hp ON hus.scratchdir_id = hp.id
-        LEFT JOIN hpc AS h ON hu.hpc_id = h.id
-        WHERE hu.name = %s AND h.name = %s
-        """,
-        (os.environ["GPMUSER"], os.environ["GPMHPC"])
-    )
-    res = cur.fetchone()
-    print(res[0])
+    print(f"# HPC settings for {res[9]}@{res[10]}")
+    print(f"export GPMACCOUNT={res[1]}")
+    print(f"export GPMMAXARRAYJOBS={res[2]}")
+    print(f"export GPMSCRATCH={res[3]}")
+    print(f"export GPMLOG={res[4]}")
+    print(f"export GPMSCRIPT={res[5]}")
+    print(f"export GPMCLUSTER={res[6]}")
+    print(f"export GPMSTANDARDQ={res[7]}")
+    print(f"export GPMCOPYQ={res[8]}")
     conn.close()
 
 
@@ -1252,17 +1188,8 @@ if __name__ == "__main__":
         require(args, ["nhours"])
         recent_observations(args.nhours)
 
-    elif args.directive.lower() == "get_logdir":
-        get_logdir()
-
-    elif args.directive.lower() == "get_scriptdir":
-        get_scriptdir()
-
-    elif args.directive.lower() == "get_account":
-        get_account()
-
-    elif args.directive.lower() == "get_scratchdir":
-        get_scratchdir()
+    elif args.directive.lower() == "get_hpc_settings":
+        get_hpc_settings()
 
     elif args.directive.lower() == "write_slurm_script":
         require(args, ["task", "host_cluster", "epoch", "user"])
