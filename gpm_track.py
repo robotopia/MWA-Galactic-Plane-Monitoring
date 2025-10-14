@@ -510,7 +510,7 @@ def epoch_observations(epoch, exclude_cal=False):
         cur.execute("""
                 SELECT e.obs_id FROM epoch AS e
                 LEFT JOIN observation AS o ON e.obs_id = o.obs_id
-                WHERE e.epoch = %s COLLATE utf8mb4_bin
+                WHERE e.epoch = %s
                 AND o.calibration = false
                 """,
                 (epoch,),
@@ -518,7 +518,7 @@ def epoch_observations(epoch, exclude_cal=False):
     else:
         cur.execute("""
                 SELECT obs_id FROM epoch
-                WHERE epoch = %s COLLATE utf8mb4_bin
+                WHERE epoch = %s
                 """,
                 (epoch,),
                 )
