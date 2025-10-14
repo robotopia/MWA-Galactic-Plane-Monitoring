@@ -55,6 +55,9 @@ DIRECTIVES = (
     "recent_obs",
     "obs_type",
     "get_logdir",
+    "get_scriptdir",
+    "get_account",
+    "get_scratchdir",
     "write_slurm_script",
 )
 
@@ -881,12 +884,76 @@ def get_logdir():
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT logdir
+        SELECT hp.path
         FROM hpc_user_setting AS hus
         LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
-        WHERE hu.name = %s
+        LEFT JOIN hpc_path AS hp ON hus.logdir_id = hp.id
+        LEFT JOIN hpc AS h ON hu.hpc_id = h.id
+        WHERE hu.name = %s AND h.name = %s
         """,
-        (os.environ["USER"],)
+        (os.environ["GPMUSER"], os.environ["GPMHPC"])
+    )
+    res = cur.fetchone()
+    print(res[0])
+    conn.close()
+
+
+def get_scriptdir():
+    """Gets the GPM script directory from the HPC user environment information from the hpc_user_setting table
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT hp.path
+        FROM hpc_user_setting AS hus
+        LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
+        LEFT JOIN hpc_path AS hp ON hus.scriptdir_id = hp.id
+        LEFT JOIN hpc AS h ON hu.hpc_id = h.id
+        WHERE hu.name = %s AND h.name = %s
+        """,
+        (os.environ["GPMUSER"], os.environ["GPMHPC"])
+    )
+    res = cur.fetchone()
+    print(res[0])
+    conn.close()
+
+
+def get_account():
+    """Gets the GPM account from the HPC user environment information from the hpc_user_setting table
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT hus.account
+        FROM hpc_user_setting AS hus
+        LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
+        LEFT JOIN hpc AS h ON hu.hpc_id = h.id
+        WHERE hu.name = %s AND h.name = %s
+        """,
+        (os.environ["GPMUSER"], os.environ["GPMHPC"])
+    )
+    res = cur.fetchone()
+    print(res[0])
+    conn.close()
+
+
+def get_scratchdir():
+    """Gets the GPM scratch directory from the HPC user environment information from the hpc_user_setting table
+    """
+    conn = gpmdb_connect()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT hp.path
+        FROM hpc_user_setting AS hus
+        LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
+        LEFT JOIN hpc_path AS hp ON hus.scratchdir_id = hp.id
+        LEFT JOIN hpc AS h ON hu.hpc_id = h.id
+        WHERE hu.name = %s AND h.name = %s
+        """,
+        (os.environ["GPMUSER"], os.environ["GPMHPC"])
     )
     res = cur.fetchone()
     print(res[0])
@@ -1187,6 +1254,15 @@ if __name__ == "__main__":
 
     elif args.directive.lower() == "get_logdir":
         get_logdir()
+
+    elif args.directive.lower() == "get_scriptdir":
+        get_scriptdir()
+
+    elif args.directive.lower() == "get_account":
+        get_account()
+
+    elif args.directive.lower() == "get_scratchdir":
+        get_scratchdir()
 
     elif args.directive.lower() == "write_slurm_script":
         require(args, ["task", "host_cluster", "epoch", "user"])
