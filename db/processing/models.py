@@ -161,7 +161,7 @@ class Hpc(models.Model):
 
 class HpcPath(models.Model):
     path = models.CharField(max_length=511)
-    hpc = models.ForeignKey("Hpc", on_delete=models.DO_NOTHING, related_name="paths")
+    owner = models.ForeignKey("HpcUser", on_delete=models.DO_NOTHING, related_name="hpc_paths")
 
     def __str__(self) -> str:
         return self.path
@@ -171,17 +171,21 @@ class HpcPath(models.Model):
         db_table = 'hpc_path'
         verbose_name = 'HPC path'
         verbose_name_plural = 'HPC paths'
+        constraints = [
+            models.UniqueConstraint(fields=['path', 'owner'], name='hpc_path_unique'),
+        ]
+        ordering = ['path']
 
 
 class HpcUser(models.Model):
-    name = models.CharField(max_length=1023)
-    hpc = models.ForeignKey("Hpc", models.DO_NOTHING, related_name="hpc_users")
+    name = models.CharField(max_length=1023, help_text="Username on the HPC")
+    hpc = models.ForeignKey("Hpc", models.DO_NOTHING, related_name="hpc_users", verbose_name="HPC")
     auth_users = models.ManyToManyField(
         User,
         blank=True,
-        through='HpcAuthUser',
-        through_fields=('hpc_user', 'auth_user'),
         related_name='hpc_users',
+        help_text="Which users of this Django app are authorised to change settings for this HPC user.",
+        verbose_name="Associated webapp users",
     )
 
     def __str__(self) -> str:
@@ -198,13 +202,13 @@ class HpcUserSetting(models.Model):
     hpc_user = models.OneToOneField("HpcUser", models.CASCADE, related_name="hpc_user_settings")
     account = models.CharField(max_length=31, null=True, blank=True)
     max_array_jobs = models.IntegerField(null=True, blank=True)
-    basedir = models.ForeignKey("HpcPath", null=True, blank=True,
+    basedir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
                                help_text="The path where the software repository is installed")
-    scratchdir = models.ForeignKey("HpcPath", null=True, blank=True,
+    scratchdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
                                   help_text="The 'scratch' path where the data are processed")
-    logdir = models.ForeignKey(max_length=1023, null=True, blank=True,
+    logdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
                               help_text="The path where to place the log files")
-    scriptdir = models.ForeignKey(max_length=1023, null=True, blank=True,
+    scriptdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
                               help_text="The path where to place the script files")
     container = models.CharField(max_length=1023, null=True, blank=True,
                               help_text="The path of the singularity container")
@@ -219,6 +223,7 @@ class HpcUserSetting(models.Model):
         verbose_name_plural = 'HPC user settings'
 
 
+'''
 class HpcAuthUser(models.Model):
     hpc_user = models.ForeignKey('HpcUser', models.DO_NOTHING)
     auth_user = models.ForeignKey(User, models.DO_NOTHING)
@@ -226,7 +231,7 @@ class HpcAuthUser(models.Model):
     class Meta:
         managed = False
         db_table = 'hpc_auth_user'
-
+'''
 
 class Lightcurve(models.Model):
     source = models.ForeignKey('Source', models.DO_NOTHING)

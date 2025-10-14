@@ -89,8 +89,8 @@ class HpcAdmin(admin.ModelAdmin):
 
 @admin.register(HpcPath)
 class HpcPathAdmin(admin.ModelAdmin):
-    list_display = ['id', 'hpc', 'path']
-    list_filter = ['hpc']
+    list_display = ['id', 'owner', 'path']
+    list_filter = ['owner__hpc', 'owner']
 
 @admin.register(HpcUser)
 class HpcUserAdmin(admin.ModelAdmin):

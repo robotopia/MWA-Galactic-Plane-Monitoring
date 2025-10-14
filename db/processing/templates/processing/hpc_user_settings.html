@@ -1,0 +1,89 @@
+{% extends 'processing/main.html' %}
+
+{% load static %}
+
+{% block body %}
+
+<h1>Settings</h1>
+
+<form method="post">
+  {% csrf_token %}
+  <h2>HPC settings for {{ hpc_user }}</h2>
+
+  <div style="padding: 10px;">
+    <label for="account">Account:</label>
+    <input id="account" name="account" maxlength="31" value="{{ hpc_user.hpc_user_settings.account }}" required/>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="max_array_jobs">Max. size of job array:</label>
+    <input id="max_array_jobs" name="max_array_jobs" type="number" value="{{ hpc_user.hpc_user_settings.max_array_jobs }}" required/>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="container">Path to container:</label>
+    <input id="container" name="container" value="{{ hpc_user.hpc_user_settings.container }}" required/>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="basedir">(Pipeline software) base directory:</label>
+    <select id="basedir" name="basedir" required>
+      {% for hpc_path in hpc_paths %}
+      <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.basedir %}selected{% endif %}>{{ hpc_path }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="scratchdir">Scratch directory:</label>
+    <select id="scratchdir" name="scratchdir" required>
+      {% for hpc_path in hpc_paths %}
+      <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.scratchdir %}selected{% endif %}>{{ hpc_path }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="logdir">Destination directory for <b>log</b> files:</label>
+    <select id="logdir" name="logdir" required>
+      {% for hpc_path in hpc_paths %}
+      <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.logdir %}selected{% endif %}>{{ hpc_path }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div style="padding: 10px;">
+    <label for="scriptdir">Destination directory for <b>script</b> files:</label>
+    <select id="scriptdir" name="scriptdir" required>
+      {% for hpc_path in hpc_paths %}
+      <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.scriptdir %}selected{% endif %}>{{ hpc_path }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <input name="next" hidden value="{{ next|default:'' }}"\>
+
+  <input type="submit" class="btn btn-primary" name="action" value="Save"/>
+</form>
+
+<script>
+  const clusters_dropdown = document.getElementById('clusters');
+  const hpc_users_dropdown = document.getElementById('hpc_users');
+  const clusters_by_hpc_user = {{ clusters_by_hpc_user|safe }};
+
+  // Update clusters dropdown depending on selected HPC user
+  function update_clusters () {
+    clusters_dropdown.innerHTML = '';
+    for (const cluster of clusters_by_hpc_user[hpc_users_dropdown.value]) {
+      const option = document.createElement('option');
+      option.value = cluster.pk;
+      option.text = cluster.name;
+      clusters_dropdown.appendChild(option);
+    }
+    clusters_dropdown.value = "{{ request.user.session_settings.selected_cluster.pk }}";
+  }
+
+  update_clusters();
+</script>
+
+{% endblock %}

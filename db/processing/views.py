@@ -436,21 +436,29 @@ def HpcUserSettingsView(request, hpc_user_id):
     if hpc_user not in request.user.hpc_users.all():
         return HttpResponse(status=404)
 
+    hpc_user_settings = hpc_user.hpc_user_settings
+    if hpc_user_settings is None:
+        hpc_user_settings = models.HpcUserSettings(hpc_user=hpc_user)
+        hpc_user_settings.save()
+
     if request.method == 'POST':
-        hpc_user_settings = hpc_user.hpc_user_settings
-        if hpc_user_settings is None:
-            hpc_user_settings = models.HpcUserSettings(hpc_user=hpc_user)
-            hpc_user_settings.save()
         hpc_user_settings.account        = request.POST.get('account')
         hpc_user_settings.max_array_jobs = request.POST.get('max_array_jobs')
-        hpc_user_settings.basedir        = request.POST.get('basedir')
-        hpc_user_settings.scratchdir     = request.POST.get('scratchdir')
-        hpc_user_settings.logdir         = request.POST.get('logdir')
+        hpc_user_settings.basedir        = models.HpcPath.objects.get(pk=request.POST.get('basedir'))
+        hpc_user_settings.scratchdir     = models.HpcPath.objects.get(pk=request.POST.get('scratchdir'))
+        hpc_user_settings.logdir         = models.HpcPath.objects.get(pk=request.POST.get('logdir'))
+        hpc_user_settings.scriptdir      = models.HpcPath.objects.get(pk=request.POST.get('scriptdir'))
         hpc_user_settings.container      = request.POST.get('container')
-        hpc_user_settings.scriptdir      = request.POST.get('scriptdir')
         hpc_user_settings.save()
 
         if request.GET.get('next') is not None:
             return redirect(request.GET.get('next'))
 
-    return render(request, 'processing/hpc_user_settings.html', {'hpc_user': hpc_user})
+    hpc_paths = models.HpcPath.objects.filter(owner=hpc_user)
+
+    context = {
+        'hpc_user': hpc_user,
+        'hpc_paths': hpc_paths,
+    }
+
+    return render(request, 'processing/hpc_user_settings.html', context)

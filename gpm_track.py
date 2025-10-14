@@ -54,7 +54,7 @@ DIRECTIVES = (
     "last_obs",
     "recent_obs",
     "obs_type",
-    "get_environment",
+    "get_logdir",
     "write_slurm_script",
 )
 
@@ -275,7 +275,7 @@ def create_jobs(job_id, host_cluster, obs_ids, user, batch_file, stderr, stdout,
     '''
     cur.execute(
         """
-            SELECT hpc_user_id, logdir, scriptdir
+            SELECT hpc_user_id, logdir_id, scriptdir_id
             FROM hpc_user_setting AS hus
             LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
             WHERE hu.name = %s
@@ -874,14 +874,14 @@ def calibrations():
     conn.close()
 
 
-def get_environment():
-    """Gets HPC user environment information from the hpc_user_setting table
+def get_logdir():
+    """Gets the GPM log directory from the HPC user environment information from the hpc_user_setting table
     """
     conn = gpmdb_connect()
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT account, basedir, scratchdir, logdir, container, scriptdir
+        SELECT logdir
         FROM hpc_user_setting AS hus
         LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
         WHERE hu.name = %s
@@ -889,12 +889,7 @@ def get_environment():
         (os.environ["USER"],)
     )
     res = cur.fetchone()
-    print(f"""export GPMACCOUNT={res[0]}
-export GPMBASE={res[1]}
-export GPMSCRATCH={res[2]}
-export GPMLOG={res[3]}
-export GPMCONTAINER={res[4]}
-export GPMSCRIPT={res[5]}""")
+    print(res[0])
     conn.close()
 
 
@@ -1190,8 +1185,8 @@ if __name__ == "__main__":
         require(args, ["nhours"])
         recent_observations(args.nhours)
 
-    elif args.directive.lower() == "get_environment":
-        get_environment()
+    elif args.directive.lower() == "get_logdir":
+        get_logdir()
 
     elif args.directive.lower() == "write_slurm_script":
         require(args, ["task", "host_cluster", "epoch", "user"])
