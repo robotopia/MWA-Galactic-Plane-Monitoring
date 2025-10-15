@@ -47,6 +47,13 @@ class YearListFilter(admin.SimpleListFilter):
         elif self.value() == '2024':
             return queryset.filter(obs__gte=1388102418, obs__lte=1419724817)
 
+@admin.register(ArrayJob)
+class ArrayJobAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'processing', 'obs', 'start_time', 'status']
+    list_filter = ['status']
+    autocomplete_fields = ['obs', 'cal_obs']
+    search_fields = ['obs']
+
 @admin.register(AntennaFlag)
 class AntennaFlagAdmin(admin.ModelAdmin):
     list_display = ['pk', 'start_obs_id', 'end_obs_id', 'antenna']

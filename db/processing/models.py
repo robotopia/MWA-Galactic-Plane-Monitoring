@@ -366,24 +366,17 @@ class PipelineStep(models.Model):
 
 
 class Processing(models.Model):
-    job_id = models.IntegerField(blank=True, null=True)
-    array_task_id = models.IntegerField(blank=True, null=True)
+    job_id = models.CharField(max_length=127, blank=True, null=True)
     cluster = models.ForeignKey("Cluster", on_delete=models.DO_NOTHING, related_name="array_jobs")
     submission_time = models.IntegerField(blank=True, null=True)
     task = models.ForeignKey("Task", on_delete=models.DO_NOTHING, related_name="array_jobs")
-    hpc_user = models.ForeignKey("HpcUser", on_delete=models.DO_NOTHING, blank=True, null=True, related_name="array_jobs")
-    start_time = models.IntegerField(blank=True, null=True)
-    end_time = models.IntegerField(blank=True, null=True)
-    obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='array_jobs')
-    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_array_jobs')
-    status = models.TextField(blank=True, null=True)
+    hpc_user = models.ForeignKey("HpcUser", on_delete=models.DO_NOTHING, related_name="array_jobs")
     batch_file = models.TextField(blank=True, null=True)
     batch_file_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_batch_file")
     stderr = models.TextField(blank=True, null=True)
     stderr_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stderr")
     stdout = models.TextField(blank=True, null=True)
     stdout_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stdout")
-    output_files = models.TextField(blank=True, null=True)
     commit = models.CharField(max_length=256)
 
     @property
@@ -409,6 +402,23 @@ class Processing(models.Model):
         db_table = 'processing'
         ordering = ['-submission_time']
         verbose_name_plural = "Processing"
+
+
+class ArrayJob(models.Model):
+
+    processing = models.ForeignKey("Processing", models.DO_NOTHING, related_name="array_jobs")
+    obs = models.ForeignKey("Observation", models.DO_NOTHING, related_name="array_jobs")
+
+    start_time = models.IntegerField(blank=True, null=True)
+    end_time = models.IntegerField(blank=True, null=True)
+    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_array_jobs')
+    status = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'array_job'
+        ordering = ['-start_time']
+
 
 
 class Source(models.Model):

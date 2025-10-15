@@ -22,8 +22,6 @@ import jplephem
 import numpy as np
 from datetime import datetime
 
-import subprocess
-
 MWA = EarthLocation.of_site('MWA')
 MWA_ctr_freq_MHz = 200.32 # WARNING! This info is not in the database, but it should be!
 # The DM delay calculation will be wrong for observations not taken at this frequency!!!
@@ -181,7 +179,7 @@ def ProcessingObsTaskView(request, obs_id, task_id):
 
     processings = models.Processing.objects.filter(
         hpc_user=request.user.session_settings.selected_hpc_user,
-        obs=obs,
+        array_jobs__obs=obs,
         task=task,
     ).order_by('submission_time')
 
@@ -595,7 +593,7 @@ def create_processing_job(request):
     output_text = ""
 
     try:
-        obs_ids = [int(o) for o in request.GET.get('obs_ids').split(',')]
+        obs_ids = sorted([int(o) for o in request.GET.get('obs_ids').split(',')])
     except Exception as e:
         output_text += f"\nERROR: obs_ids is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
