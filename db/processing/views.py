@@ -467,3 +467,104 @@ def HpcUserSettingsView(request, hpc_user_id):
     }
 
     return render(request, 'processing/hpc_user_settings.html', context)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def load_profile(request):
+
+    output_text = ""
+    status = 200
+
+    # Select hpc_user
+    hpc_users = request.user.hpc_users.filter(name=request.GET.get('hpc_user'))
+    if not hpc_users.exists():
+        try:
+            hpc_user = request.user.session_settings.selected_hpc_user
+            output_text += f"# HPC user (session default): {hpc_user}\n"
+        except:
+            output_text += f"# No HPC user selected and no default {request.user}\n"
+            status = 400
+    elif len(hpc_users) > 1:
+        output_text += f"# Multiple HPCs exist for username {request.GET.get('hpc_user')}: {[hu.hpc.name for hu in hpc_users]}. Please specify using query parameter 'hpc'.\n"
+
+    # Get the corresponding HPC settings and print out the corresponding export statements
+    output_text = hpc_user.hpc_user_settings.write_exports()
+
+    return HttpResponse(output_text, content_type="text/plain", status=status)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def load_job_environment(request):
+
+    output_text = ""
+    status = 200
+
+    # Select hpc_user
+    hpc = models.Hpc.objects.filter(name=request.GET.get('hpc')).first()
+    if hpc:
+        hpc_users = request.user.hpc_users.filter(name=request.GET.get('hpc_user'), hpc=hpc)
+    else:
+        hpc_users = request.user.hpc_users.filter(name=request.GET.get('hpc_user'))
+    if not hpc_users.exists():
+        try:
+            hpc_user = request.user.session_settings.selected_hpc_user
+            output_text += f"# HPC user (session default): {hpc_user}\n"
+        except:
+            output_text += f"# No HPC user selected and no default for {request.user}\n"
+            return HttpResponse(output_text, content_type="text/plain", status=400)
+    elif len(hpc_users) > 1:
+        output_text += f"# Multiple HPCs exist for username {request.GET.get('hpc_user')}: {[hu.hpc.name for hu in hpc_users]}. Please specify using query parameter 'hpc'.\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+    else:
+        hpc_user = hpc_users.first()
+        output_text += f"\n# HPC user (selected): {hpc_user}\n"
+
+    try:
+        # Write out HPC user settings
+        output_text += hpc_user.hpc_user_settings.write_exports()
+    except:
+        output_text += f"# Cannot find settings for HPC user {hpc_user}. Returning error 400.\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Select pipeline
+    pipeline_name = request.GET.get('pipeline')
+    if pipeline_name is not None:
+        pipeline = models.Pipeline.objects.filter(name=pipeline_name).first()
+        if not pipeline:
+            output_text += f"# Could not find pipeline {pipeline_name}\n"
+    else:
+        pipeline = None
+
+    if not pipeline:
+        output_text += f"# No pipeline selected. Returning error 400.\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    output_text += f"\n# Pipeline (selected): {pipeline.name}\n"
+
+    # Select pipeline step
+    task_name = request.GET.get('task')
+    if not task_name:
+        output_text += f"# No task selected. Returning error 400.\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    output_text += f"# Task: {task_name}\n"
+
+    pipeline_step = pipeline.steps.filter(task__name=task_name).first()
+    if not pipeline_step:
+        output_text += f"# Could not find task '{task_name}' in pipeline '{pipeline.name}'\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    slurm_settings = models.SlurmSettings.objects.filter(pipeline_step=pipeline_step).first()
+    if not slurm_settings:
+        output_text = f"# Could not find SLURM settings for pipeline step {pipeline_step}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    output_text += slurm_settings.write_exports()
+
+    output_text += f"export GPMOBSSCRIPT={pipeline_step.obs_script}\n"
+
+    return HttpResponse(output_text, content_type="text/plain", status=status)

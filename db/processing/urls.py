@@ -15,5 +15,8 @@ urlpatterns = [
     re_path(r'^backups/(?P<epoch>[EB]poch[0-9]+)$', views.backupView, name="backup_view"),
     re_path(r'^api/set_qa$', views.changeQaStateView, name="set_qa"),
     re_path(r'^hpc_login$', views.HPCLogin, name='hpc_login'),
+
+    re_path(f'^api/load_profile$', views.load_profile, name="load_profile"),
+    re_path(f'^api/load_job_environment$', views.load_job_environment, name="load_job_environment"),
     path('', include('django.contrib.auth.urls')),
 ]

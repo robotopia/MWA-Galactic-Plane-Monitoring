@@ -200,25 +200,45 @@ class HpcUser(models.Model):
 
 class HpcUserSetting(models.Model):
     hpc_user = models.OneToOneField("HpcUser", models.CASCADE, related_name="hpc_user_settings")
-    account = models.CharField(max_length=31, null=True, blank=True)
+
+    account = models.CharField(max_length=127, null=True, blank=True)
+
     max_array_jobs = models.IntegerField(null=True, blank=True)
+
     basedir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
                                 help_text="The path where the software repository is installed",
                                 related_name="hpc_user_settings_as_base")
+
     scratchdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
                                    help_text="The 'scratch' path where the data are processed",
                                    related_name="hpc_user_settings_as_scratch")
+
     logdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
                                help_text="The path where to place the log files",
                                related_name="hpc_user_settings_as_log")
+
     scriptdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
                                   help_text="The path where to place the script files",
                                   related_name="hpc_user_settings_as_script")
+
     container = models.CharField(max_length=1023, null=True, blank=True,
                                  help_text="The path of the singularity container")
 
+    #start_time_offset_minutes = models.IntegerField(null=True, blank=True, help_text="When a SLURM job is submitted, start the job no sooner from this many minutes from that time.")
+
     def __str__(self) -> str:
         return f"{self.hpc_user}"
+
+    def write_exports(self):
+        output_text = ""
+        output_text += f"export GPMBASE={self.basedir.path}\n"
+        output_text += f"export GPMSCRATCH={self.scratchdir.path}\n"
+        output_text += f"export GPMLOG={self.logdir.path}\n"
+        output_text += f"export GPMSCRIPT={self.scriptdir.path}\n"
+        output_text += f"export GPMACCOUNT={self.account}\n"
+        output_text += f"export GPMMAXARRAYJOBS={self.max_array_jobs}\n"
+        output_text += f"export GPMCONTAINER={self.container}\n"
+        return output_text
 
     class Meta:
         managed = False
@@ -575,3 +595,63 @@ class SemesterPlanProcessingDetail(models.Model):
         managed = False
         db_table = 'semester_plan_processing_detail'
         ordering = ['semester', 'obs', 'pipeline_step']
+
+
+class SlurmSettings(models.Model):
+
+    pipeline_step = models.ForeignKey("PipelineStep", on_delete=models.CASCADE, related_name="slurm_settings")
+    cluster = models.ForeignKey("Cluster", on_delete=models.CASCADE, related_name="slurm_settings")
+    begin = models.CharField(max_length=127, null=True, blank=True)
+    mem   = models.CharField(max_length=15, null=True, blank=True)
+    time  = models.CharField(max_length=31, null=True, blank=True)
+    ntasks_per_node = models.CharField(max_length=31, null=True, blank=True)
+    partition = models.CharField(
+        max_length=1,
+        choices=[
+            ('w', 'Work'),
+            ('c', 'Copy'),
+        ],
+        null=True, blank=True
+    )
+    account = models.CharField(max_length=127, null=True, blank=True)
+
+    @property
+    def partition_name(self):
+        if self.partition == 'c':
+            return self.cluster.copy_queue
+        if self.partition == 'w':
+            return self.cluster.work_queue
+        return None
+
+    def write_slurm_header(self):
+        header = ""
+        header += f"#SBATCH --clusters={self.cluster.name}\n" if self.cluster else ""
+        header += f"#SBATCH --begin={self.begin}\n" if self.begin else ""
+        header += f"#SBATCH --mem={self.mem}\n" if self.mem else ""
+        header += f"#SBATCH --time={self.time}\n" if self.time else ""
+        header += f"#SBATCH --ntasks-per-node={self.ntasks_per_node}\n" if self.ntasks_per_node else ""
+        header += f"#SBATCH --partition={self.partition_name}\n" if self.partition_name else ""
+        header += f"#SBATCH --account={self.account}\n" if self.account else ""
+        return header
+
+    def write_exports(self):
+        exports = ""
+        exports += f"export GPMCLUSTER={self.cluster.name}\n" if self.cluster else ""
+        exports += f"export GPMBEGIN={self.begin}\n" if self.begin else ""
+        exports += f"export GPMABSMEMORY={self.mem}\n" if self.mem else ""
+        exports += f"export GPMTIME={self.time}\n" if self.time else ""
+        exports += f"export GPMNTASKSPERNODE={self.ntasks_per_node}\n" if self.ntasks_per_node else ""
+        exports += f"export GPMSTANDARDQ={self.partition_name}\n" if self.partition_name else ""
+        exports += f"export GPMCOPYQ={self.partition_name}\n" if self.partition_name else ""
+        exports += f"export GPMACCOUNT={self.account}\n" if self.account else ""
+
+        return exports
+
+    class Meta:
+        managed = False
+        db_table = 'slurm_settings'
+        ordering = ['cluster', 'pipeline_step']
+        constraints = [
+            models.UniqueConstraint(fields=['cluster', 'pipeline_step'], name='slurm_settings_unique'),
+        ]
+        verbose_name = 'SLURM settings'

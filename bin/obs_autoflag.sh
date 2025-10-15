@@ -11,8 +11,6 @@ echo "obs_autoflag.sh [-d dep] [-t] obsnum
 exit 1;
 }
 
-pipeuser="${GPMUSER}"
-
 dep=
 tst=
 
@@ -41,10 +39,8 @@ then
     usage
 fi
 
-if [[ ! -z ${GPMACCOUNT} ]]
-then
-    account="--account=${GPMACCOUNT}"
-fi
+# Get job enviroment
+curl -X GET -H "Authorization: Token ${GPMDBTOKEN}" -H "Accept: application/json" "https://gpm.mwa-image-plane.cloud.edu.au/processing/api/load_job_environment?pipeline=calibrate&task=flag"
 
 # Establish job array options
 if [[ -f ${obsnum} ]]
@@ -71,9 +67,7 @@ fi
 
 script="${GPMSCRIPT}/autoflag_${obsnum}.sh"
 
-cat "${GPMBASE}/templates/autoflag.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" \
-                                     -e "s:HOST:${GPMCOMPUTER}:g" \
-                                     -e "s:PIPEUSER:${pipeuser}:g" > "${script}"
+cat "${GPMBASE}/templates/autoflag.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" > "${script}"
 
 
 output="${GPMLOG}/autoflag_${obsnum}.o%A"
@@ -90,14 +84,8 @@ chmod 755 "${script}"
 echo '#!/bin/bash' > ${script}.sbatch
 echo "singularity run ${GPMCONTAINER} ${script}" >> ${script}.sbatch
 
-if [ ! -z ${GPMNCPULINE} ]
-then
-    # autoflag only needs a single CPU core
-    GPMNCPULINE="--ntasks-per-node=1"
-fi
-
-sub="sbatch --begin=now+1minutes --export=ALL --time=00:05:00 -M ${GPMCOMPUTER} --output=${output} --error=${error} "
-sub="${sub}  ${GPMNCPULINE} ${account} ${GPMTASKLINE} ${jobarray} ${depend} ${queue} ${script}.sbatch"
+sub="sbatch --begin=${GPMBEGIN} --export=ALL --time=${GPMTIME} -M ${GPMCLUSTER} --output=${output} --error=${error} "
+sub="${sub}  --ntasks-per-node=${GPMNTASKSPERNODE} --account=${GPMACCOUNT} ${jobarray} ${depend} ${queue} ${script}.sbatch"
 
 if [[ ! -z ${tst} ]]
 then
@@ -119,27 +107,4 @@ ${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submissi
 
 echo "STDOUTs: ${output}"
 echo "STDERRs: ${error}"
-
-#for taskid in $(seq ${numfiles})
-#do
-#    # rename the err/output files as we now know the jobid
-#    obserror=$(echo "${error}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-#    obsoutput=$(echo "${output}" | sed -e "s/%A/${jobid}/" -e "s/%a/${taskid}/")
-#    
-#    if [[ -f ${obsnum} ]]
-#    then
-#        obs=$(sed -n -e "${taskid}"p "${obsnum}")
-#    else
-#        obs=$obsnum
-#    fi
-#
-#    if [ "${GPMTRACK}" = "track" ]
-#    then
-#        # record submission
-#        ${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_job --jobid="${jobid}" --taskid="${taskid}" --task='flag' --submission_time="$(date +%s)" --batch_file="${script}" --obs_id="${obs}" --stderr="${obserror}" --stdout="${obsoutput}"
-#    fi
-#
-#    echo "$obsoutput"
-#    echo "$obserror"
-#done
 

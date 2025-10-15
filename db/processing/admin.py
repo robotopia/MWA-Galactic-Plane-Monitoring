@@ -140,6 +140,7 @@ class SemesterAdmin(admin.ModelAdmin):
 class SemesterPlanAdmin(admin.ModelAdmin):
     list_display = ['pk', 'semester', 'obs', 'pipeline']
     list_filter = ['semester', 'pipeline']
+    search_fields = ['obs__obs']
 
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):
@@ -154,4 +155,8 @@ class UserSessionSettingAdmin(admin.ModelAdmin):
     list_display = ['pk', 'user', 'selected_hpc_user', 'selected_semester', 'selected_pipeline']
     list_filter = ['user', 'selected_hpc_user', 'selected_semester']
 
+@admin.register(SlurmSettings)
+class SlurmSettingAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'pipeline_step', 'cluster']
+    list_filter = ['pipeline_step', 'cluster']
 
