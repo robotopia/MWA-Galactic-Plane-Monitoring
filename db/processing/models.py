@@ -392,11 +392,11 @@ class Processing(models.Model):
 
     @property
     def stdout_full_path(self):
-        return f'{self.stdout_path.path}/{self.stdout.replace("%j", str(self.array_task_id))}'
+        return f'{self.stdout_path.path}/{self.stdout.replace("%a", str(self.obs.obs)).replace("%A", str(self.job_id))}'
 
     @property
     def stderr_full_path(self):
-        return f'{self.stderr_path.path}/{self.stderr.replace("%j", str(self.array_task_id))}'
+        return f'{self.stderr_path.path}/{self.stderr.replace("%a", str(self.obs.obs)).replace("%A", str(self.job_id))}'
 
     @property
     def slurm_id(self) -> str:

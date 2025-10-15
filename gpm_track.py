@@ -272,16 +272,6 @@ def create_jobs(job_id, host_cluster, obs_ids, user, batch_file, stderr, stdout,
                stderrs[i], stdouts[i], task, os.environ['GPMGITVERSION'], cal_obs_ids[i][0],)
               for i in range(ntasks)]
             
-    '''
-    cur.execute(
-        """
-            SELECT hpc_user_id, logdir_id, scriptdir_id
-            FROM hpc_user_setting AS hus
-            LEFT JOIN hpc_user AS hu ON hus.hpc_user_id = hu.id
-            WHERE hu.name = %s
-        """
-    '''
-
     cur.executemany(
         """
                 INSERT INTO processing

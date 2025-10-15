@@ -495,68 +495,83 @@ def load_profile(request):
     return HttpResponse(output_text, content_type="text/plain", status=status)
 
 
+def find_hpc_user(user, hpc_username, hpc_name):
+
+    hpc = models.Hpc.objects.filter(name=hpc_name).first()
+
+    if hpc:
+        hpc_users = user.hpc_users.filter(name=hpc_username, hpc=hpc)
+    else:
+        hpc_users = user.hpc_users.filter(name=hpc_username)
+
+    if not hpc_users.exists():
+        try:
+            hpc_user = user.session_settings.selected_hpc_user
+            return hpc_user
+        except:
+            raise Exception(f"No HPC user selected and no default for {user}")
+    elif len(hpc_users) > 1:
+        raise Exception(f"Multiple HPCs exist for username {hpc_username}: {[hu.hpc.name for hu in hpc_users]}")
+
+    return hpc_users.first()
+
+
+def find_pipeline_step(pipeline_name, task_name):
+
+    if pipeline_name is None:
+        raise Exception(f"No pipeline supplied")
+
+    if task_name is None:
+        raise Exception(f"No task supplied")
+
+    pipeline = models.Pipeline.objects.filter(name=pipeline_name).first()
+    if not pipeline:
+        raise Exception("Could not find pipeline {pipeline_name}")
+
+    # Select pipeline step
+    pipeline_step = pipeline.steps.filter(task__name=task_name).first()
+    if not pipeline_step:
+        raise Exception(f"Could not find task '{task_name}' in pipeline '{pipeline_name}'")
+
+    return pipeline_step
+
+
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def load_job_environment(request):
 
     output_text = ""
-    status = 200
 
     # Select hpc_user
-    hpc = models.Hpc.objects.filter(name=request.GET.get('hpc')).first()
-    if hpc:
-        hpc_users = request.user.hpc_users.filter(name=request.GET.get('hpc_user'), hpc=hpc)
-    else:
-        hpc_users = request.user.hpc_users.filter(name=request.GET.get('hpc_user'))
-    if not hpc_users.exists():
-        try:
-            hpc_user = request.user.session_settings.selected_hpc_user
-            output_text += f"# HPC user (session default): {hpc_user}\n"
-        except:
-            output_text += f"# No HPC user selected and no default for {request.user}\n"
-            return HttpResponse(output_text, content_type="text/plain", status=400)
-    elif len(hpc_users) > 1:
-        output_text += f"# Multiple HPCs exist for username {request.GET.get('hpc_user')}: {[hu.hpc.name for hu in hpc_users]}. Please specify using query parameter 'hpc'.\n"
+    try:
+        hpc_user = find_hpc_user(request.user, request.GET.get('hpc_user'), request.GET.get('hpc'))
+    except Exception as e:
+        output_text += f"\nERROR: {e}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
-    else:
-        hpc_user = hpc_users.first()
-        output_text += f"\n# HPC user (selected): {hpc_user}\n"
 
     try:
         # Write out HPC user settings
         output_text += hpc_user.hpc_user_settings.write_exports()
     except:
-        output_text += f"# Cannot find settings for HPC user {hpc_user}. Returning error 400.\n"
+        output_text += f"\nERROR: Cannot find settings for HPC user {hpc_user}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
-    # Select pipeline
-    pipeline_name = request.GET.get('pipeline')
-    if pipeline_name is not None:
-        pipeline = models.Pipeline.objects.filter(name=pipeline_name).first()
-        if not pipeline:
-            output_text += f"# Could not find pipeline {pipeline_name}\n"
-    else:
-        pipeline = None
 
-    if not pipeline:
-        output_text += f"# No pipeline selected. Returning error 400.\n"
+    try:
+        pipeline_step = find_pipeline_step(
+            request.GET.get('pipeline'),
+            request.GET.get('task')
+        )
+    except Exception as e:
+        output_text += f"\nERROR: {e}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    pipeline = pipeline_step.pipeline
+    task = pipeline_step.task
 
     output_text += f"\n# Pipeline (selected): {pipeline.name}\n"
-
-    # Select pipeline step
-    task_name = request.GET.get('task')
-    if not task_name:
-        output_text += f"# No task selected. Returning error 400.\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
-
-    output_text += f"# Task: {task_name}\n"
-
-    pipeline_step = pipeline.steps.filter(task__name=task_name).first()
-    if not pipeline_step:
-        output_text += f"# Could not find task '{task_name}' in pipeline '{pipeline.name}'\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
+    output_text += f"# Task: {task.name}\n"
 
     slurm_settings = models.SlurmSettings.objects.filter(pipeline_step=pipeline_step).first()
     if not slurm_settings:
@@ -567,4 +582,82 @@ def load_job_environment(request):
 
     output_text += f"export GPMOBSSCRIPT={pipeline_step.obs_script}\n"
 
-    return HttpResponse(output_text, content_type="text/plain", status=status)
+    return HttpResponse(output_text, content_type="text/plain", status=200)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def create_processing_job(request):
+    '''
+    Creates new Processing objects
+    '''
+    output_text = ""
+
+    try:
+        obs_ids = [int(o) for o in request.GET.get('obs_ids').split(',')]
+    except Exception as e:
+        output_text += f"\nERROR: obs_ids is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Select hpc_user and their settings
+    try:
+        hpc_user = find_hpc_user(request.user, request.GET.get('hpc_user'), request.GET.get('hpc'))
+    except Exception as e:
+        output_text += f"\nERROR: {e}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    if hpc_user.hpc_user_settings is None:
+        output_text += f"\nERROR: No settins exist for {hpc_user}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    hpc_user_settings = hpc_user.hpc_user_settings
+
+    # Select the pipeline step
+    try:
+        pipeline_step = find_pipeline_step(
+            request.GET.get('pipeline'),
+            request.GET.get('task')
+        )
+    except Exception as e:
+        output_text += f"\n{e}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    pipeline = pipeline_step.pipeline
+    task = pipeline_step.task
+
+    slurm_settings = models.SlurmSettings.objects.filter(pipeline_step=pipeline_step).first()
+    if not slurm_settings:
+        output_text = f"# Could not find SLURM settings for pipeline step {pipeline_step}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    stdout = f"{pipeline_step.obs_script}_%a.o%A"
+    stderr = f"{pipeline_step.obs_script}_%a.e%A"
+
+    for obs_id in obs_ids:
+        observation = models.Observation.objects.filter(obs=obs_id).first()
+        if observation is None:
+            output_text += f"Observation {obs_id} not found in database. Skipping.\n"
+            continue
+
+        if len(obs_ids) > 1:
+            batch_file = f"{pipeline_step.obs_script}_{obs_ids[0]}-{obs_ids[-1]}.sh"
+        else:
+            batch_file = f"{pipeline_step.obs_script}_{obs_id}.sh"
+
+        processing = models.Processing(
+            obs=observation,
+            cluster=slurm_settings.cluster,
+            batch_file=batch_file,
+            stdout=stdout,
+            stderr=stderr,
+            batch_file_path=hpc_user_settings.scriptdir,
+            stdout_path=hpc_user_settings.logdir,
+            stderr_path=hpc_user_settings.logdir,
+            hpc_user=hpc_user,
+            task=task,
+        )
+        output_text += f"Added processing job for {obs_id}\n"
+        processing.save()
+
+    return HttpResponse(output_text, content_type="text/plain", status=200)

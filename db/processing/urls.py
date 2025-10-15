@@ -18,5 +18,6 @@ urlpatterns = [
 
     re_path(f'^api/load_profile$', views.load_profile, name="load_profile"),
     re_path(f'^api/load_job_environment$', views.load_job_environment, name="load_job_environment"),
+    re_path(f'^api/create_processing_job$', views.create_processing_job, name="create_processing_job"),
     path('', include('django.contrib.auth.urls')),
 ]
