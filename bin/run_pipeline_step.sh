@@ -52,8 +52,8 @@ then
 fi
 
 # Get job enviroment
-exports="$(curl -X GET -H "Authorization: Token ${GPMDBTOKEN}" -H "Accept: application/json" "https://gpm.mwa-image-plane.cloud.edu.au/processing/api/load_job_environment?pipeline=${pipeline}&task=${step}&hpc=${hpc}&hpc_user=${whoami}")"
-echo "${exports}"
+exports="$(curl -s -S -X GET -H "Authorization: Token ${GPMDBTOKEN}" -H "Accept: application/json" "https://gpm.mwa-image-plane.cloud.edu.au/processing/api/load_job_environment?pipeline=${pipeline}&task=${step}&hpc=${hpc}&hpc_user=${whoami}")"
+#echo "${exports}"
 eval "${exports}"
 
 # Establish job array options
@@ -61,6 +61,10 @@ if [[ -f ${obsnum} ]]
 then
     numfiles=$(wc -l "${obsnum}" | awk '{print $1}')
     jobarray="--array=1-${numfiles}"
+    if [ ! -z ${GPMMAXARRAYJOBS} ]
+    then
+        jobarray="${jobarray}%${GPMMAXARRAYJOBS}"
+    fi
 else
     numfiles=1
     jobarray=''
@@ -77,7 +81,7 @@ then
     fi
 fi
 
-script="${GPMSCRIPT}/${GPMOBSSCRIPT}_${obsnum}.sh"
+script="${GPMSCRIPT}/${GPMOBSSCRIPT}_$(basename ${obsnum}).sh"
 
 cat "${GPMBASE}/templates/${GPMOBSSCRIPT}.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" > "${script}"
 
@@ -144,8 +148,8 @@ jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} Follow progress here:"
 
 # Add rows to the database 'processing' table that will track the progress of this submission
-${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task='flag' --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
-${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
+#${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task="${step}" --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
+#${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
 echo "STDOUTs: ${output}"
 echo "STDERRs: ${error}"
