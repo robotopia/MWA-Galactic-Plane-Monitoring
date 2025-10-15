@@ -127,8 +127,10 @@ echo "${exports}" >> ${sbatch_script}
 
 echo >> ${sbatch_script}
 echo "module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ':' | head -1)">> ${sbatch_script}
+echo >> ${sbatch_script}
 
-echo "singularity run ${GPMCONTAINER} ${script}" >> ${sbatch_script}
+echo "obsid=\${SLURM_ARRAY_TASK_ID}" >> ${sbatch_script}
+echo "singularity run ${GPMCONTAINER} ${script} \$obsid" >> ${sbatch_script}
 
 sub="sbatch ${depend} --export=ALL ${sbatch_script}"
 # Apparently, the --export=ALL in the script header doesn't work the same as the --export=ALL on the cmd line
