@@ -44,13 +44,14 @@ class YearListFilter(admin.SimpleListFilter):
         return [(str(year), str(year)) for year in range(min_year, max_year+1)]
 
     def queryset(self, request, queryset):
-        year_start = Time(f'{self.value()}-01-01 00:00:00', scale='utc', format='iso')
-        year_end   = Time(f'{self.value()}-12-31 23:59:59', scale='utc', format='iso')
-        return queryset.filter(obs__gte=year_start.gps, obs__lte=year_end.gps)
+        if self.value() is not None:
+            year_start = Time(f'{self.value()}-01-01 00:00:00', scale='utc', format='iso')
+            year_end   = Time(f'{self.value()}-12-31 23:59:59', scale='utc', format='iso')
+            return queryset.filter(obs__gte=year_start.gps, obs__lte=year_end.gps)
 
 @admin.register(ArrayJob)
 class ArrayJobAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'processing', 'obs', 'start_time', 'status']
+    list_display = ['pk', 'obs', 'processing__job_id', 'processing__pipeline_step', 'processing__cluster', 'start_time', 'status']
     list_filter = ['status', YearListFilter]
     autocomplete_fields = ['obs', 'cal_obs']
     search_fields = ['obs']

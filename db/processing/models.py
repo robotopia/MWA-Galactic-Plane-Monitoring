@@ -8,9 +8,16 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.urls import reverse
+
 import base64
 import os
 import paramiko
+
+# This is to get and use the absolute URL for this running server instance
+# (see GPM_URL)
+from dotenv import load_dotenv
+load_dotenv()
 
 User = get_user_model()
 
@@ -318,9 +325,9 @@ class Observation(models.Model):
     def __str__(self) -> str:
         return f"{self.obs}"
 
-    #@property
-    #def epoch(self):
-    #    return f"Epoch{(self.obs - 1335398418)//86400:04d}"
+    @property
+    def antenna_flags_as_str(self, delimiter=' '):
+        return delimiter.join([str(af.antenna) for af in models.AntennaFlag.filter(start_obs_id__lte=self.obs, end_obs_id__gte=self.obs)])
 
     class Meta:
         managed = False
@@ -386,6 +393,29 @@ class Processing(models.Model):
     def stderr_abs_path(self):
         return f'{self.stderr_path.path}/{self.stderr}'
 
+    def set_status_curl_command_for_sbatch_scripts(self, status):
+        return f"""
+curl -s -S -G \\
+     -X POST \\
+     -H "Authorization: Token $GPMDBTOKEN" \\
+     -H "Accept: application/json" \\
+     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
+     --data-urlencode "obs_id=${{obs_id}}" \\
+     --data-urlencode "status={status}" \\
+     "https://{os.getenv('GPM_URL')}{reverse('update_processing_job_status')}"
+"""
+
+    def get_datadir_curl_command_for_sbatch_scripts(self):
+        return f"""
+curl -s -S -G \\
+     -X POST \\
+     -H "Authorization: Token $GPMDBTOKEN" \\
+     -H "Accept: application/json" \\
+     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
+     --data-urlencode "obs_id=${{obs_id}}" \\
+     "https://{os.getenv('GPM_URL')}{reverse('get_datadir')}"
+"""
+
     @property
     def sbatch(self):
 
@@ -412,14 +442,28 @@ class Processing(models.Model):
         script += self.hpc_user.hpc_user_settings.write_exports()
 
         script += '\n'
+        script += 'export obsnum=${SLURM_ARRAY_TASK_ID}\n'
+        script += 'export datadir=$(' + self.get_datadir_curl_command_for_sbatch_scripts() + ')\n'
+
+        script += "\n# Set the status of this job to 'started'"
+        script += self.set_status_curl_command_for_sbatch_scripts("started")
+
+        script += '\n'
         script += '# Load singularity dynamically\n'
         script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
 
         script += '\n'
         script += f'# Run {self.pipeline_step.obs_script} script\n'
         script += f'script={self.batch_file_abs_path}\n'
-        script += 'obsid=${SLURM_ARRAY_TASK_ID}\n'
-        script += 'singularity run ${GPMCONTAINER} ${script} ${obsid}\n'
+        script += 'singularity run ${GPMCONTAINER} ${script} ${obsnum} ${datadir}\n'
+
+        script += '\n# Handle script errors'
+        script += '\nif [ $? -eq 0]; then'
+        script += self.set_status_curl_command_for_sbatch_scripts("finished")
+        script += '\nelse'
+        script += self.set_status_curl_command_for_sbatch_scripts("failed")
+        script += '\nfi'
+
 
         return script
 
@@ -439,6 +483,14 @@ class ArrayJob(models.Model):
     end_time = models.IntegerField(blank=True, null=True)
     cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_array_jobs')
     status = models.TextField(blank=True, null=True)
+
+    @property
+    def datadir(self):
+        hus = self.processing.hpc_user.hpc_user_settings
+        if hus is None:
+            return None
+
+        return f'{hus.scratchdir.path}/{self.obs.epoch}/{self.obs.obs}'
 
     class Meta:
         managed = False

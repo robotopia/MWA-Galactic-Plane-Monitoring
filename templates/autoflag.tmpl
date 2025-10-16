@@ -2,49 +2,12 @@
 
 set -x
 
-obsnum=OBSNUM
-
-# If obsnum is a file, then we are in an array job
-if [[ -f ${obsnum} ]]
-then
-    taskid=${SLURM_ARRAY_TASK_ID}
-    jobid=${SLURM_ARRAY_JOB_ID}
-
-    echo "obsfile ${obsnum}"
-    obsnum=$(sed -n -e ${SLURM_ARRAY_TASK_ID}p ${obsnum})
-    echo "autoflag obsid ${obsnum}"
-else
-    taskid=1
-    jobid=${SLURM_JOB_ID}
-fi
-
-echo "jobid: ${jobid}"
-echo "taskid: ${taskid}"
-
-function test_fail {
-if [[ $1 != 0 ]]
-then
-    $GPMBASE/gpm/bin/track_task.py fail --jobid=${jobid} --taskid=${taskid} --finish_time=`date +%s`
-    exit $1
-fi
-}
-
-# start
-$GPMBASE/gpm/bin/track_task.py start --jobid=${jobid} --taskid=${taskid} --start_time=`date +%s`
-
-#cores=`grep -P '^core id\t' /proc/cpuinfo  | wc -l`
+obsnum=$1
 
 epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
 datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
 
 cd "${datadir}" || exit 1
-
-#metafits="${obsnum}.metafits"
-#if [[ ! -e ${metafits} ]]
-#then
-#    wget "http://mwa-metadata01.pawsey.org.au/metadata/fits?obs_id=${obsnum}" -O ${metafits}
-#    test_fail $?
-#fi
 
 # Set up telescope-configuration-dependent options
 
@@ -55,6 +18,4 @@ then
     echo "Flagging tiles $flags"
     flagantennae ${obsnum}.ms $flags
 fi
-
-$GPMBASE/gpm/bin/track_task.py finish --jobid=${jobid} --taskid=${taskid} --finish_time=`date +%s`
 

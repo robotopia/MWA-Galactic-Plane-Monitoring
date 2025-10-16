@@ -676,3 +676,84 @@ def create_processing_job(request):
         output_text += f"Added processing job for {obs_id}\n"
 
     return HttpResponse(output_text, content_type="text/plain", status=200)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def update_processing_job_status(request):
+
+    output_text = ""
+
+    # Parse all required parameters
+    job_id = request.GET.get('job_id')
+    if job_id is None:
+        output_text += f"\nERROR: job_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    obs_id = request.GET.get('obs_id')
+    if obs_id is None:
+        output_text += f"\nERROR: obs_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    status = request.GET.get('status')
+    if status is None:
+        output_text += f"\nERROR: status is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Get the relevant Processing and ArrayJob objects and make sure they exist
+    processing = models.Processing.objects.filter(job_id=job_id, hpc_user__auth_users=request.user).first()
+    if processing is None:
+        output_text += f"\nERROR: Could not find processing job with job_id = {job_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    array_job = processing.array_jobs.filter(obs__obs=obs_id).first()
+    if array_job is None:
+        output_text += f"\nERROR: Could not find array job for ObsID = {obs_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Update the job's status
+    array_job.status = status
+    if status == 'started':
+        array_job.start_time = int(Time.now().unix)
+    elif status in ['failed', 'finished']:
+        array_job.end_time = int(Time.now().unix)
+
+    try:
+        array_job.save()
+    except Exception as e:
+        output_text += f"\nERROR: {e}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    output_text += f"\nSet status of JobID {processing.job_id}, Observation {array_job.obs.obs} to '{status}'\n"
+    return HttpResponse(output_text, content_type="text/plain", status=200)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_datadir(request):
+
+    # Parse all required parameters
+    job_id = request.GET.get('job_id')
+    if job_id is None:
+        output_text = f"\n# ERROR: job_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    obs_id = request.GET.get('obs_id')
+    if obs_id is None:
+        output_text = f"\n# ERROR: obs_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Get the relevant Processing and ArrayJob objects and make sure they exist
+    processing = models.Processing.objects.filter(job_id=job_id, hpc_user__auth_users=request.user).first()
+    if processing is None:
+        output_text = f"\n# ERROR: Could not find processing job with job_id = {job_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    array_job = processing.array_jobs.filter(obs__obs=obs_id).first()
+    if array_job is None:
+        output_text = f"\n# ERROR: Could not find array job for ObsID = {obs_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    return HttpResponse(array_job.datadir, content_type="text/plain", status=200)
