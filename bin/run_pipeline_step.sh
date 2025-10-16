@@ -69,14 +69,13 @@ fi
 
 # Create an sbatch script
 sbatch_script=run_GPM_$(date +'%s').sbatch
-curl -s -S -X GET -H "Authorization: Token ${GPMDBTOKEN}" -H "Accept: application/json" "https://gpm.mwa-image-plane.cloud.edu.au/processing/api/create_sbatch_script?pipeline=${pipeline}&task=${task}&hpc=${GPMHPC}&hpc_user=${whoami}&obs_ids=${obs_ids}" >> ${sbatch_script}
+curl -s -S -X GET -H "Authorization: Token ${GPMDBTOKEN}" -H "Accept: application/json" "${GPMURL}/processing/api/create_sbatch_script?pipeline=${pipeline}&task=${task}&hpc=${GPMHPC}&hpc_user=${whoami}&obs_ids=${obs_ids}" >> ${sbatch_script}
 
 sub="sbatch ${depend} --export=ALL ${sbatch_script}"
 # Apparently, the --export=ALL in the script header doesn't work the same as the --export=ALL on the cmd line
 
 if [[ ! -z ${tst} ]]
 then
-    echo "script is ${script}"
     echo "submit via:"
     echo "${sub}"
     exit 0
@@ -85,8 +84,4 @@ fi
 # submit job
 jobid=($(${sub}))
 jobid=${jobid[3]}
-echo "Submitted ${script} as ${jobid} Follow progress here:"
-
-echo "STDOUTs: ${output}"
-echo "STDERRs: ${error}"
-
+echo "Submitted ${sbatch_script} as ${jobid}"

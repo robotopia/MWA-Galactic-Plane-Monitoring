@@ -4,6 +4,7 @@ from django.utils.http import urlencode
 from django.contrib.auth.decorators import login_required
 from processing.hpc_login import hpc_login_required
 from django.db.models import Q
+from django.conf import settings
 from . import models
 import json
 from collections import defaultdict
@@ -652,6 +653,7 @@ def create_processing_job(request):
         stderr_path=hpc_user_settings.logdir,
         hpc_user=hpc_user,
         pipeline_step=pipeline_step,
+        commit=settings.GITVERSION,
     )
 
     try:
@@ -793,7 +795,9 @@ def create_sbatch_script(request):
     if obs_ids is None:
         output_text = f"ERROR: obs_ids is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
-    obs_ids.sort()
+
+    # Keep only obs_ids that are already in the database
+    obs_ids = [str(obs.obs) for obs in models.Observation.objects.filter(obs__in=obs_ids).order_by('obs')]
 
     # Select hpc_user and their settings
     try:
@@ -844,6 +848,28 @@ def create_sbatch_script(request):
         stderr_path=hpc_user_settings.logdir,
         hpc_user=hpc_user,
         pipeline_step=pipeline_step,
+        commit=settings.GITVERSION,
     )
 
     return HttpResponse(processing.sbatch(obs_ids=obs_ids), content_type="text/plain", status=200)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_template(request):
+
+    task_name = request.GET.get('task')
+    if task_name is None:
+        return HttpResponse("ERROR: task is a required parameter\n", content_type="text/plain", status=400)
+
+    task = models.Task.objects.filter(name=task_name).first()
+    if task is None:
+        return HttpResponse(f"ERROR: task '{task_name}' not found\n", content_type="text/plain", status=400)
+
+    try:
+        contents = task.script_contents
+    except Exception as e:
+        return HttpResponse(f"ERROR: {e}\n", content_type='text/plain', status=400)
+
+    return HttpResponse(contents, content_type='text/plain', status=200)

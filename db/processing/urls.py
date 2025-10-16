@@ -23,5 +23,6 @@ urlpatterns = [
     re_path(f'^api/get_datadir$', views.get_datadir, name="get_datadir"),
     re_path(f'^api/get_antennaflags$', views.get_antennaflags, name="get_antennaflags"),
     re_path(f'^api/create_sbatch_script$', views.create_sbatch_script, name="create_sbatch_script"),
+    re_path(f'^api/get_template$', views.get_template, name="get_template"),
     path('', include('django.contrib.auth.urls')),
 ]

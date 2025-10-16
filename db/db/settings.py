@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-import os
+import os, subprocess
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -35,6 +35,12 @@ ALLOWED_HOSTS = [
     os.getenv("GPM_URL"),
     os.getenv("WAN_IP"),
 ]
+
+GITVERSION = subprocess.run(
+    ["git", "describe", "--tags", "--long"],
+    capture_output=True,
+    text=True,
+).stdout
 
 
 # Application definition

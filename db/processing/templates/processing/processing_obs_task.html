@@ -36,8 +36,13 @@
   <B>Data directory:</b> <code>{{ array_job.datadir }}</code>
   <br>
   <details>
-    <summary>sbatch</summary>
+    <summary><b>sbatch</b></summary>
     <pre>{{ array_job.processing.sbatch }}</pre>
+  </details>
+  <br>
+  <details>
+    <summary><b>script</b></summary>
+    <pre>{{ array_job.processing.pipeline_step.task.script_contents }}</pre>
   </details>
 </div>
 {% endfor %}

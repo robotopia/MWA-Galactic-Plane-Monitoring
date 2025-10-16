@@ -109,3 +109,7 @@ td.selected-cell {
   background-color: #ddd;
   border: 1px solid black;
 }
+
+.proc-obs-task summary:hover {
+  background-color: #aaa;
+}
