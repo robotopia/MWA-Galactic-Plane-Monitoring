@@ -2,14 +2,13 @@
 
 usage()
 {
-echo "run_pipeline_step.sh [-d dep] [-t] obsnum
+echo "run_pipeline_step.sh [-d dep] [-t] pipeline step obs_ids
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
   pipeline   : the name of the pipeline to run
   step       : the name of the pipeline step to run
-  hpc        : the name of the HPC system this is running on
-  obsnum     : the obsid to process, or a text file of obsids (newline separated). 
+  obs_ids     : the obsid to process, or a text file of obsids (newline separated). 
                A job-array task will be submitted to process the collection of obsids. " 1>&2;
 exit 1;
 }
@@ -40,26 +39,23 @@ shift  "$(($OPTIND -1))"
 step=$1
 
 shift  "$(($OPTIND -1))"
-hpc=$1
-
-shift  "$(($OPTIND -1))"
-obsnum=$1
+obs_ids=$1
 
 # if obsid is empty then just ping help
-if [[ -z ${obsnum} ]]
+if [[ -z ${obs_ids} ]]
 then
     usage
 fi
 
 # Get job enviroment
-exports="$(curl -s -S -X GET -H "Authorization: Token ${GPMDBTOKEN}" -H "Accept: application/json" "https://gpm.mwa-image-plane.cloud.edu.au/processing/api/load_job_environment?pipeline=${pipeline}&task=${step}&hpc=${hpc}&hpc_user=${whoami}")"
+exports="$(curl -s -S -X GET -H "Authorization: Token ${GPMDBTOKEN}" -H "Accept: application/json" "https://gpm.mwa-image-plane.cloud.edu.au/processing/api/load_job_environment?pipeline=${pipeline}&task=${step}&hpc=${GPMHPC}&hpc_user=${whoami}")"
 #echo "${exports}"
 eval "${exports}"
 
 # Establish job array options
-if [[ -f ${obsnum} ]]
+if [[ -f ${obs_ids} ]]
 then
-    numfiles=$(wc -l "${obsnum}" | awk '{print $1}')
+    numfiles=$(wc -l "${obs_ids}" | awk '{print $1}')
     jobarray="--array=1-${numfiles}"
     if [ ! -z ${GPMMAXARRAYJOBS} ]
     then
@@ -73,7 +69,7 @@ fi
 # set dependency
 if [[ ! -z ${dep} ]]
 then
-    if [[ -f ${obsnum} ]]
+    if [[ -f ${obs_ids} ]]
     then
         depend="--dependency=aftercorr:${dep}"
     else
@@ -81,14 +77,14 @@ then
     fi
 fi
 
-script="${GPMSCRIPT}/${GPMOBSSCRIPT}_$(basename ${obsnum}).sh"
+script="${GPMSCRIPT}/${GPMOBSSCRIPT}_$(basename ${obs_ids}).sh"
 
-cat "${GPMBASE}/templates/${GPMOBSSCRIPT}.tmpl" | sed -e "s:OBSNUM:${obsnum}:g" > "${script}"
+cat "${GPMBASE}/templates/${GPMOBSSCRIPT}.tmpl" | sed -e "s:OBSNUM:${obs_ids}:g" > "${script}"
 
 
-output="${GPMLOG}/${GPMOBSSCRIPT}_${obsnum}.o%A"
-error="${GPMLOG}/${GPMOBSSCRIPT}_${obsnum}.e%A"
-if [[ -f ${obsnum} ]]
+output="${GPMLOG}/${GPMOBSSCRIPT}_${obs_ids}.o%A"
+error="${GPMLOG}/${GPMOBSSCRIPT}_${obs_ids}.e%A"
+if [[ -f ${obs_ids} ]]
 then
     output="${output}_%a"
     error="${error}_%a"
