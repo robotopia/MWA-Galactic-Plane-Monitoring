@@ -2,16 +2,11 @@
 
 set -x
 
-obsnum=$1
-
-epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
-datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+obsnum="$1"
+datadir="$2"
+flags="$3"
 
 cd "${datadir}" || exit 1
-
-# Set up telescope-configuration-dependent options
-
-flags=$(${GPMBASE}/gpm_track.py obs_flagantennae --obs_id ${obsnum})
 
 if [[ ! -z ${flags} ]]
 then

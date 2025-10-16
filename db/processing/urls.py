@@ -21,5 +21,7 @@ urlpatterns = [
     re_path(f'^api/create_processing_job$', views.create_processing_job, name="create_processing_job"),
     re_path(f'^api/update_processing_job_status$', views.update_processing_job_status, name="update_processing_job_status"),
     re_path(f'^api/get_datadir$', views.get_datadir, name="get_datadir"),
+    re_path(f'^api/get_antennaflags$', views.get_antennaflags, name="get_antennaflags"),
+    re_path(f'^api/create_sbatch_script$', views.create_sbatch_script, name="create_sbatch_script"),
     path('', include('django.contrib.auth.urls')),
 ]

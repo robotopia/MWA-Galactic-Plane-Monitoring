@@ -327,7 +327,7 @@ class Observation(models.Model):
 
     @property
     def antenna_flags_as_str(self, delimiter=' '):
-        return delimiter.join([str(af.antenna) for af in models.AntennaFlag.filter(start_obs_id__lte=self.obs, end_obs_id__gte=self.obs)])
+        return delimiter.join([str(af.antenna) for af in AntennaFlag.objects.filter(start_obs_id__lte=self.obs, end_obs_id__gte=self.obs)])
 
     class Meta:
         managed = False
@@ -393,9 +393,20 @@ class Processing(models.Model):
     def stderr_abs_path(self):
         return f'{self.stderr_path.path}/{self.stderr}'
 
+    def create_processing_job_curl_command_for_sbatch_scripts(self):
+        return f"""curl -s -S -G \\
+     -X POST \\
+     -H "Authorization: Token $GPMDBTOKEN" \\
+     -H "Accept: application/json" \\
+     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
+     --data-urlencode "obs_id=${{obs_id}}" \\
+     --data-urlencode "pipeline={self.pipeline_step.pipeline.name}" \\
+     --data-urlencode "task={self.pipeline_step.task.name}" \\
+     "https://{os.getenv('GPM_URL')}{reverse('create_processing_job')}"
+"""
+
     def set_status_curl_command_for_sbatch_scripts(self, status):
-        return f"""
-curl -s -S -G \\
+        return f"""curl -s -S -G \\
      -X POST \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
@@ -406,9 +417,8 @@ curl -s -S -G \\
 """
 
     def get_datadir_curl_command_for_sbatch_scripts(self):
-        return f"""
-curl -s -S -G \\
-     -X POST \\
+        return f"""curl -s -S -G \\
+     -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
      --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
@@ -416,8 +426,21 @@ curl -s -S -G \\
      "https://{os.getenv('GPM_URL')}{reverse('get_datadir')}"
 """
 
-    @property
-    def sbatch(self):
+    def get_antennaflags_curl_command_for_sbatch_scripts(self):
+        return f"""curl -s -S -G \\
+     -X GET \\
+     -H "Authorization: Token $GPMDBTOKEN" \\
+     -H "Accept: application/json" \\
+     --data-urlencode "obs_id=${{obs_id}}" \\
+     "https://{os.getenv('GPM_URL')}{reverse('get_antennaflags')}"
+"""
+
+    def sbatch(self, obs_ids=None):
+        '''
+        Returns a string that represents the content of an sbatch file.
+        If obs_ids is None, the observations are drawn from this processing's
+        child ArrayJob objects.
+        '''
 
         hus = self.hpc_user.hpc_user_settings
         if hus is None:
@@ -434,35 +457,42 @@ curl -s -S -G \\
         script += f"#SBATCH --output={self.stdout_abs_path}\n"
         script += f"#SBATCH --error={self.stderr_abs_path}\n"
 
-        obss = [str(aj.obs.obs) for aj in self.array_jobs.all()]
-        array_string = ','.join(obss) + (f'%{hus.max_array_jobs}' if hus.max_array_jobs else '')
+        if obs_ids is None:
+            obs_ids = [str(aj.obs.obs) for aj in self.array_jobs.all()]
+        array_string = ','.join(obs_ids) + (f'%{hus.max_array_jobs}' if hus.max_array_jobs else '')
         script += f"#SBATCH --array={array_string}\n"
 
-        script += '\n'
+        script += '\n# Create entry in processing table for this job with status="started"\n'
+        script += self.create_processing_job_curl_command_for_sbatch_scripts()
+
+        script += '\n# Setup environment variables\n'
         script += self.hpc_user.hpc_user_settings.write_exports()
 
-        script += '\n'
-        script += 'export obsnum=${SLURM_ARRAY_TASK_ID}\n'
-        script += 'export datadir=$(' + self.get_datadir_curl_command_for_sbatch_scripts() + ')\n'
+        script += '\n# Variables that depend on which observation is being processed\n'
+        script += 'export obsnum="${SLURM_ARRAY_TASK_ID}"\n'
+        script += 'export datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts() + ')"\n'
+        if self.pipeline_step.task.name == 'flag':
+            script += 'export flags="$(' + self.get_antennaflags_curl_command_for_sbatch_scripts() + ')"\n'
 
-        script += "\n# Set the status of this job to 'started'"
-        script += self.set_status_curl_command_for_sbatch_scripts("started")
-
-        script += '\n'
-        script += '# Load singularity dynamically\n'
+        script += '\n# Load singularity dynamically\n'
         script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
 
-        script += '\n'
-        script += f'# Run {self.pipeline_step.obs_script} script\n'
+        script += f'\n# Run {self.pipeline_step.obs_script} script\n'
         script += f'script={self.batch_file_abs_path}\n'
-        script += 'singularity run ${GPMCONTAINER} ${script} ${obsnum} ${datadir}\n'
+        script += f'cp "$GPMBASE/templates/obs_{self.pipeline_step.obs_script}.sh" "${{script}}"\n'
 
-        script += '\n# Handle script errors'
-        script += '\nif [ $? -eq 0]; then'
+        # Compile the script-running line, with arguments appropriate for each script
+        if self.pipeline_step.task.name == 'flag':
+            script += 'singularity run ${GPMCONTAINER} ${script} ${obsnum} ${datadir} "${flags}"\n'
+        else:
+            script += 'singularity run ${GPMCONTAINER} ${script} ${obsnum} ${datadir}\n'
+
+        script += '\n# Handle script errors\n'
+        script += 'if [ $? -eq 0]; then\n'
         script += self.set_status_curl_command_for_sbatch_scripts("finished")
-        script += '\nelse'
+        script += 'else\n'
         script += self.set_status_curl_command_for_sbatch_scripts("failed")
-        script += '\nfi'
+        script += 'fi\n'
 
 
         return script
