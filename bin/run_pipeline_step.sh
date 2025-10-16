@@ -125,6 +125,19 @@ if [ ! -z $jobarray ];         then echo "#SBATCH ${jobarray}"                  
 echo >> ${sbatch_script}
 echo "${exports}" >> ${sbatch_script}
 
+echo '
+curl -s -S -G \
+     -X POST \
+     -H "Authorization: Token \${GPMDBTOKEN}" \
+     -H "Accept: application/json" \
+     --data-urlencode "pipeline=\${GPMPIPELINE}" \
+     --data-urlencode "task=\${GPMTASK}" \
+     --data-urlencode "hpc_user=${whoami}" \
+     --data-urlencode "hpc=$GPMHPC" \
+     --data-urlencode "job_id=$SLURM_JOB_ID" \
+     "https://gpm.mwa-image-plane.cloud.edu.au/processing/api/create_processing_job"
+' >> ${sbatch_script}
+
 echo >> ${sbatch_script}
 echo "module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ':' | head -1)">> ${sbatch_script}
 echo >> ${sbatch_script}
@@ -148,10 +161,6 @@ fi
 jobid=($(${sub}))
 jobid=${jobid[3]}
 echo "Submitted ${script} as ${jobid} Follow progress here:"
-
-# Add rows to the database 'processing' table that will track the progress of this submission
-#${GPMCONTAINER} ${GPMBASE}/gpm_track.py create_jobs --jobid="${jobid}" --task="${step}" --batch_file="${script}" --obs_file="${obsnum}" --stderr="${error}" --stdout="${output}"
-#${GPMCONTAINER} ${GPMBASE}/gpm_track.py queue_jobs --jobid="${jobid}" --submission_time="$(date +%s)"
 
 echo "STDOUTs: ${output}"
 echo "STDERRs: ${error}"

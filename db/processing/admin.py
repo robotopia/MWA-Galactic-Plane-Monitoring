@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import *
+from astropy.time import Time
+from django.db.models import Min, Max
 
 # Epoch filter
 class EpochListFilter(admin.SimpleListFilter):
@@ -36,21 +38,20 @@ class YearListFilter(admin.SimpleListFilter):
     parameter_name = "year"
 
     def lookups(self, request, model_admin):
-        return [
-            ("2022", "2022"),
-            ("2024", "2024"),
-        ]
+        result = Observation.objects.aggregate(Min('obs'), Max('obs'))
+        min_year = Time(result['obs__min'], format='gps', scale='utc').datetime.year
+        max_year = Time(result['obs__max'], format='gps', scale='utc').datetime.year
+        return [(str(year), str(year)) for year in range(min_year, max_year+1)]
 
     def queryset(self, request, queryset):
-        if self.value() == '2022':
-            return queryset.filter(obs__gte=1325030418, obs__lte=1356566417)
-        elif self.value() == '2024':
-            return queryset.filter(obs__gte=1388102418, obs__lte=1419724817)
+        year_start = Time(f'{self.value()}-01-01 00:00:00', scale='utc', format='iso')
+        year_end   = Time(f'{self.value()}-12-31 23:59:59', scale='utc', format='iso')
+        return queryset.filter(obs__gte=year_start.gps, obs__lte=year_end.gps)
 
 @admin.register(ArrayJob)
 class ArrayJobAdmin(admin.ModelAdmin):
     list_display = ['pk', 'processing', 'obs', 'start_time', 'status']
-    list_filter = ['status']
+    list_filter = ['status', YearListFilter]
     autocomplete_fields = ['obs', 'cal_obs']
     search_fields = ['obs']
 
@@ -86,7 +87,7 @@ class EpochAdmin(admin.ModelAdmin):
 
 @admin.register(EpochOverview)
 class EpochOverviewAdmin(admin.ModelAdmin):
-    list_display = ['job_id', 'obs', 'epoch', 'hpc_user', 'task', 'submission_time', 'status']
+    list_display = ['job_id', 'obs', 'epoch', 'hpc_user', 'task', 'status']
     list_filter = ['hpc_user', YearListFilter, 'task', 'status', 'epoch']
     date_hierarchy = 'submission_time'
 

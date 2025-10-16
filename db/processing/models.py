@@ -119,7 +119,6 @@ class EpochOverview(models.Model):
     epoch = models.CharField(max_length=9)
     hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING, related_name="epoch_overviews")
     task = models.ForeignKey("Task", on_delete=models.DO_NOTHING, related_name="epoch_overviews")
-    submission_time = models.DateTimeField(blank=True, null=True)
     status = models.TextField(blank=True, null=True)
     cal_usable = models.BooleanField(blank=True, null=True)
     cal_notes = models.TextField(blank=True, null=True)
@@ -366,9 +365,8 @@ class PipelineStep(models.Model):
 
 
 class Processing(models.Model):
-    job_id = models.CharField(max_length=127, blank=True, null=True)
+    job_id = models.CharField(max_length=127)
     cluster = models.ForeignKey("Cluster", on_delete=models.DO_NOTHING, related_name="array_jobs")
-    submission_time = models.IntegerField(blank=True, null=True)
     task = models.ForeignKey("Task", on_delete=models.DO_NOTHING, related_name="array_jobs")
     hpc_user = models.ForeignKey("HpcUser", on_delete=models.DO_NOTHING, related_name="array_jobs")
     batch_file = models.TextField(blank=True, null=True)
@@ -400,7 +398,7 @@ class Processing(models.Model):
     class Meta:
         managed = False
         db_table = 'processing'
-        ordering = ['-submission_time']
+        ordering = ['job_id']
         verbose_name_plural = "Processing"
 
 
