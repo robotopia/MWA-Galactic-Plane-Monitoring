@@ -35,10 +35,10 @@ done
 shift  "$(($OPTIND -1))"
 pipeline=$1
 
-shift  "$(($OPTIND -1))"
+shift
 task=$1
 
-shift  "$(($OPTIND -1))"
+shift
 obs_ids="$@"
 
 # if obsid is empty then just ping help
