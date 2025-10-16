@@ -137,8 +137,8 @@ class TaskClusterSettingAdmin(admin.ModelAdmin):
 
 @admin.register(Processing)
 class ProcessingAdmin(admin.ModelAdmin):
-    list_display = ['job_id', 'obs_id', 'hpc_user', 'task', 'submission_time', 'status']
-    list_filter = ['hpc_user', 'task', YearListFilter, EpochListFilter]
+    list_display = ['pk', 'job_id', 'hpc_user', 'pipeline_step']
+    list_filter = ['hpc_user', 'pipeline_step']
 
 @admin.register(Semester)
 class SemesterAdmin(admin.ModelAdmin):

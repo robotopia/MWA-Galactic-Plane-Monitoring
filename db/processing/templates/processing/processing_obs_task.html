@@ -17,24 +17,26 @@
   <code>{{ semester_plan_processing_detail.pipeline_step.command }} {{ obs.obs }}</code>
 </div>
 
-{% for processing in processings %}
+{% for array_job in array_jobs %}
 <div class="proc-obs-task">
-  <b>Processing code version:</b> {{ processing.commit|default:"[Not recorded]" }}
+  <b>Processing code version:</b> {{ array_job.processing.commit|default:"[Not recorded]" }}
   <br>
-  <b>Cluster:</b> {{ processing.cluster.name }}
-  <b>SLURM Job:</b> {{ processing.job_id }}
-  <b>Array job:</b> {{ processing.array_task_id }}
+  <b>Cluster:</b> {{ array_job.processing.cluster.name }}
+  <b>SLURM Job:</b> {{ array_job.processing.job_id }}
   <br>
-  <b>Submitted:</b> {{ processing.submission_time|unix_to_datetime|date:"Y-m-d H:i:s" }}
-  <b>Started:</b> {{ processing.start_time|unix_to_datetime|date:"Y-m-d H:i:s" }}
-  <b>Finished:</b> {{ processing.end_time|unix_to_datetime|date:"Y-m-d H:i:s" }}
+  <b>Started:</b> {{ array_job.start_time|unix_to_datetime|date:"Y-m-d H:i:s" }}
+  <b>Finished:</b> {{ array_job.end_time|unix_to_datetime|date:"Y-m-d H:i:s" }}
   <br>
-  <span class="{{ processing.status }}"><b>{{ processing.status|upper }}</b></span>
-  {% if processing.batch_file %}- <a href="{% url 'log_view' processing_id=processing.id logfile_type='batch' %}">Batch file</a>{% endif %}
-  {% if processing.stdout %}- <a href="{% url 'log_view' processing_id=processing.id logfile_type='stdout' %}">STDOUT</a>{% endif %}
-  {% if processing.stderr %}- <a href="{% url 'log_view' processing_id=processing.id logfile_type='stderr' %}">STDERR</a>{% endif %}
-  {% if processing.job_id %}- <a href="{% url 'log_view' processing_id=processing.id logfile_type='seff' %}">seff</a>{% endif %}
+  <span class="{{ array_job.status }}"><b>{{ array_job.status|upper }}</b></span>
+  {% if array_job.processing.batch_file %}- <a href="{% url 'log_view' processing_id=array_job.processing.id logfile_type='batch' %}">Batch file</a>{% endif %}
+  {% if array_job.processing.stdout %}- <a href="{% url 'log_view' processing_id=array_job.processing.id logfile_type='stdout' %}">STDOUT</a>{% endif %}
+  {% if array_job.processing.stderr %}- <a href="{% url 'log_view' processing_id=array_job.processing.id logfile_type='stderr' %}">STDERR</a>{% endif %}
+  {% if array_job.processing.job_id %}- <a href="{% url 'log_view' processing_id=array_job.processing.id logfile_type='seff' %}">seff</a>{% endif %}
   <br>
+  <details>
+    <summary>sbatch</summary>
+    <pre>{{ array_job.processing.sbatch }}</pre>
+  </details>
 </div>
 {% endfor %}
 

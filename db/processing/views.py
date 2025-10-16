@@ -177,11 +177,11 @@ def ProcessingObsTaskView(request, obs_id, task_id):
     if obs is None or task is None:
         return HttpResponse(status=404)
 
-    processings = models.Processing.objects.filter(
-        hpc_user=request.user.session_settings.selected_hpc_user,
-        array_jobs__obs=obs,
-        task=task,
-    ).order_by('submission_time')
+    array_jobs = models.ArrayJob.objects.filter(
+        processing__hpc_user=request.user.session_settings.selected_hpc_user,
+        obs=obs,
+        processing__pipeline_step__task=task,
+    ).order_by('processing__job_id')
 
     semester_plan_processing_detail = models.SemesterPlanProcessingDetail.objects.filter(
         semester=request.user.session_settings.selected_semester,
@@ -190,13 +190,13 @@ def ProcessingObsTaskView(request, obs_id, task_id):
     ).filter(
         Q(hpc_user=request.user.session_settings.selected_hpc_user) | Q(hpc_user__isnull=True)
     ).first()
-    print(f'{semester_plan_processing_detail = }')
+    #print(f'{semester_plan_processing_detail = }')
 
     context = {
         'obs': obs,
         'task': task,
         'semester_plan_processing_detail': semester_plan_processing_detail,
-        'processings': processings,
+        'array_jobs': array_jobs,
     }
 
     return render(request, 'processing/processing_obs_task.html', context)
@@ -548,8 +548,8 @@ def load_job_environment(request):
         output_text += f"\nERROR: {e}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
+    # Write out HPC user settings
     try:
-        # Write out HPC user settings
         output_text += hpc_user.hpc_user_settings.write_exports()
     except:
         output_text += f"\nERROR: Cannot find settings for HPC user {hpc_user}\n"
@@ -652,7 +652,7 @@ def create_processing_job(request):
         stdout_path=hpc_user_settings.logdir,
         stderr_path=hpc_user_settings.logdir,
         hpc_user=hpc_user,
-        task=task,
+        pipeline_step=pipeline_step,
     )
 
     try:

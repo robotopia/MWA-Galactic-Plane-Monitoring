@@ -232,10 +232,7 @@ class HpcUserSetting(models.Model):
         output_text = ""
         output_text += f"export GPMBASE={self.basedir.path}\n"
         output_text += f"export GPMSCRATCH={self.scratchdir.path}\n"
-        output_text += f"export GPMLOG={self.logdir.path}\n"
         output_text += f"export GPMSCRIPT={self.scriptdir.path}\n"
-        output_text += f"export GPMACCOUNT={self.account}\n"
-        output_text += f"export GPMMAXARRAYJOBS={self.max_array_jobs}\n"
         output_text += f"export GPMCONTAINER={self.container}\n"
         return output_text
 
@@ -367,7 +364,7 @@ class PipelineStep(models.Model):
 class Processing(models.Model):
     job_id = models.CharField(max_length=127)
     cluster = models.ForeignKey("Cluster", on_delete=models.DO_NOTHING, related_name="array_jobs")
-    task = models.ForeignKey("Task", on_delete=models.DO_NOTHING, related_name="array_jobs")
+    pipeline_step = models.ForeignKey("PipelineStep", on_delete=models.DO_NOTHING, related_name="array_jobs")
     hpc_user = models.ForeignKey("HpcUser", on_delete=models.DO_NOTHING, related_name="array_jobs")
     batch_file = models.TextField(blank=True, null=True)
     batch_file_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_batch_file")
@@ -378,22 +375,53 @@ class Processing(models.Model):
     commit = models.CharField(max_length=256)
 
     @property
-    def batch_file_full_path(self):
+    def batch_file_abs_path(self):
         return f'{self.batch_file_path.path}/{self.batch_file}'
 
     @property
-    def stdout_full_path(self):
-        return f'{self.stdout_path.path}/{self.stdout.replace("%a", str(self.obs.obs)).replace("%A", str(self.job_id))}'
+    def stdout_abs_path(self):
+        return f'{self.stdout_path.path}/{self.stdout}'
 
     @property
-    def stderr_full_path(self):
-        return f'{self.stderr_path.path}/{self.stderr.replace("%a", str(self.obs.obs)).replace("%A", str(self.job_id))}'
+    def stderr_abs_path(self):
+        return f'{self.stderr_path.path}/{self.stderr}'
 
     @property
-    def slurm_id(self) -> str:
-        if self.array_task_id:
-            return f'{self.job_id}_{self.array_task_id}'
-        return f'{self.job_id}'
+    def sbatch(self):
+
+        hus = self.hpc_user.hpc_user_settings
+        if hus is None:
+            return f"ERROR: user settings for {self.hpc_user} do not exist"
+
+        script  = "#!/bin/bash -l\n\n"
+        script += "#SBATCH --export=ALL\n"
+        if hus.account is not None:
+            script += f"#SBATCH --account={hus.account}\n"
+
+        slurm_settings = self.pipeline_step.slurm_settings.filter(cluster=self.cluster).first()
+        script += slurm_settings.write_slurm_header()
+
+        script += f"#SBATCH --output={self.stdout_abs_path}\n"
+        script += f"#SBATCH --error={self.stderr_abs_path}\n"
+
+        obss = [str(aj.obs.obs) for aj in self.array_jobs.all()]
+        array_string = ','.join(obss) + (f'%{hus.max_array_jobs}' if hus.max_array_jobs else '')
+        script += f"#SBATCH --array={array_string}\n"
+
+        script += '\n'
+        script += self.hpc_user.hpc_user_settings.write_exports()
+
+        script += '\n'
+        script += '# Load singularity dynamically\n'
+        script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
+
+        script += '\n'
+        script += f'# Run {self.pipeline_step.obs_script} script\n'
+        script += f'script={self.batch_file_abs_path}\n'
+        script += 'obsid=${SLURM_ARRAY_TASK_ID}\n'
+        script += 'singularity run ${GPMCONTAINER} ${script} ${obsid}\n'
+
+        return script
 
     class Meta:
         managed = False
