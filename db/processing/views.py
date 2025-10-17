@@ -587,104 +587,6 @@ def load_job_environment(request):
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def create_processing_job(request):
-    '''
-    Creates new Processing objects
-    Required parameters = job_id, obs_ids, pipeline, task
-    '''
-    job_id = request.GET.get('job_id')
-    if job_id is None:
-        output_text = f"ERROR: job_id is a required parameter\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
-
-    obs_ids = request.GET.get('obs_ids').split(',')
-    if obs_ids is None:
-        output_text = f"ERROR: obs_ids is a required parameter\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
-    obs_ids.sort()
-
-    # Select hpc_user and their settings
-    try:
-        hpc_user = find_hpc_user(request.user, request.GET.get('hpc_user'), request.GET.get('hpc'))
-    except Exception as e:
-        output_text = f"ERROR: {e}\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
-
-    if hpc_user.hpc_user_settings is None:
-        output_text = f"ERROR: No settins exist for {hpc_user}\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
-
-    hpc_user_settings = hpc_user.hpc_user_settings
-
-    # Select the pipeline step
-    try:
-        pipeline_step = find_pipeline_step(
-            request.GET.get('pipeline'),
-            request.GET.get('task')
-        )
-    except Exception as e:
-        output_text = f"ERROR: {e}\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
-
-    pipeline = pipeline_step.pipeline
-    task = pipeline_step.task
-
-    slurm_settings = models.SlurmSettings.objects.filter(pipeline_step=pipeline_step).first()
-    if not slurm_settings:
-        output_text = f"ERROR: Could not find SLURM settings for pipeline step {pipeline_step}\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
-
-    stdout = f"{pipeline_step.obs_script}_%a.o%A"
-    stderr = f"{pipeline_step.obs_script}_%a.e%A"
-
-    if len(obs_ids) > 1:
-        batch_file = f"{pipeline_step.obs_script}_{obs_ids[0]}-{obs_ids[-1]}.sh"
-    else:
-        batch_file = f"{pipeline_step.obs_script}_{obs_ids[0]}.sh"
-
-    processing = models.Processing(
-        job_id=job_id,
-        cluster=slurm_settings.cluster,
-        batch_file=batch_file,
-        stdout=stdout,
-        stderr=stderr,
-        batch_file_path=hpc_user_settings.scriptdir,
-        stdout_path=hpc_user_settings.logdir,
-        stderr_path=hpc_user_settings.logdir,
-        hpc_user=hpc_user,
-        pipeline_step=pipeline_step,
-        commit=settings.GITVERSION,
-    )
-
-    try:
-        processing.save()
-    except Exception as e:
-        output_text = f"ERROR: {e}\n"
-        return HttpResponse(output_text, content_type="text/plain", status=400)
-
-    output_text = ""
-    for obs_id in obs_ids:
-        obs = models.Observation.objects.filter(obs=obs_id).first()
-        if obs is None:
-            output_text += f"Observation {obs_id} not found in database. Skipping.\n"
-            continue
-
-        array_job = models.ArrayJob(
-            processing=processing,
-            obs=obs,
-            cal_obs=obs.cal_obs if task.name == 'apply_cal' else None,
-            start_time=int(Time.now().unix),
-            status='started',
-        )
-        array_job.save()
-        output_text += f"Added processing job for {obs_id}\n"
-
-    return HttpResponse(output_text, content_type="text/plain", status=200)
-
-
-@api_view(['POST'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
 def update_processing_job_status(request):
 
     output_text = ""
@@ -786,18 +688,21 @@ def get_antennaflags(request):
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def create_sbatch_script(request):
+def create_processing_job(request):
     '''
-    Creates new Processing objects
+    Creates new Processing and ArrayJob objects, and responds with text/plain of sbatch script
     Required parameters = obs_ids, pipeline, task, hpc_user, hpc
+    Optional parameters = sbatch(=1)
     '''
-    obs_ids = request.GET.get('obs_ids').split(',')
-    if obs_ids is None:
+    all_obs_ids = request.GET.get('obs_ids').split(',')
+    if all_obs_ids is None:
         output_text = f"ERROR: obs_ids is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     # Keep only obs_ids that are already in the database
-    obs_ids = [str(obs.obs) for obs in models.Observation.objects.filter(obs__in=obs_ids).order_by('obs')]
+    obss = models.Observation.objects.filter(obs__in=all_obs_ids).order_by('obs')
+    obs_ids = [str(obs.obs) for obs in obss]
+    #invalid_obs_ids = list(set(all_obs_ids) - set(obs_ids))
 
     # Select hpc_user and their settings
     try:
@@ -830,13 +735,13 @@ def create_sbatch_script(request):
         output_text = f"ERROR: Could not find SLURM settings for pipeline step {pipeline_step}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
-    stdout = f"{pipeline_step.obs_script}_%a.o%A"
-    stderr = f"{pipeline_step.obs_script}_%a.e%A"
+    stdout = f"{pipeline_step.task.script_name}_%a.o%A"
+    stderr = f"{pipeline_step.task.script_name}_%a.e%A"
 
     if len(obs_ids) > 1:
-        batch_file = f"{pipeline_step.obs_script}_{obs_ids[0]}-{obs_ids[-1]}.sh"
+        batch_file = f"{pipeline_step.task.script_name}_{obs_ids[0]}-{obs_ids[-1]}.sh"
     else:
-        batch_file = f"{pipeline_step.obs_script}_{obs_ids[0]}.sh"
+        batch_file = f"{pipeline_step.task.script_name}_{obs_ids[0]}.sh"
 
     processing = models.Processing(
         cluster=slurm_settings.cluster,
@@ -851,7 +756,25 @@ def create_sbatch_script(request):
         commit=settings.GITVERSION,
     )
 
-    return HttpResponse(processing.sbatch(obs_ids=obs_ids), content_type="text/plain", status=200)
+    try:
+        processing.save()
+    except Exception as e:
+        return HttpResponse(f'ERROR: {e}', content_type="text/plain", status=400)
+
+    for i, obs in enumerate(obss):
+        array_job = models.ArrayJob(
+            processing=processing,
+            array_idx=i+1,
+            obs=obs,
+            cal_obs=obs.cal_obs if task.name == 'apply_cal' else None,
+            status='queued', # Do this by default, even though it'll be misleading if the job doesn't actually get submitted for some reason
+        )
+        array_job.save()
+
+    if request.GET.get('sbatch') == '1':
+        return HttpResponse(processing.sbatch, content_type="text/plain", status=200)
+    else:
+        return HttpResponse(f"Processing object created (id={processing.id}) for Observations {', '.join(obs_ids)}", content_type="text/plain", status=200)
 
 
 @api_view(['GET'])
@@ -873,3 +796,29 @@ def get_template(request):
         return HttpResponse(f"ERROR: {e}\n", content_type='text/plain', status=400)
 
     return HttpResponse(contents, content_type='text/plain', status=200)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def update_jobid(request):
+
+    processing_id = request.GET.get('processing_id')
+    if processing_id is None:
+        return HttpResponse("ERROR: processing_id is a required parameter\n", content_type="text/plain", status=400)
+
+    processing = models.Processing.objects.get(pk=processing_id)
+    if processing is None:
+        return HttpResponse(f"ERROR: processing ID {processing_id} not found\n", content_type="text/plain", status=400)
+
+    job_id = request.GET.get('job_id')
+    try:
+        processing.job_id = job_id
+        processing.save()
+    except Exception as e:
+        return HttpResponse(f"ERROR: {e}\n", content_type='text/plain', status=400)
+
+    return HttpResponse(f"job_id={job_id} set for processing ID {processing_id}", content_type='text/plain', status=200)
+
+
+

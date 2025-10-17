@@ -120,7 +120,7 @@ class EpochCompletion(models.Model):
 
 class EpochOverview(models.Model):
     # This model points to a database VIEW
-    job_id = models.IntegerField(primary_key=True)
+    job_id = models.CharField(max_length=127)
     obs = models.ForeignKey('Observation', models.DO_NOTHING, related_name="epoch_overviews")
     cal_obs = models.ForeignKey('Observation', models.DO_NOTHING, blank=True, null=True, related_name="cal_epoch_overviews")
     epoch = models.CharField(max_length=9)
@@ -369,7 +369,8 @@ class PipelineStep(models.Model):
 
 
 class Processing(models.Model):
-    job_id = models.CharField(max_length=127)
+    job_id = models.CharField(max_length=127, null=True, blank=True,
+                              help_text="SLURM job ID. If null, then job has not been submitted to the queue.")
     cluster = models.ForeignKey("Cluster", on_delete=models.DO_NOTHING, related_name="array_jobs")
     pipeline_step = models.ForeignKey("PipelineStep", on_delete=models.DO_NOTHING, related_name="array_jobs")
     hpc_user = models.ForeignKey("HpcUser", on_delete=models.DO_NOTHING, related_name="array_jobs")
@@ -448,16 +449,31 @@ class Processing(models.Model):
      "https://{os.getenv('GPM_URL')}{reverse('get_template')}" > ${{script}}
 """
 
-    def sbatch(self, obs_ids=None):
+    def update_jobid_curl_command_for_sbatch_scripts(self):
+        return f"""curl -s -S -G \\
+     -X POST \\
+     -H "Authorization: Token $GPMDBTOKEN" \\
+     -H "Accept: application/json" \\
+     --data-urlencode "processing_id={self.id}" \\
+     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
+     "https://{os.getenv('GPM_URL')}{reverse('update_jobid')}" > ${{script}}
+"""
+
+    @property
+    def sbatch(self):
         '''
         Returns a string that represents the content of an sbatch file.
-        If obs_ids is None, the observations are drawn from this processing's
-        child ArrayJob objects.
         '''
 
+        # If there are no observations associated with this processing, do nothing
+        if not self.array_jobs.exists():
+            raise Exception("No observations have been associated with this job. Cannot write sbatch script.")
+        nobs = len(self.array_jobs.all())
+
+        # There must be settings for this HPC user
         hus = self.hpc_user.hpc_user_settings
         if hus is None:
-            return f"ERROR: user settings for {self.hpc_user} do not exist"
+            raise Exception(f"User settings for {self.hpc_user} do not exist")
 
         script  = "#!/bin/bash -l\n\n"
 
@@ -474,19 +490,30 @@ class Processing(models.Model):
         script += f"#SBATCH --output={self.stdout_abs_path}\n"
         script += f"#SBATCH --error={self.stderr_abs_path}\n"
 
-        if obs_ids is None:
-            obs_ids = [str(aj.obs.obs) for aj in self.array_jobs.all()]
-        array_string = ','.join(obs_ids) + (f'%{hus.max_array_jobs}' if hus.max_array_jobs else '')
-        script += f"#SBATCH --array={array_string}\n"
+        script += f"#SBATCH --array=1-{nobs}"
+        if hus.max_array_jobs is not None and hus.max_array_jobs > 1:
+            script += f'%{hus.max_array_jobs}'
+        script += '\n'
 
-        script += '\n# Create entry in processing table for this job with status="started"\n'
-        script += self.create_processing_job_curl_command_for_sbatch_scripts()
+        obs_ids = ' '.join([str(aj.obs.obs) for aj in self.array_jobs.all().order_by('array_idx')])
+        script += f'obs_ids="{obs_ids}"\n'
+        script += 'obs_ids_arr=($obs_ids)\n'
+        script += 'obs_id=${obs_ids_arr[$SLURM_ARRAY_TASK_ID]}\n'
+
+        script += "\n# Update database with this SLURM JobID\n"
+        if nobs > 1:
+            script += f"if [[ $SLURM_ARRAY_TASK_ID -eq 1 ]]; then\n"
+        script += self.update_jobid_curl_command_for_sbatch_scripts()
+        if nobs > 1:
+            script += "fi\n"
+
+        script += '\n# Update entry in array job table with status="started"\n'
+        script += self.set_status_curl_command_for_sbatch_scripts("started")
 
         script += '\n# Setup environment variables\n'
         script += self.hpc_user.hpc_user_settings.write_exports()
 
         script += '\n# Variables that depend on which observation is being processed\n'
-        script += 'export obsnum="${SLURM_ARRAY_TASK_ID}"\n'
         script += 'export datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts() + ')"\n'
         if self.pipeline_step.task.name == 'flag':
             script += 'export flags="$(' + self.get_antennaflags_curl_command_for_sbatch_scripts() + ')"\n'
@@ -503,9 +530,9 @@ class Processing(models.Model):
 
         # Compile the script-running line, with arguments appropriate for each script
         if self.pipeline_step.task.name == 'flag':
-            script += 'singularity run "${GPMCONTAINER}" "${script}" "${obsnum}" "${datadir}" "${flags}"\n'
+            script += 'singularity run "${GPMCONTAINER}" "${script}" "${obs_id}" "${datadir}" "${flags}"\n'
         else:
-            script += 'singularity run "${GPMCONTAINER}" "${script}" "${obsnum}" "${datadir}"\n'
+            script += 'singularity run "${GPMCONTAINER}" "${script}" "${obs_id}" "${datadir}"\n'
 
         script += '\n# Handle script errors\n'
         script += """if [ $? -eq 0]; then
@@ -529,6 +556,7 @@ class ArrayJob(models.Model):
 
     processing = models.ForeignKey("Processing", models.DO_NOTHING, related_name="array_jobs")
     obs = models.ForeignKey("Observation", models.DO_NOTHING, related_name="array_jobs")
+    array_idx = models.IntegerField()
 
     start_time = models.IntegerField(blank=True, null=True)
     end_time = models.IntegerField(blank=True, null=True)
@@ -542,6 +570,14 @@ class ArrayJob(models.Model):
             return None
 
         return f'{hus.scratchdir.path}/{self.obs.epoch}/{self.obs.obs}'
+
+    @property
+    def stdout_abs_path(self):
+        return f'{self.processing.stdout_abs_path.replace("%A", self.processing.job_id).replace("%a", self.array_idx)'
+
+    @property
+    def stderr_abs_path(self):
+        return f'{self.processing.stderr_abs_path.replace("%A", self.processing.job_id).replace("%a", self.array_idx)'
 
     class Meta:
         managed = False
