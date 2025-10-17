@@ -738,13 +738,14 @@ def create_processing_job(request):
         output_text = f"ERROR: Could not find SLURM settings for pipeline step {pipeline_step}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
-    stdout = f"{pipeline_step.task.script_name}_%a.o%A"
-    stderr = f"{pipeline_step.task.script_name}_%a.e%A"
-
     if len(obs_ids) > 1:
         batch_file = f"{pipeline_step.task.script_name}_{obs_ids[0]}-{obs_ids[-1]}"
+        stdout = batch_file + ".o%A_%a"
+        stderr = batch_file + ".e%A_%a"
     else:
         batch_file = f"{pipeline_step.task.script_name}_{obs_ids[0]}"
+        stdout = batch_file + ".o%A"
+        stderr = batch_file + ".e%A"
 
     processing = models.Processing(
         cluster=slurm_settings.cluster,

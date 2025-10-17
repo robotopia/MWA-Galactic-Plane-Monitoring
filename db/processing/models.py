@@ -561,11 +561,11 @@ class Processing(models.Model):
             script += 'flags="$(' + self.get_antennaflags_curl_command_for_sbatch_scripts() + ')"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${flags}"\n'
         elif self.pipeline_step.task.name == 'calibrate':
-            script += f'mwapb="{hus.mwapb}"\n'
+            script += f'mwapb_dir="{os.path.dirname(hus.mwapb)}"\n'
             script += f'sky_model="{hus.sky_model}"\n'
             script += f'cores="{self.cluster.ncpus}"\n'
             script += f'absmem="{self.cluster.abs_memory_minus_ten}"\n'
-            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${mwapb}" "${sky_model}" "${cores}" "${absmem}"\n'
+            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${mwapb_dir}" "${sky_model}" "${cores}" "${absmem}"\n'
         else:
             script += 'singularity run "${container{" "${script}" "${obs_id}" "${datadir}"\n'
 
