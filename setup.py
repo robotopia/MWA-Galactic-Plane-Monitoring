@@ -15,7 +15,7 @@ reqs = [
     "psutil",
 ]
 
-scripts = glob('gpm/bin/*.py') + glob('gpm/db/*.py') + glob('gpm/utils/*.py')
+scripts = [s for s in (glob('gpm/bin/*.py') + glob('gpm/db/*.py') + glob('gpm/utils/*.py')) if not s != '__init__.py']
 
 setup(
     name="gpm",
