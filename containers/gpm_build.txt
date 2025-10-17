@@ -136,6 +136,9 @@ pip3 install --no-cache-dir \
 git clone --no-remote-submodules https://github.com/robotopia/MWA-Galactic-Plane-Monitoring.git
 cd MWA-Galactic-Plane-Monitoring
 pip install .
+mkdir -p /usr/local/bin
+cp /usr/local/lib/python3.10/dist-packages/gpm/bin/*.py /usr/local/bin/
+chmod +x /usr/local/bin/*.py
 
 # ------------------------------------------------
 
