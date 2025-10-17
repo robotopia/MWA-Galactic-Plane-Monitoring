@@ -1,41 +1,25 @@
 #! /bin/bash -l
 set -x
 
-pipeuser=PIPEUSER
-obsnum=OBSNUM
-cores=${GPMNCPUS}
-fraction=FRACTION
-sthresh=STHRESH
-ion=IONOTEST # Perform ionospheric triage? (1 means yes, blank means no)
+obsnum="$1"
+datadir="$2"
+mwapath="$3" # MWA primary beam file
+sky_model="$4"
+cores="$5"
+absmem="$6"
 
-# If obsnum is a file, then we are in an array job
-if [[ -f "${obsnum}" ]]
-then
-    taskid=${SLURM_ARRAY_TASK_ID}
-    jobid=${SLURM_ARRAY_JOB_ID}
+fraction=0.25
+sthresh=0.4
+ion=1 # Perform ionospheric triage? (1 means yes, blank means no)
 
-    echo "obsfile ${obsnum}"
-    obsnum=$(sed -n -e "${SLURM_ARRAY_TASK_ID}"p "${obsnum}")
-    echo "autocal obsid ${obsnum}"
-else
-    taskid=1
-    jobid=${SLURM_JOB_ID}
-fi
 
 metafits="${obsnum}.metafits"
 
-epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
-datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
-
 cd "${datadir}" || exit
-
-echo "jobid: ${jobid}"
-echo "taskid: ${taskid}"
 
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
@@ -68,12 +52,6 @@ maxuvm=$(echo "390000 / (${chan} + 11)" | bc -l)
 
 calmodel="${obsnum}_local_gleam_model.txt"
 
-# MWA beam information
-MWAPATH="${GPMMWAPB}"
-
-# start
-$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
-
 if [[ ! -e ${metafits} ]] || [[ ! -s ${metafits} ]]
 then
     wget -O "${metafits}" http://ws.mwatelescope.org/metadata/fits?obs_id=${obsnum}
@@ -81,7 +59,6 @@ then
 fi
 
 # Calibration input and output files
-catfile="${GPMBASE}/catalogue/GGSM_updated.fits" # GLEAM-X sky model
 calibrator=$( pyhead.py -p CALIBSRC "$metafits" | awk '{print $3}' )
 
 echo "Calibrator is $calibrator"
@@ -89,31 +66,14 @@ echo "Calibrator is $calibrator"
 #if [[ ! -e "${calmodel}" ]]
 #then
     # crop_catalogue.py --ra="${RA}" --dec="${Dec}" --radius=30 --minflux=1.0 --metafits="${metafits}" \
-    #                     --catalogue="${catfile}" --fluxcol=S_200 --plot "${obsnum}_local_gleam_model.png" \
+    #                     --catalogue="${sky_model}" --fluxcol=S_200 --plot "${obsnum}_local_gleam_model.png" \
     #                     --output "${obsnum}_cropped_catalogue.fits"
     crop_catalogue.py --ra="${RA}" --dec="${Dec}" --radius=30 --top-bright=250 --metafits="${metafits}" \
-                        --catalogue="${catfile}" --fluxcol=S_200 --plot "${obsnum}_local_gleam_model.png" \
+                        --catalogue="${sky_model}" --fluxcol=S_200 --plot "${obsnum}_local_gleam_model.png" \
                         --output "${obsnum}_cropped_catalogue.fits"
     vo2model.py --catalogue="${obsnum}_cropped_catalogue.fits" --point --output="${calmodel}" \
                 --racol=RAJ2000 --decol=DEJ2000 --acol=a --bcol=b --pacol=pa --fluxcol=S_200 --alphacol=alpha
 #fi
-
-# Check whether the phase centre has already changed
-# Calibration will fail if it has, so measurement set must be shifted back to its original position
-#current=$(chgcentre "${obsnum}.ms") 
-#
-#if [[ $current == *"shift"* ]] 
-#then
-#    echo "Detected that this measurement set has undergone a denormal shift; this must be undone before calibration."
-#    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
-#    echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
-#    chgcentre \
-#            "${obsnum}.ms" \
-#            ${coords}
-#else
-#    echo "Detected that this measurement set has not yet had its phase centre changed. Not shifting."
-#fi
-
 
 # Perform ionospheric triage
 if [[ ! -z $ion ]]
@@ -135,15 +95,15 @@ then
     calibrate \
             -t ${ts} \
             -j ${cores} \
-            -absmem ${GPMMEMORY} \
+            -absmem ${absmem} \
             -m "${calmodel}" \
             -minuv ${minuvm} \
-            -applybeam -mwa-path "${MWAPATH}" \
+            -applybeam -mwa-path "${mwapath}" \
             "${obsnum}.ms" \
             "${solutions}"
     
     echo "Ionospheric calibration finished. Creating plots and statistics. "
-    ${GPMBASE}/gpm/bin/aocal_plot.py --refant="${refant}" --amp_max=2 -m "${metafits}" "${solutions}"
+    aocal_plot.py --refant="${refant}" --amp_max=2 -m "${metafits}" "${solutions}"
     aocal_diff.py --metafits="${metafits}" --names "${solutions}" --refant="${refant}"
     iono_update.py --ionocsv "${obsnum}_ionodiff.csv"
 fi
@@ -156,10 +116,10 @@ solutions="${solutions/${obsnum}_${obsnum}_/${obsnum}_}"
 # calibrate
 calibrate \
         -j ${cores} \
-        -absmem ${GPMMEMORY} \
+        -absmem ${absmem} \
         -m "${calmodel}" \
         -minuv $minuvm \
-        -applybeam -mwa-path "${MWAPATH}" \
+        -applybeam -mwa-path "${mwapath}" \
         "${obsnum}".ms \
         "${solutions}"
 test_fail $?
@@ -170,21 +130,18 @@ aocal_phaseref.py "${solutions}" "${solutions%.bin}_ref.bin" "${refant}" --xy -2
 
 # plot calibration solutions
 # Using absolute path to make sure the previous version built into the container directly from the original repo is not used
-${GPMBASE}/gpm/bin/aocal_plot.py --refant="${refant}" --amp_max=2 -m "${metafits}" "${solutions%.bin}_ref.bin"
+aocal_plot.py --refant="${refant}" --amp_max=2 -m "${metafits}" "${solutions%.bin}_ref.bin"
 test_fail $?
 
 # Test to see if the calibration solution meets minimum quality control. At the moment
 # this is a simple check based on the number of flagged solutions
-# SM: Commenting this out for now -- will check manually
 
-# result=$(check_assign_solutions.py -t "${fraction}" -s 4 --segment-threshold ${sthresh} check "${solutions%.bin}_ref.bin")
+#result=$(check_assign_solutions.py -t "${fraction}" -s 4 --segment-threshold ${sthresh} check "${solutions%.bin}_ref.bin")
 
-#result=$(check_assign_solutions.py -t "${fraction}" check "${solutions%.bin}_ref.bin")
-#if echo "${result}" | grep -q fail
-#then
-#    mv "${solutions%.bin}_ref.bin" "${solutions%.bin}_ref_failed.bin"
-#    test_fail 1
-#fi
-
-$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
+result=$(check_assign_solutions.py -t "${fraction}" check "${solutions%.bin}_ref.bin")
+if echo "${result}" | grep -q fail
+then
+    mv "${solutions%.bin}_ref.bin" "${solutions%.bin}_ref_failed.bin"
+    test_fail 1
+fi
 

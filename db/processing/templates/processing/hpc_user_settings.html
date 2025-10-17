@@ -10,56 +10,89 @@
   {% csrf_token %}
   <h2>HPC settings for {{ hpc_user }}</h2>
 
-  <div style="padding: 10px;">
-    <label for="account">Account:</label>
-    <input id="account" name="account" maxlength="31" value="{{ hpc_user.hpc_user_settings.account }}" required/>
-  </div>
+  <table>
+    <tr>
+      <td><label for="account">Account:</label></td>
+      <td><input id="account" name="account" maxlength="31" value="{{ hpc_user.hpc_user_settings.account }}" required/></td>
+    </tr>
 
-  <div style="padding: 10px;">
-    <label for="max_array_jobs">Max. size of job array:</label>
-    <input id="max_array_jobs" name="max_array_jobs" type="number" value="{{ hpc_user.hpc_user_settings.max_array_jobs }}" required/>
-  </div>
+    <tr>
+      <td><label for="max_array_jobs">Max. size of job array:</label></td>
+      <td><input id="max_array_jobs" name="max_array_jobs" type="number" min="1" value="{{ hpc_user.hpc_user_settings.max_array_jobs|default:'' }}"/></td>
+    </tr>
 
-  <div style="padding: 10px;">
-    <label for="container">Path to container:</label>
-    <input id="container" name="container" value="{{ hpc_user.hpc_user_settings.container }}" required/>
-  </div>
+    <tr>
+      <td><label for="container">Path to <b>container</b>:</label></td>
+      <td><input id="container" name="container" value="{{ hpc_user.hpc_user_settings.container|default:'' }}" required/></td>
+    </tr>
 
-  <div style="padding: 10px;">
-    <label for="basedir">(Pipeline software) base directory:</label>
-    <select id="basedir" name="basedir" required>
-      {% for hpc_path in hpc_paths %}
-      <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.basedir %}selected{% endif %}>{{ hpc_path }}</option>
-      {% endfor %}
-    </select>
-  </div>
+    <tr>
+      <td><label for="mwapb">Path to <b>MWA primary beam embedded element file</b>:</label></td>
+      <td><input id="mwapb" name="mwapb" value="{{ hpc_user.hpc_user_settings.mwapb|default:'' }}" required/></td>
+    </tr>
 
-  <div style="padding: 10px;">
-    <label for="scratchdir">Scratch directory:</label>
-    <select id="scratchdir" name="scratchdir" required>
-      {% for hpc_path in hpc_paths %}
-      <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.scratchdir %}selected{% endif %}>{{ hpc_path }}</option>
-      {% endfor %}
-    </select>
-  </div>
+    <tr>
+      <td><label for="sky_model">Path to <b>sky model file</b>:</label></td>
+      <td><input id="sky_model" name="sky_model" value="{{ hpc_user.hpc_user_settings.sky_model|default:'' }}" required/></td>
+    </tr>
 
-  <div style="padding: 10px;">
-    <label for="logdir">Destination directory for <b>log</b> files:</label>
-    <select id="logdir" name="logdir" required>
-      {% for hpc_path in hpc_paths %}
-      <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.logdir %}selected{% endif %}>{{ hpc_path }}</option>
-      {% endfor %}
-    </select>
-  </div>
+    <tr>
+      <td><label for="basedir">(Pipeline software) base directory:</label></td>
+      <td><select id="basedir" name="basedir" required>
+          <option value=''>--- Select ---</option>
+          {% for hpc_path in hpc_paths %}
+          <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.basedir %}selected{% endif %}>{{ hpc_path }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
 
-  <div style="padding: 10px;">
-    <label for="scriptdir">Destination directory for <b>script</b> files:</label>
-    <select id="scriptdir" name="scriptdir" required>
-      {% for hpc_path in hpc_paths %}
-      <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.scriptdir %}selected{% endif %}>{{ hpc_path }}</option>
-      {% endfor %}
-    </select>
-  </div>
+    <tr>
+      <td><label for="scratchdir">Scratch directory:</label></td>
+      <td><select id="scratchdir" name="scratchdir" required>
+          <option value=''>--- Select ---</option>
+          {% for hpc_path in hpc_paths %}
+          <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.scratchdir %}selected{% endif %}>{{ hpc_path }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td><label for="logdir">Destination directory for <b>log</b> files:</label></td>
+      <td><select id="logdir" name="logdir" required>
+          <option value=''>--- Select ---</option>
+          {% for hpc_path in hpc_paths %}
+          <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.logdir %}selected{% endif %}>{{ hpc_path }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td><label for="scriptdir">Destination directory for <b>script</b> files:</label></td>
+      <td>
+        <select id="scriptdir" name="scriptdir" required>
+          <option value=''>--- Select ---</option>
+          {% for hpc_path in hpc_paths %}
+          <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.scriptdir %}selected{% endif %}>{{ hpc_path }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+
+    <tr>
+      <td><label for="mwalookupdir">Directory containing <b>MWA lookup files</b>:</label></td>
+      <td>
+        <select id="mwalookupdir" name="mwalookupdir" required>
+          <option value=''>--- Select ---</option>
+          {% for hpc_path in hpc_paths %}
+          <option value='{{ hpc_path.pk }}' {% if hpc_path == hpc_user.hpc_user_settings.mwalookupdir %}selected{% endif %}>{{ hpc_path }}</option>
+          {% endfor %}
+        </select>
+      </td>
+    </tr>
+  </table>
 
   <input name="next" hidden value="{{ next|default:'' }}"\>
 

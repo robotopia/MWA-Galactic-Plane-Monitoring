@@ -40,7 +40,7 @@ GITVERSION = subprocess.run(
     ["git", "describe", "--tags", "--long"],
     capture_output=True,
     text=True,
-).stdout
+).stdout.strip()
 
 
 # Application definition

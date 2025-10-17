@@ -1,4 +1,5 @@
 from distutils.core import setup
+from glob import glob
 
 reqs = [
     "astropy",
@@ -14,54 +15,7 @@ reqs = [
     "psutil",
 ]
 
-# TODO: See if glob works here
-scripts = [
-    "gpm/bin/pyhead.py",
-    "gpm/bin/alt_az_corrector.py",
-    "gpm/bin/aocal_diff.py",
-    "gpm/bin/aocal_phaseref.py",
-    "gpm/bin/aocal_ratio.py",
-    "gpm/bin/beam_value_at_radec.py",
-    "gpm/bin/calc_leakage.py",
-    "gpm/bin/calc_pointing.py",
-    "gpm/bin/calc_optimum_pointing.py",
-    "gpm/bin/calc_mean_pos.py",
-    "gpm/bin/clip_clean_components.py",
-    "gpm/bin/crop_catalogue.py",
-    "gpm/bin/dd_flux_mod.py",
-    "gpm/bin/extract_lowhigh_psf_beam.py",
-    "gpm/bin/filter_blurred_obsids.py",
-    "gpm/bin/generate_beam_list.py",
-    "gpm/bin/generate_weight_map.py",
-    "gpm/bin/iono_update.py",
-    "gpm/bin/make_imstack.py",
-    "gpm/bin/make_time_cube.py",
-    "gpm/bin/mask_image.py",
-    "gpm/bin/match_idg_obsid_pairs.py",
-    "gpm/bin/mosaic_global_rescale.py",
-    "gpm/bin/ms_flag_by_direction.py",
-    "gpm/bin/ms_flag_by_uvdist.py",
-    "gpm/bin/multiply.py",
-    "gpm/bin/new_fk5_template.py",
-    "gpm/bin/polyfit_snapshots.py",
-    "gpm/bin/psf_combine_axes.py",
-    "gpm/bin/psf_combine_nights.py",
-    "gpm/bin/psf_create.py",
-    "gpm/bin/psf_projected.py",
-    "gpm/bin/psf_select.py",
-    "gpm/bin/pyhead.py",
-    "gpm/bin/track_task.py",
-    "gpm/bin/vo2model.py",
-    "gpm/bin/fits_trim.py",
-    "gpm/bin/check_assign_solutions.py",
-    "gpm/bin/generate_ateam_subtract_model.py",
-    "gpm/db/check_sources_vs_obsids.py",
-    "gpm/db/check_src_fov.py",
-    "gpm/db/import_observations_from_db.py",
-    "gpm/utils/download_obsid_list.py",
-    "gpm/utils/flag_tiles_bad_dipoles.py",
-    "gpm/utils/obsid_ops.py",
-]
+scripts = glob('gpm/bin/*.py') + glob('gpm/db/*.py') + glob('gpm/utils/*.py')
 
 setup(
     name="gpm",

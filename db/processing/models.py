@@ -79,9 +79,18 @@ class BackupTable(models.Model):
 class Cluster(models.Model):
     name = models.CharField(max_length=31)
     hpc = models.ForeignKey('Hpc', models.DO_NOTHING)
-    copy_queue = models.CharField(max_length=31, null=True, blank=True)
-    work_queue = models.CharField(max_length=31, null=True, blank=True)
-    hostname = models.CharField(max_length=127, null=True, blank=True)
+    copy_queue = models.CharField(max_length=31)
+    work_queue = models.CharField(max_length=31)
+    hostname = models.CharField(max_length=127)
+    abs_memory = models.CharField(max_length=31)
+    ncpus = models.IntegerField()
+
+    @property
+    def abs_memory_minus_ten(self):
+        # Expects abs_memory is in format number+letter (e.g. 150G)
+        smaller_mem = int(self.abs_memory[:-1])
+        smaller_mem -= 10
+        return f"{smaller_mem}{self.abs_memory[-1]}"
 
     def __str__(self) -> str:
         return f"{self.name} ({self.hpc})"
@@ -228,12 +237,26 @@ class HpcUserSetting(models.Model):
                                   related_name="hpc_user_settings_as_script")
 
     container = models.CharField(max_length=1023, null=True, blank=True,
-                                 help_text="The path of the singularity container")
+                                 help_text="The absolute path of the singularity container")
+
+    mwapb = models.CharField(max_length=1023, null=True, blank=True,
+                                 help_text="The absolute path of the MWA primary beam embedded element file")
+
+    sky_model = models.CharField(max_length=1023, null=True, blank=True,
+                                 help_text="The absolute path of the sky model file")
+
+    mwalookupdir = models.ForeignKey("HpcPath", on_delete=models.SET_NULL, null=True, blank=True,
+                                     help_text="The path where the MWA lookup files live",
+                                     related_name="hpc_user_settings_as_mwalookup")
 
     #start_time_offset_minutes = models.IntegerField(null=True, blank=True, help_text="When a SLURM job is submitted, start the job no sooner from this many minutes from that time.")
 
     def __str__(self) -> str:
         return f"{self.hpc_user}"
+
+    @property
+    def singularity_bindpath(self):
+        return f"{self.scratchdir}:${{HOME}},{self.scriptdir},{self.logdir},{self.scratchdir},{self.mwalookupdir}:/pb_lookup,{os.path.dirname(self.mwapb)},{os.path.dirname(self.sky_model)}"
 
     def write_exports(self):
         output_text = ""
@@ -384,11 +407,11 @@ class Processing(models.Model):
 
     @property
     def batch_file_abs_path(self):
-        return f'{self.batch_file_path.path}/{self.batch_file}'
+        return f'{self.batch_file_path.path}/{self.batch_file}_{self.id}.sh'
 
     @property
     def sbatch_file_abs_path(self):
-        return f'{self.batch_file_path.path}/{self.batch_file}.sbatch'
+        return f'{self.batch_file_path.path}/{self.batch_file}_{self.id}.sbatch'
 
     @property
     def stdout_abs_path(self):
@@ -446,7 +469,7 @@ class Processing(models.Model):
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
      --data-urlencode "task={self.pipeline_step.task.name}" \\
-     "https://{os.getenv('GPM_URL')}{reverse('get_template')}" > ${{script}}
+     "https://{os.getenv('GPM_URL')}{reverse('get_template')}" > "${{script}}"
 """
 
     def update_jobid_curl_command_for_sbatch_scripts(self):
@@ -456,7 +479,7 @@ class Processing(models.Model):
      -H "Accept: application/json" \\
      --data-urlencode "processing_id={self.id}" \\
      --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
-     "https://{os.getenv('GPM_URL')}{reverse('update_jobid')}" > ${{script}}
+     "https://{os.getenv('GPM_URL')}{reverse('update_jobid')}"
 """
 
     @property
@@ -490,15 +513,20 @@ class Processing(models.Model):
         script += f"#SBATCH --output={self.stdout_abs_path}\n"
         script += f"#SBATCH --error={self.stderr_abs_path}\n"
 
-        script += f"#SBATCH --array=1-{nobs}"
-        if hus.max_array_jobs is not None and hus.max_array_jobs > 1:
-            script += f'%{hus.max_array_jobs}'
-        script += '\n'
+        if nobs > 1:
+            script += f"#SBATCH --array=1-{nobs}"
+            if hus.max_array_jobs is not None and hus.max_array_jobs > 1 and hus.max_array_jobs < nobs:
+                script += f'%{hus.max_array_jobs}'
+            script += '\n'
 
-        obs_ids = ' '.join([str(aj.obs.obs) for aj in self.array_jobs.all().order_by('array_idx')])
-        script += f'obs_ids="{obs_ids}"\n'
-        script += 'obs_ids_arr=($obs_ids)\n'
-        script += 'obs_id=${obs_ids_arr[$SLURM_ARRAY_TASK_ID]}\n'
+        if nobs > 1:
+            script += '\n# Select the appropriate obs_id for this array job\n'
+            obs_ids = ' '.join([str(aj.obs.obs) for aj in self.array_jobs.all().order_by('array_idx')])
+            script += f'obs_ids="{obs_ids}"\n'
+            script += 'obs_ids_arr=($obs_ids)\n'
+            script += 'obs_id=${obs_ids_arr[$SLURM_ARRAY_TASK_ID]}\n'
+        else:
+            script += f'\nobs_id="{self.array_jobs.first().obs.obs}"\n'
 
         script += "\n# Update database with this SLURM JobID\n"
         if nobs > 1:
@@ -510,32 +538,39 @@ class Processing(models.Model):
         script += '\n# Update entry in array job table with status="started"\n'
         script += self.set_status_curl_command_for_sbatch_scripts("started")
 
-        script += '\n# Setup environment variables\n'
-        script += self.hpc_user.hpc_user_settings.write_exports()
-
         script += '\n# Variables that depend on which observation is being processed\n'
         script += 'export datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts() + ')"\n'
-        if self.pipeline_step.task.name == 'flag':
-            script += 'export flags="$(' + self.get_antennaflags_curl_command_for_sbatch_scripts() + ')"\n'
 
         script += '\n# Load singularity dynamically\n'
         script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
 
-        script += '\n# Copy this file to the log directory for safekeeping\n'
-        script += f'cp "$(realpath "$0")" "{self.sbatch_file_abs_path}"\n'
+        script += '\n# Copy this file to the script directory for safekeeping\n'
+        script += f'this_file_log="{self.sbatch_file_abs_path}"\n'
+        script += 'mkdir -p "$(dirname "$this_file_log")"\n'
+        script += 'cp "$(realpath "$0")" "${this_file_log}"\n'
 
         script += f'\n# Download and run {self.pipeline_step.task.script_name} script\n'
         script += f'script="{self.batch_file_abs_path}"\n'
+        script += f'container="{self.hpc_user.hpc_user_settings.container}"\n'
+        script += f'\nexport SINGULARITY_BINDPATH="{hus.singularity_bindpath}"\n\n'
         script += self.get_template_curl_command_for_sbatch_scripts()
+        script += 'chmod +x "${script}"\n\n'
 
         # Compile the script-running line, with arguments appropriate for each script
         if self.pipeline_step.task.name == 'flag':
-            script += 'singularity run "${GPMCONTAINER}" "${script}" "${obs_id}" "${datadir}" "${flags}"\n'
+            script += 'flags="$(' + self.get_antennaflags_curl_command_for_sbatch_scripts() + ')"\n'
+            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${flags}"\n'
+        elif self.pipeline_step.task.name == 'calibrate':
+            script += f'mwapb="{hus.mwapb}"\n'
+            script += f'sky_model="{hus.sky_model}"\n'
+            script += f'cores="{self.cluster.ncpus}"\n'
+            script += f'absmem="{self.cluster.abs_memory_minus_ten}"\n'
+            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${mwapb}" "${sky_model}" "${cores}" "${absmem}"\n'
         else:
-            script += 'singularity run "${GPMCONTAINER}" "${script}" "${obs_id}" "${datadir}"\n'
+            script += 'singularity run "${container{" "${script}" "${obs_id}" "${datadir}"\n'
 
         script += '\n# Handle script errors\n'
-        script += """if [ $? -eq 0]; then
+        script += """if [ $? -eq 0 ]; then
     status=finished
 else
     status=failed
@@ -573,11 +608,11 @@ class ArrayJob(models.Model):
 
     @property
     def stdout_abs_path(self):
-        return f'{self.processing.stdout_abs_path.replace("%A", self.processing.job_id).replace("%a", self.array_idx)'
+        return self.processing.stdout_abs_path.replace("%A", self.processing.job_id).replace("%a", self.array_idx)
 
     @property
     def stderr_abs_path(self):
-        return f'{self.processing.stderr_abs_path.replace("%A", self.processing.job_id).replace("%a", self.array_idx)'
+        return self.processing.stderr_abs_path.replace("%A", self.processing.job_id).replace("%a", self.array_idx)
 
     class Meta:
         managed = False
@@ -809,7 +844,7 @@ class SlurmSettings(models.Model):
         header = ""
         header += f"#SBATCH --clusters={self.cluster.name}\n" if self.cluster else ""
         header += f"#SBATCH --begin={self.begin}\n" if self.begin else ""
-        header += f"#SBATCH --mem={self.mem}\n" if self.mem else ""
+        header += f"#SBATCH --mem={self.mem or self.cluster.abs_memory}\n"
         header += f"#SBATCH --time={self.time}\n" if self.time else ""
         header += f"#SBATCH --ntasks-per-node={self.ntasks_per_node}\n" if self.ntasks_per_node else ""
         header += f"#SBATCH --partition={self.partition_name}\n" if self.partition_name else ""

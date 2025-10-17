@@ -452,7 +452,10 @@ def HpcUserSettingsView(request, hpc_user_id):
         hpc_user_settings.scratchdir     = models.HpcPath.objects.get(pk=request.POST.get('scratchdir'))
         hpc_user_settings.logdir         = models.HpcPath.objects.get(pk=request.POST.get('logdir'))
         hpc_user_settings.scriptdir      = models.HpcPath.objects.get(pk=request.POST.get('scriptdir'))
+        hpc_user_settings.mwalookupdir   = models.HpcPath.objects.get(pk=request.POST.get('mwalookupdir'))
         hpc_user_settings.container      = request.POST.get('container')
+        hpc_user_settings.mwapb          = request.POST.get('mwapb')
+        hpc_user_settings.sky_model      = request.POST.get('sky_model')
         hpc_user_settings.save()
 
         if request.GET.get('next') is not None:
@@ -739,9 +742,9 @@ def create_processing_job(request):
     stderr = f"{pipeline_step.task.script_name}_%a.e%A"
 
     if len(obs_ids) > 1:
-        batch_file = f"{pipeline_step.task.script_name}_{obs_ids[0]}-{obs_ids[-1]}.sh"
+        batch_file = f"{pipeline_step.task.script_name}_{obs_ids[0]}-{obs_ids[-1]}"
     else:
-        batch_file = f"{pipeline_step.task.script_name}_{obs_ids[0]}.sh"
+        batch_file = f"{pipeline_step.task.script_name}_{obs_ids[0]}"
 
     processing = models.Processing(
         cluster=slurm_settings.cluster,
