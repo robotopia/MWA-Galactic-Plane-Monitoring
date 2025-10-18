@@ -718,6 +718,8 @@ def create_processing_job(request):
     Required parameters = obs_ids, pipeline, task, hpc_user, hpc
     Optional parameters = sbatch(=1), debug_mode(=1)
     '''
+    # TODO: Make a way to ignore obsids under certin conditions, e.g. status
+
     if request.GET.get('obs_ids') is None:
         output_text = f"ERROR: obs_ids is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
@@ -730,7 +732,6 @@ def create_processing_job(request):
         Q(obs__in=list(obs_ids_only)) | Q(epoch__epoch__in=list(epochs_only)),
     ).order_by('obs')
     obs_ids = [str(obs.obs) for obs in obss]
-    #invalid_obs_ids = list(set(all_obs_ids) - set(obs_ids))
 
     # Select hpc_user and their settings
     try:

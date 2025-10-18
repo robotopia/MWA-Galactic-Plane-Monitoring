@@ -1,0 +1,78 @@
+{% extends 'processing/main.html' %}
+
+{% load static %}
+
+{% block title %}
+Semester planning
+{% endblock %}
+
+{% block extrahead %}
+<link rel="stylesheet" href="{% static 'processing/epoch_overview.css' %}">
+{% endblock %}
+
+{% block body %}
+
+<h1>Semester planning</h1>
+
+<form method="post">
+
+  {% csrf_token %}
+
+  <div>
+    <label for="semester">Select semester:</label>
+    <select id="semester" name="semester" required>
+      <option value="">--- Select ---</option>
+      {% for s in semesters %}
+      <option value="{{ s.id }}"{% if s == semester %} selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label for="pipeline">Select pipeline:</label>
+    <select id="pipeline" name="pipeline" required>
+      <option value="">--- Select ---</option>
+      {% for pipeline in pipelines %}
+      <option value="{{ pipeline.id }}">{{ pipeline.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label for="calibration_options">Include calibration/target?</label>
+    <select id="calibration_options" name="calibration_option" required>
+      {% for calibration_option in calibration_options %}
+      <option value="{{ calibration_option }}">{{ calibration_option }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label for="epoch">Epoch (e.g. EpochXXXX):</label>
+    <input id="epoch" name="epoch" value="{{ epoch|default:'' }}"/>
+  </div>
+
+  <div>
+    <label for="projectid">ProjectID:</label>
+    <input id="projectid" name="projectid"/>
+  </div>
+
+  <div>
+    <label for="mintime">ObsID range:</label>
+    <input id="mintime" name="mintime"/> to <input id="maxtime" name="maxtime"/>
+  </div>
+
+  <input id="next" name="next" value="{{ next }}" hidden/>
+                 
+  <div>
+    <input type="submit" value="Add"/>
+  </div>
+
+</form>
+
+{% if added_obs_ids %}
+<h3>Added observations:</h3>
+{{ added_obs_ids|join:', ' }}
+{% endif %}
+
+{% endblock %}
