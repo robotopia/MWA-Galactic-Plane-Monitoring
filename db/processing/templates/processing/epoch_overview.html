@@ -43,9 +43,9 @@
     <td class="selectable {% if obs.calibration %}calibration{% endif %}">{{ obs }}</td>
     <td>{{ obs.cal_obs }}</td>
     {% for detail in details %}
-    <td class="{{ detail.processing.status }}">
-      <a href="{% url 'proc_obs_task' obs_id=obs.obs task_id=detail.task.id %}">
-        <span>{{ detail.task.name|upper }}</span>
+    <td class="{{ detail.array_job.status }}">
+      <a href="{% url 'proc_obs_task' obs_id=obs.obs task_id=detail.pipeline_step.task.id %}">
+        <span>{{ detail.pipeline_step.task.name|upper }}</span>
       </a>
     </td>
     {% endfor %}

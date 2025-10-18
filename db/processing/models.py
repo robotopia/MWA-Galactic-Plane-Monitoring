@@ -404,7 +404,6 @@ class Processing(models.Model):
     stdout = models.TextField(blank=True, null=True)
     stdout_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stdout")
     commit = models.CharField(max_length=256)
-    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_array_jobs')
 
     @property
     def batch_file_abs_path(self):
@@ -453,6 +452,16 @@ class Processing(models.Model):
      --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
      --data-urlencode "obs_id={obs_id}" \\
      "https://{os.getenv('GPM_URL')}{reverse('get_datadir')}"
+"""
+
+    def get_calfile_curl_command_for_sbatch_scripts(self, obs_id):
+        return f"""curl -s -S -G \\
+     -X GET \\
+     -H "Authorization: Token $GPMDBTOKEN" \\
+     -H "Accept: application/json" \\
+     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
+     --data-urlencode "obs_id={obs_id}" \\
+     "https://{os.getenv('GPM_URL')}{reverse('get_calfile')}"
 """
 
     def get_antennaflags_curl_command_for_sbatch_scripts(self):
@@ -568,9 +577,8 @@ class Processing(models.Model):
             script += f'absmem="{self.cluster.abs_memory_minus_ten}"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${mwapb_dir}" "${sky_model}" "${cores}" "${absmem}"\n'
         elif self.pipeline_step.task.name == 'apply_cal':
+            script += 'calfile="$(' + self.get_calfile_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
             # More TODO here: Figure out DEBUG mode
-            script += 'caldir="$(' + self.get_datadir_curl_command_for_sbatch_scripts(str(self.cal_obs.obs)) + ')"\n'
-            script += f'calfile="${{caldir}}/{self.cal_obs.obs}_local_gleam_model_solutions_initial_ref.bin\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${calfile}" "${debug}"\n'
         else:
             script += 'singularity run "${container{" "${script}" "${obs_id}" "${datadir}"\n'
@@ -602,6 +610,7 @@ class ArrayJob(models.Model):
     start_time = models.IntegerField(blank=True, null=True)
     end_time = models.IntegerField(blank=True, null=True)
     status = models.TextField(blank=True, null=True)
+    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_array_jobs')
 
     @property
     def datadir(self):
@@ -610,6 +619,14 @@ class ArrayJob(models.Model):
             return None
 
         return f'{hus.scratchdir.path}/{self.obs.epoch}/{self.obs.obs}'
+
+    @property
+    def calfile(self):
+        hus = self.processing.hpc_user.hpc_user_settings
+        if hus is None:
+            return None
+
+        return f'{hus.scratchdir.path}/{self.cal_obs.epoch}/{self.cal_obs.obs}/{self.cal_obs.obs}_local_gleam_model_solutions_initial_ref.bin'
 
     @property
     def stdout_abs_path(self):
@@ -623,7 +640,6 @@ class ArrayJob(models.Model):
         managed = False
         db_table = 'array_job'
         ordering = ['-start_time']
-
 
 
 class Source(models.Model):
@@ -805,12 +821,9 @@ class SemesterPlanProcessingDetail(models.Model):
 
     # This model is just a convenient way to access an SQL VIEW
 
-    semester = models.ForeignKey("Semester", models.DO_NOTHING)
-    epoch = models.CharField(max_length=9)
-    obs = models.ForeignKey("Observation", models.DO_NOTHING)
-    processing = models.ForeignKey("Processing", models.DO_NOTHING)
+    semester_plan = models.ForeignKey("SemesterPlan", models.DO_NOTHING)
+    array_job = models.ForeignKey("ArrayJob", models.DO_NOTHING)
     hpc_user = models.ForeignKey("HpcUser", models.DO_NOTHING)
-    task = models.ForeignKey("Task", models.DO_NOTHING)
     pipeline_step = models.ForeignKey("PipelineStep", models.DO_NOTHING)
 
     class Meta:

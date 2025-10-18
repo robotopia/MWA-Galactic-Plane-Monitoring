@@ -13,11 +13,10 @@
 <h1>Processing for {{ obs }}:{{ task }}</h1>
 
 <div class="proc-obs-task">
-  <b>Command:</b>
-  <code>{{ semester_plan_processing_detail.pipeline_step.command }} {{ obs.obs }}</code>
+  <b>Data directory:</b> <code>{{ array_jobs.0.datadir }}</code>
 </div>
 
-{% for array_job in array_jobs %}
+{% for array_job in array_jobs reversed %}
 <div class="proc-obs-task">
   <b>Processing code version:</b> {{ array_job.processing.commit|default:"[Not recorded]" }}
   <br>
@@ -32,18 +31,17 @@
   {% if array_job.processing.stdout %}- <a href="{% url 'log_view' processing_id=array_job.processing.id logfile_type='stdout' %}">STDOUT</a>{% endif %}
   {% if array_job.processing.stderr %}- <a href="{% url 'log_view' processing_id=array_job.processing.id logfile_type='stderr' %}">STDERR</a>{% endif %}
   {% if array_job.processing.job_id %}- <a href="{% url 'log_view' processing_id=array_job.processing.id logfile_type='seff' %}">seff</a>{% endif %}
-  <br>
-  <B>Data directory:</b> <code>{{ array_job.datadir }}</code>
-  <br>
+
   <details>
     <summary><b>sbatch</b></summary>
     <pre>{{ array_job.processing.sbatch }}</pre>
   </details>
-  <br>
+
   <details>
     <summary><b>script</b></summary>
     <pre>{{ array_job.processing.pipeline_step.task.script_contents }}</pre>
   </details>
+
 </div>
 {% endfor %}
 

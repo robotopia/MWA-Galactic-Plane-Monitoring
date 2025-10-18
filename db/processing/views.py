@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from django.utils.http import urlencode
 from django.contrib.auth.decorators import login_required
 from processing.hpc_login import hpc_login_required
-from django.db.models import Q
+from django.db.models import Q, F
 from django.conf import settings
 from . import models
 import json
@@ -37,20 +37,21 @@ def dmdelay(dm, f_MHz):
 def EpochOverviewView(request, epoch):
 
     hpc_user = request.user.session_settings.selected_hpc_user
-    semester = request.user.session_settings.selected_semester
+    semester_plans = request.user.session_settings.selected_semester.semester_plans.filter(obs__epoch__epoch=epoch)
+    semester_plan_processing_details = models.SemesterPlanProcessingDetail.objects.filter(
+        Q(hpc_user=hpc_user) | Q(hpc_user__isnull=True),
+        semester_plan__in=semester_plans,
+    ).order_by('pipeline_step')
 
-    details = models.SemesterPlanProcessingDetail.objects.filter(semester=semester, epoch=epoch).filter(
-        Q(hpc_user=hpc_user) | Q(hpc_user__isnull=True)
-    )
     details_by_obs = defaultdict(list)
-
-    for detail in details:
-        details_by_obs[detail.obs].append(detail)
+    for semester_plan_processing_detail in semester_plan_processing_details:
+        details_by_obs[semester_plan_processing_detail.semester_plan.obs].append(semester_plan_processing_detail)
+    details_by_obs = dict(details_by_obs)
 
     context = {
         'epoch': epoch,
         'hpc_user': hpc_user,
-        'details_by_obs': dict(details_by_obs),
+        'details_by_obs': details_by_obs,
     }
 
     return render(request, f'processing/epoch_overview.html', context)
@@ -184,19 +185,9 @@ def ProcessingObsTaskView(request, obs_id, task_id):
         processing__pipeline_step__task=task,
     ).order_by('processing__job_id')
 
-    semester_plan_processing_detail = models.SemesterPlanProcessingDetail.objects.filter(
-        semester=request.user.session_settings.selected_semester,
-        task=task,
-        obs=obs,
-    ).filter(
-        Q(hpc_user=request.user.session_settings.selected_hpc_user) | Q(hpc_user__isnull=True)
-    ).first()
-    #print(f'{semester_plan_processing_detail = }')
-
     context = {
         'obs': obs,
         'task': task,
-        'semester_plan_processing_detail': semester_plan_processing_detail,
         'array_jobs': array_jobs,
     }
 
@@ -671,6 +662,36 @@ def get_datadir(request):
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
+def get_calfile(request):
+
+    # Parse all required parameters
+    job_id = request.GET.get('job_id')
+    if job_id is None:
+        output_text = f"\n# ERROR: job_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    obs_id = request.GET.get('obs_id')
+    if obs_id is None:
+        output_text = f"\n# ERROR: obs_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Get the relevant Processing and ArrayJob objects and make sure they exist
+    processing = models.Processing.objects.filter(job_id=job_id, hpc_user__auth_users=request.user).first()
+    if processing is None:
+        output_text = f"\n# ERROR: Could not find processing job with job_id = {job_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    array_job = processing.array_jobs.filter(obs__obs=obs_id).first()
+    if array_job is None:
+        output_text = f"\n# ERROR: Could not find array job for ObsID = {obs_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    return HttpResponse(array_job.calfile, content_type="text/plain", status=200)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def get_antennaflags(request):
 
     # Parse all required parameters
@@ -758,7 +779,6 @@ def create_processing_job(request):
         hpc_user=hpc_user,
         pipeline_step=pipeline_step,
         commit=settings.GITVERSION,
-        cal_obs=obs.cal_obs if task.name == 'apply_cal' else None,
     )
 
     try:
@@ -772,6 +792,7 @@ def create_processing_job(request):
             array_idx=i+1,
             obs=obs,
             status='queued', # Do this by default, even though it'll be misleading if the job doesn't actually get submitted for some reason
+            cal_obs=obs.cal_obs if task.name == 'apply_cal' else None,
         )
         array_job.save()
 

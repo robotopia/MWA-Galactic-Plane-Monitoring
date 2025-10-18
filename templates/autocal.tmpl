@@ -126,7 +126,15 @@ test_fail $?
 
 # Create a version divided through by the reference antenna, so that all observations have the same relative XY phase, allowing polarisation calibration solutions to be transferred
 # This also sets the cross-terms to zero by default
-aocal_phaseref.py "${solutions}" "${solutions%.bin}_ref.bin" "${refant}" --xy -2.806338586067941065e+01 --dxy -4.426533296449057023e-07  --ms "${obsnum}.ms"
+
+# SMc (2025-10-18): I'm disabling polarisation correction at the moment. The
+# main reason is that python casacore breaks, possibly due to an incompatible
+# NumPy version in the container (at this writing). I'm under the impression
+# that the specific values for --xy and --dxy are no longer valid for recent
+# MWA semesters anyway.
+
+#aocal_phaseref.py "${solutions}" "${solutions%.bin}_ref.bin" "${refant}" --xy -2.806338586067941065e+01 --dxy -4.426533296449057023e-07  --ms "${obsnum}.ms"
+aocal_phaseref.py "${solutions}" "${solutions%.bin}_ref.bin" "${refant}" --ms "${obsnum}.ms"
 
 # plot calibration solutions
 # Using absolute path to make sure the previous version built into the container directly from the original repo is not used
@@ -136,12 +144,15 @@ test_fail $?
 # Test to see if the calibration solution meets minimum quality control. At the moment
 # this is a simple check based on the number of flagged solutions
 
-#result=$(check_assign_solutions.py -t "${fraction}" -s 4 --segment-threshold ${sthresh} check "${solutions%.bin}_ref.bin")
+# SMc (2025-10-18): Disabling check, since the checking script relies on a
+# deprecated connection to the database
 
-result=$(check_assign_solutions.py -t "${fraction}" check "${solutions%.bin}_ref.bin")
-if echo "${result}" | grep -q fail
-then
-    mv "${solutions%.bin}_ref.bin" "${solutions%.bin}_ref_failed.bin"
-    test_fail 1
-fi
+#result=$(check_assign_solutions.py -t "${fraction}" -s 4 --segment-threshold ${sthresh} check "${solutions%.bin}_ref.bin")
+#
+#result=$(check_assign_solutions.py -t "${fraction}" check "${solutions%.bin}_ref.bin")
+#if echo "${result}" | grep -q fail
+#then
+#    mv "${solutions%.bin}_ref.bin" "${solutions%.bin}_ref_failed.bin"
+#    test_fail 1
+#fi
 
