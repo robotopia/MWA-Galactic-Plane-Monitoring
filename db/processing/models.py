@@ -581,7 +581,7 @@ class Processing(models.Model):
             # More TODO here: Figure out DEBUG mode
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${calfile}" "${debug}"\n'
         else:
-            script += 'singularity run "${container{" "${script}" "${obs_id}" "${datadir}"\n'
+            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}"\n'
 
         script += '\n# Handle script errors\n'
         script += """if [ $? -eq 0 ]; then
