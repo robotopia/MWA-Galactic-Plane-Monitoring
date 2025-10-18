@@ -404,6 +404,7 @@ class Processing(models.Model):
     stdout = models.TextField(blank=True, null=True)
     stdout_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stdout")
     commit = models.CharField(max_length=256)
+    debug_mode = models.BooleanField()
 
     @property
     def batch_file_abs_path(self):
@@ -550,6 +551,7 @@ class Processing(models.Model):
 
         script += '\n# Variables that depend on which observation is being processed\n'
         script += 'datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
+        script += 'debug=' + ('1' if self.debug_mode else '0')
 
         script += '\n# Load singularity dynamically\n'
         script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
@@ -578,7 +580,6 @@ class Processing(models.Model):
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${mwapb_dir}" "${sky_model}" "${cores}" "${absmem}"\n'
         elif self.pipeline_step.task.name == 'apply_cal':
             script += 'calfile="$(' + self.get_calfile_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
-            # More TODO here: Figure out DEBUG mode
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${calfile}" "${debug}"\n'
         else:
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}"\n'

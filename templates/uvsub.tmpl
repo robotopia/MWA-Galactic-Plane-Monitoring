@@ -8,40 +8,16 @@
 
 set -x
 
-pipeuser=PIPEUSER
-obsnum=OBSNUM
-debug=DEBUG
-
-# If obsnum is a file, then we are in an array job
-if [[ -f "${obsnum}" ]]
-then
-    taskid=${SLURM_ARRAY_TASK_ID}
-    jobid=${SLURM_ARRAY_JOB_ID}
-
-    echo "obsfile ${obsnum}"
-    obsnum=$(sed -n -e "${SLURM_ARRAY_TASK_ID}"p "${obsnum}")
-    echo "uvsubtract obsid ${obsnum}"
-else
-    taskid=1
-    jobid=${SLURM_JOB_ID}
-fi
-
-echo "jobid: ${jobid}"
-echo "taskid: ${taskid}"
+obsnum="$1"
+datadir="$2"
+debug="$3"
 
 function test_fail {
 if [[ $1 != 0 ]]
 then
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
     exit "$1"
 fi
 }
-
-# start
-$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
-
-epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
-datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
 
 cd "${datadir}" || exit 1
 
@@ -98,5 +74,3 @@ then
 else
     echo "No wsclean script ${submodel} found. Exiting. "
 fi
-
-$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"

@@ -716,7 +716,7 @@ def create_processing_job(request):
     '''
     Creates new Processing and ArrayJob objects, and responds with text/plain of sbatch script
     Required parameters = obs_ids, pipeline, task, hpc_user, hpc
-    Optional parameters = sbatch(=1)
+    Optional parameters = sbatch(=1), debug_mode(=1)
     '''
     all_obs_ids = request.GET.get('obs_ids').split(',')
     if all_obs_ids is None:
@@ -779,6 +779,7 @@ def create_processing_job(request):
         hpc_user=hpc_user,
         pipeline_step=pipeline_step,
         commit=settings.GITVERSION,
+        debug_mode=(request.GET.get('debug_mode') == '1'),
     )
 
     try:

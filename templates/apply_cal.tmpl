@@ -4,12 +4,12 @@ set -x
 obsnum=$1
 datadir=$2
 calfile=$3
-debug=$4 # Any nonzero value will mean that debug mode is on
+debug=$4 # Any non-"0" value will mean that debug mode is on
 
 cd "${datadir}" || exit
 
 # If in debugging mode, apply to the CORRECTED_DATA column
-if [[ ! -z $debug ]]
+if [[ "$debug" != "0"]]
 then
     applysolutions \
                 ${obsnum}.ms \

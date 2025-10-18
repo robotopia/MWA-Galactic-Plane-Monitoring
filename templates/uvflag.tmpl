@@ -1,49 +1,16 @@
 #! /bin/bash -l
 set -x
 
-pipeuser=PIPEUSER
-obsnum=OBSNUM
-
-# If obsnum is a file, then we are in an array job
-if [[ -f ${obsnum} ]]
-then
-    taskid=${SLURM_ARRAY_TASK_ID}
-    jobid=${SLURM_ARRAY_JOB_ID}
-
-    echo "obsfile ${obsnum}"
-    obsnum=$(sed -n -e "${SLURM_ARRAY_TASK_ID}"p "${obsnum}")
-    echo "uvflag obsid ${obsnum}"
-else
-    taskid=1
-    jobid=${SLURM_JOB_ID}
-fi
-
-echo "jobid: ${jobid}"
-echo "taskid: ${taskid}"
-
-debug=DEBUG
-
-function test_fail {
-if [[ $1 != 0 ]]
-then
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-    exit "$1"
-fi
-}
-
-$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
-
-epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
-datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+obsnum=$1
+datadir=$2
+debug=$3 # Any non-"0" value turns on debug mode
 
 cd "${datadir}" || exit 1
 
-if [[ -z $debug ]]
+if [[ "$debug" != "0" ]]
 then
     ms_flag_by_uvdist.py "${obsnum}.ms" DATA -a
 else
     ms_flag_by_uvdist.py "${obsnum}.ms" CORRECTED_DATA -a 
 fi
-
-$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
 

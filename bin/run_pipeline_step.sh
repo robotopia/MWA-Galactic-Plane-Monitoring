@@ -6,6 +6,7 @@ echo "run_pipeline_task.sh [-d dep] [-t] pipeline task obs_ids
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
+  -z         : Debug mode, so adjusts the CORRECTED_DATA column
   pipeline   : the name of the pipeline to run
   task       : the name of the pipeline task to run
   obs_ids     : the obsid to process, or a text file of obsids (newline separated). 
@@ -15,6 +16,7 @@ exit 1;
 
 dep=
 tst=
+debug=0
 
 # parse args and set options
 while getopts ':td:a:p:' OPTION
@@ -26,6 +28,9 @@ do
 	t)
 	    tst=1
 	    ;;
+  z)
+      debug=1
+      ;;
 	? | : | h)
 	    usage
 	    ;;
@@ -78,6 +83,7 @@ curl -s -S -G -X GET \
   --data-urlencode "hpc_user=${whoami}" \
   --data-urlencode "obs_ids=${obs_ids}" \
   --data-urlencode "sbatch=1" \
+  --data-urlencode "debug_mode=${debug}" \
   "${GPMURL}/processing/api/create_processing_job" > ${sbatch_script}
 
 sub="sbatch ${depend} --export=ALL ${sbatch_script}"
