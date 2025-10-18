@@ -581,8 +581,12 @@ class Processing(models.Model):
         elif self.pipeline_step.task.name == 'apply_cal':
             script += 'calfile="$(' + self.get_calfile_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${calfile}" "${debug}"\n'
+        elif self.pipeline_step.task.name in ['image', 'transient']:
+            script += f'cores="{self.cluster.ncpus}"\n'
+            script += f'absmem="{self.cluster.abs_memory_minus_ten}"\n'
+            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${cores}" "${absmem}" "${debug}"\n'
         else:
-            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}"\n'
+            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${debug}"\n'
 
         script += '\n# Handle script errors\n'
         script += """if [ $? -eq 0 ]; then
