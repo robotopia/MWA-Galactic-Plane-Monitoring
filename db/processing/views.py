@@ -721,11 +721,13 @@ def create_processing_job(request):
     if request.GET.get('obs_ids') is None:
         output_text = f"ERROR: obs_ids is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
-    all_obs_ids_and_epochs = request.GET.get('obs_ids').split(',')
+    all_obs_ids_and_epochs = set(request.GET.get('obs_ids').split(','))
 
     # Keep only obs_ids and epochs that are already in the database
+    obs_ids_only = {s for s in list(all_obs_ids_and_epochs) if s.isnumeric()}
+    epochs_only = all_obs_ids_and_epochs - obs_ids_only
     obss = models.Observation.objects.filter(
-        Q(obs__in=all_obs_ids_and_epochs) | Q(epoch__epoch__in=all_obs_ids_and_epochs),
+        Q(obs__in=list(obs_ids_only)) | Q(epoch__epoch__in=list(epochs_only)),
     ).order_by('obs')
     obs_ids = [str(obs.obs) for obs in obss]
     #invalid_obs_ids = list(set(all_obs_ids) - set(obs_ids))

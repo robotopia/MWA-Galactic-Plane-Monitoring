@@ -556,19 +556,26 @@ class Processing(models.Model):
         script += '\n# Load singularity dynamically\n'
         script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
 
-        script += '\n# Copy this file to the script directory for safekeeping\n'
-        script += f'this_file_log="{self.sbatch_file_abs_path}"\n'
-        script += 'mkdir -p "$(dirname "$this_file_log")"\n'
-        script += 'cp "$(realpath "$0")" "${this_file_log}"\n'
-
-        script += f'\n# Download and run {self.pipeline_step.task.script_name} script\n'
-        script += f'script="{self.batch_file_abs_path}"\n'
+        script += f'\n# Download the {self.pipeline_step.task.script_name} script\n'
+        script += 'this_sbatch_file="$(realpath "$0")"\n'
+        script += 'this_batch_file="${this_sbatch_file%.sbatch}.sh"\n\n'
+        script += 'script="${this_batch_file}"\n'
         script += f'container="{self.hpc_user.hpc_user_settings.container}"\n'
         script += f'\nexport SINGULARITY_BINDPATH="{hus.singularity_bindpath}"\n\n'
-        script += self.get_template_curl_command_for_sbatch_scripts()
-        script += 'chmod +x "${script}"\n\n'
+
+        script += '\n# Copy this file and the script file to the script directory for safekeeping\n'
+        if nobs > 1:
+            script += f"if [[ $SLURM_ARRAY_TASK_ID -eq 1 ]]; then\n"
+        script += f'this_sbatch_file_log="{self.sbatch_file_abs_path}"\n'
+        script += f'this_batch_file_log="{self.batch_file_abs_path}"\n'
+        script += 'mkdir -p "$(dirname "${this_sbatch_file_log}")"\n'
+        script += 'cp "${this_sbatch_file}" "${this_sbatch_file_log}"\n'
+        script += 'cp "${this_batch_file}" "${this_batch_file_log}"\n'
+        if nobs > 1:
+            script += "fi\n"
 
         # Compile the script-running line, with arguments appropriate for each script
+        script += f'\n# Run the {self.pipeline_step.task.script_name} script\n'
         if self.pipeline_step.task.name == 'flag':
             script += 'flags="$(' + self.get_antennaflags_curl_command_for_sbatch_scripts() + ')"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${flags}"\n'

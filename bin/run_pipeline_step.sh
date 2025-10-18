@@ -89,6 +89,14 @@ curl -s -S -G -X GET \
   --data-urlencode "debug_mode=${debug}" \
   "${GPMURL}/processing/api/create_processing_job" > ${sbatch_script}
 
+# Create a batch script that the sbatch script will call
+script=run_GPM_$(date +'%s').sh
+curl -s -S -G -X GET \
+  -H "Authorization: Token ${GPMDBTOKEN}" \
+  -H "Accept: application/json" \
+  --data-urlencode "task=${task}" \
+  "${GPMURL}/processing/api/get_template" > ${script}
+
 sub="sbatch ${depend} --export=ALL ${sbatch_script}"
 # Apparently, the --export=ALL in the script header doesn't work the same as the --export=ALL on the cmd line
 
