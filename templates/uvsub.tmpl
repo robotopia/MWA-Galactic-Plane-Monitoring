@@ -36,7 +36,7 @@ current=$(chgcentre "${obsnum}.ms")
 if [[ $current == *"shift"* ]] 
 then
     echo "Detected that this measurement set has undergone a denormal shift; this must be undone before subtrmodel."
-    coords=$($GPMBASE/gpm/bin/calc_optimum_pointing.py --metafits "${metafits}")
+    coords=$(calc_optimum_pointing.py --metafits "${metafits}")
     echo "Optimally shifting co-ordinates of measurement set to $coords, without zenith shiftback."
     chgcentre \
             "${obsnum}.ms" \
@@ -49,12 +49,12 @@ submodel="${obsnum}.ateam_outlier"
 rm -f "$submodel"
 
 debugoption=
-if [[ ! -z $debug ]]
+if [[ "$debug" != "0" ]]
 then
     debugoption='--corrected-data'
 fi
 echo "Generating model of A-Team sources for uv-subtraction"
-${GPMBASE}/gpm/bin/generate_ateam_subtract_model.py "${obsnum}.metafits" \
+generate_ateam_subtract_model.py "${obsnum}.metafits" \
                                 --mode wsclean \
                                 --min-elevation 0.0 \
                                 --min-flux 5  \
@@ -72,5 +72,5 @@ then
     echo "Removing outlier files"
     rm *outlier*fits
 else
-    echo "No wsclean script ${submodel} found. Exiting. "
+    echo "No wsclean script ${submodel} found, so nothing to do. Exiting."
 fi
