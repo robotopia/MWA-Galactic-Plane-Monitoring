@@ -19,7 +19,9 @@ fi
 state="$(giant-squid list "${obsnum}" --json | jq -r ".[]| select( .obsid == ${obsnum} ).jobState")"
 state="${state,,}" # convert to lower case
 
-if [[ $state == "ready" ]]; then
+if [[ -z $state ]]; then
+    giant-squid submit-conv -p avg_time_res=4,avg_freq_res=40,flag_edge_width=80,output=ms "${obsnum}"
+elif [[ "$state" == "ready" ]]; then
     giant-squid download --keep-zip ${obsnum}
     tar -xf ${obsnum}_*_ms.tar
     grep -v birli_manifest.sha1sum birli_manifest.sha1sum | sha1sum -c
@@ -28,8 +30,7 @@ if [[ $state == "ready" ]]; then
     if [[ $? -ne 0 ]]; then
         exit 1
     fi
+
+    # The tar file has been successfully extracted, so remove it
+    rm ${obsnum}_*_ms.tar
 fi
-
-# The tar file has been successfully extracted, so remove it
-rm ${obsnum}_*_ms.tar
-
