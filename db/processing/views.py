@@ -519,7 +519,7 @@ def find_pipeline_step(pipeline_name, task_name):
 
     pipeline = models.Pipeline.objects.filter(name=pipeline_name).first()
     if not pipeline:
-        raise Exception("Could not find pipeline {pipeline_name}")
+        raise Exception(f"Could not find pipeline {pipeline_name}")
 
     # Select pipeline step
     pipeline_step = pipeline.steps.filter(task__name=task_name).first()

@@ -150,6 +150,7 @@ class SemesterPlanAdmin(admin.ModelAdmin):
     list_display = ['pk', 'semester', 'obs', 'pipeline']
     list_filter = ['semester', 'pipeline']
     search_fields = ['obs__obs']
+    autocomplete_fields = ['obs']
 
 @admin.register(Source)
 class SourceAdmin(admin.ModelAdmin):

@@ -38,10 +38,16 @@
   <div class="context-menuitem" onclick='setQa("none");'>Remove QA</div>
 </div>
 <table>
+  <tr>
+    <th>ObsID</th>
+    <th>CalObsId</th>
+    <th>Pipeline</th>
+  </tr>
   {% for obs, details in details_by_obs.items %}
   <tr class="epoch-overview-row">
     <td class="selectable {% if obs.calibration %}calibration{% endif %}">{{ obs }}</td>
     <td>{{ obs.cal_obs }}</td>
+    <td>{{ details.0.pipeline_step.pipeline.name }}</td>
     {% for detail in details %}
     <td class="{{ detail.array_job.status }}">
       <a href="{% url 'proc_obs_task' obs_id=obs.obs task_id=detail.pipeline_step.task.id %}">

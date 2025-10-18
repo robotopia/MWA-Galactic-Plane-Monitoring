@@ -69,7 +69,16 @@ fi
 
 # Create an sbatch script
 sbatch_script=run_GPM_$(date +'%s').sbatch
-curl -s -S -X GET -H "Authorization: Token ${GPMDBTOKEN}" -H "Accept: application/json" "${GPMURL}/processing/api/create_processing_job?pipeline=${pipeline}&task=${task}&hpc=${GPMHPC}&hpc_user=${whoami}&obs_ids=${obs_ids}&sbatch=1" > ${sbatch_script}
+curl -s -S -G -X GET \
+  -H "Authorization: Token ${GPMDBTOKEN}" \
+  -H "Accept: application/json" \
+  --data-urlencode "pipeline=${pipeline}" \
+  --data-urlencode "task=${task}" \
+  --data-urlencode "hpc=${GPMHPC}" \
+  --data-urlencode "hpc_user=${whoami}" \
+  --data-urlencode "obs_ids=${obs_ids}" \
+  --data-urlencode "sbatch=1" \
+  "${GPMURL}/processing/api/create_processing_job" > ${sbatch_script}
 
 sub="sbatch ${depend} --export=ALL ${sbatch_script}"
 # Apparently, the --export=ALL in the script header doesn't work the same as the --export=ALL on the cmd line
