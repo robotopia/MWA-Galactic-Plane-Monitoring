@@ -41,7 +41,7 @@ def EpochOverviewView(request, epoch):
     semester_plan_processing_details = models.SemesterPlanProcessingDetail.objects.filter(
         Q(hpc_user=hpc_user) | Q(hpc_user__isnull=True),
         semester_plan__in=semester_plans,
-    ).order_by('pipeline_step')
+    ).order_by('semester_plan__obs__obs', 'pipeline_step')
 
     details_by_obs = defaultdict(list)
     for semester_plan_processing_detail in semester_plan_processing_details:
@@ -847,4 +847,64 @@ def update_jobid(request):
     return HttpResponse(f"job_id={job_id} set for processing ID {processing_id}", content_type='text/plain', status=200)
 
 
+@login_required
+def add_observations_to_semester_plan(request):
 
+    context = {
+        'semesters': models.Semester.objects.all(),
+        'pipelines': models.Pipeline.objects.all(),
+        'calibration_options': ['both', 'calibration', 'target'],
+        'epoch': request.GET.get('epoch'),
+        'next': request.GET.get('next'),
+    }
+
+    try:
+        context['semester'] = models.Semester.objects.get(pk=request.GET.get('semester_id'))
+    except:
+        pass
+
+    if request.method == 'POST':
+        epoch = request.POST.get('epoch')
+        projectid = request.POST.get('projectid')
+        mintime = request.POST.get('mintime')
+        maxtime = request.POST.get('maxtime')
+        try:
+            pipeline = models.Pipeline.objects.get(pk=request.POST.get('pipeline'))
+            semester = models.Semester.objects.get(pk=request.POST.get('semester'))
+            context['semester'] = semester
+        except Exception as e:
+            return HttpResponse(f"{e} ({request.POST.get('pipeline')}, {request.POST.get('semester')})", status=400)
+        calibration_option = request.POST.get('calibration_option') or 'both'
+
+
+        obss = models.Observation.objects.all()
+        if epoch:
+            obss = obss.filter(epoch__epoch=epoch)
+        if projectid:
+            obss = obss.filter(projectid=projectid)
+        if mintime:
+            obss = obss.filter(obs__gte=mintime)
+        if maxtime:
+            obss = obss.filter(obs__lte=maxtime)
+        if calibration_option == 'calibration':
+            obss = obss.filter(calibration=True)
+        elif calibration_option == 'target':
+            obss = obss.filter(calibration=False)
+
+        context['added_obs_ids'] = []
+        for obs in obss.all():
+            semester_plan = models.SemesterPlan(
+                obs=obs,
+                pipeline=pipeline,
+                semester=semester,
+            )
+            try:
+                semester_plan.save()
+                context['added_obs_ids'].append(obs.obs)
+            except Exception as e:
+                context['error'] = f'{e}'
+
+        if request.POST.get('next'):
+            return redirect(request.POST.get('next'))
+
+    return render(request, 'processing/add_observations_to_semester_plan.html', context)

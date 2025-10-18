@@ -54,13 +54,13 @@ class Command(BaseCommand):
         parser.add_argument("--end_iso", help="Maximum obs date in ISO format (e.g. '2020-12-31')")
 
     def handle(self, *args, **options):
-        if 'start_iso' in options.keys():
-            mintime = Time(options['start_iso'] + ' 00:00:00', scale='utc', format='iso').gps
+        if options['start_iso']:
+            mintime = int(Time(options['start_iso'] + ' 00:00:00', scale='utc', format='iso').gps)
         else:
             mintime = ''
 
-        if 'end_iso' in options.keys():
-            maxtime = Time(options['end_iso'] + ' 23:59:59', scale='utc', format='iso').gps
+        if options['end_iso']:
+            maxtime = int(Time(options['end_iso'] + ' 23:59:59', scale='utc', format='iso').gps)
         else:
             maxtime = ''
 
@@ -72,7 +72,7 @@ class Command(BaseCommand):
         params = {
             'mintime': mintime,
             'maxtime': maxtime,
-            'projectid': projectid,
+            'projectid': options['projectid'] or '',
             'page': 1,
         }
         obs_ids = []
@@ -83,13 +83,15 @@ class Command(BaseCommand):
                 self.stdout.write("  Empty page. Finished getting everything.")
                 break
             obs_ids += [row[0] for row in results] # row[0] is the obs_id as an integer
+            params['page'] += 1
 
         # Now go through each observation, get the full metadata, and import into database
         for obs_id in obs_ids:
             meta = getmeta(service="obs", params={"obs_id": obs_id})
+            metadata = meta["metadata"]
 
             if meta is None:
-                self.stderr(f"{obs_id=} has no metadata!")
+                self.stderr.write(f"{obs_id=} has no metadata!")
                 continue
 
             obs = Observation(
@@ -115,5 +117,10 @@ class Command(BaseCommand):
                 archived=False,
                 status="unprocessed",
             )
-            obs.save()
+
+            try:
+                obs.save()
+            except Exception as e:
+                self.stderr.write(f"Couldn't import {obs_id}: {e}")
+                #continue
 

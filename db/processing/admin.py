@@ -90,7 +90,6 @@ class EpochAdmin(admin.ModelAdmin):
 class EpochOverviewAdmin(admin.ModelAdmin):
     list_display = ['job_id', 'obs', 'epoch', 'hpc_user', 'task', 'status']
     list_filter = ['hpc_user', YearListFilter, 'task', 'status', 'epoch']
-    date_hierarchy = 'submission_time'
 
 @admin.register(Hpc)
 class HpcAdmin(admin.ModelAdmin):

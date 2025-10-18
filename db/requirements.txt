@@ -5,3 +5,4 @@ jplephem
 paramiko
 dotenv
 djangorestframework
+requests

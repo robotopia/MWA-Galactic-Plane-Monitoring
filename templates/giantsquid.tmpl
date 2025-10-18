@@ -21,6 +21,7 @@ state="${state,,}" # convert to lower case
 
 if [[ -z $state ]]; then
     giant-squid submit-conv -p avg_time_res=4,avg_freq_res=40,flag_edge_width=80,output=ms "${obsnum}"
+    exit 2
 elif [[ "$state" == "ready" ]]; then
     giant-squid download --keep-zip ${obsnum}
     tar -xf ${obsnum}_*_ms.tar
@@ -35,4 +36,5 @@ elif [[ "$state" == "ready" ]]; then
     rm ${obsnum}_*_ms.tar
 else
     echo "State on ASVO: ${state}. Neither downloading this obs (${obsnum}) nor requesting preprocessing"
+    exit 2
 fi

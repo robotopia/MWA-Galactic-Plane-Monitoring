@@ -7,6 +7,10 @@
   background-color: #00a;
   color: #eee;
 }
+.preprocessing {
+  background-color: #80c;
+  color: #000;
+}
 .started {
   background-color: #880;
   color: #000;
@@ -22,6 +26,9 @@
 
 .queued a {
   color: #eee;
+}
+.preprocessing a {
+  color:#000;
 }
 .started a {
   color: #000;

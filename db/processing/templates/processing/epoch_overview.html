@@ -15,9 +15,13 @@
   <h1>{{ request.user.session_settings.selected_semester }} <a href="{% url 'user_session_settings' %}?next={% url 'epoch_overview' epoch=epoch %}"><i class="fa fa-edit"></i></a></h1>
   <h2>{{ request.user.session_settings.selected_hpc_user }} <a href="{% url 'user_session_settings' %}?next={% url 'epoch_overview' epoch=epoch %}"><i class="fa fa-edit"></i></a></h2>
   <h3>{{ epoch }}</h3>
-  <p>See this epoch's <a href="{% url 'backup_view' epoch=epoch %}">backups</a></p>
+  <p>
+    See this epoch's <a href="{% url 'backup_view' epoch=epoch %}">backups</a>.
+    Add <a href="{% url 'add_observations_to_semester_plan' %}?next={% url 'epoch_overview' epoch=epoch %}&epoch={{ epoch }}&semester_id={{ request.user.session_settings.selected_semester.id }}">more observations</a> to this list.
+  </p>
   Legend:
   <span class="queued legend">Queued</span>
+  <span class="preprocessing legend">Preprocessing</span>
   <span class="started legend">Started</span>
   <span class="finished legend">Finished</span>
   <span class="failed legend">Failed</span>
@@ -59,7 +63,6 @@
   {% endfor %}
 </table>
 
-  <script type="text/javascript" src="{% static 'processing/epoch_overview.js' %}"></script>
-</html>
+<script type="text/javascript" src="{% static 'processing/epoch_overview.js' %}"></script>
 
 {% endblock %}

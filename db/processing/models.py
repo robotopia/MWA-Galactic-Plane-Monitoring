@@ -591,6 +591,8 @@ class Processing(models.Model):
         script += '\n# Handle script errors\n'
         script += """if [ $? -eq 0 ]; then
     status=finished
+elif [ $? -eq 2 ]; then
+    status=preprocessing
 else
     status=failed
 fi\n\n"""
@@ -834,7 +836,7 @@ class SemesterPlanProcessingDetail(models.Model):
     class Meta:
         managed = False
         db_table = 'semester_plan_processing_detail'
-        ordering = ['semester', 'obs', 'pipeline_step']
+        ordering = ['semester_plan', 'hpc_user', 'pipeline_step']
 
 
 class SlurmSettings(models.Model):
