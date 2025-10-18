@@ -404,6 +404,7 @@ class Processing(models.Model):
     stdout = models.TextField(blank=True, null=True)
     stdout_path = models.ForeignKey("HpcPath", models.DO_NOTHING, blank=True, null=True, related_name="array_jobs_as_stdout")
     commit = models.CharField(max_length=256)
+    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_array_jobs')
 
     @property
     def batch_file_abs_path(self):
@@ -444,13 +445,13 @@ class Processing(models.Model):
      "https://{os.getenv('GPM_URL')}{reverse('update_processing_job_status')}"
 """
 
-    def get_datadir_curl_command_for_sbatch_scripts(self):
+    def get_datadir_curl_command_for_sbatch_scripts(self, obs_id):
         return f"""curl -s -S -G \\
      -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
      --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
-     --data-urlencode "obs_id=${{obs_id}}" \\
+     --data-urlencode "obs_id={obs_id}" \\
      "https://{os.getenv('GPM_URL')}{reverse('get_datadir')}"
 """
 
@@ -539,7 +540,7 @@ class Processing(models.Model):
         script += self.set_status_curl_command_for_sbatch_scripts("started")
 
         script += '\n# Variables that depend on which observation is being processed\n'
-        script += 'export datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts() + ')"\n'
+        script += 'datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
 
         script += '\n# Load singularity dynamically\n'
         script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
@@ -566,6 +567,11 @@ class Processing(models.Model):
             script += f'cores="{self.cluster.ncpus}"\n'
             script += f'absmem="{self.cluster.abs_memory_minus_ten}"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${mwapb_dir}" "${sky_model}" "${cores}" "${absmem}"\n'
+        elif self.pipeline_step.task.name == 'apply_cal':
+            # More TODO here: Figure out DEBUG mode
+            script += 'caldir="$(' + self.get_datadir_curl_command_for_sbatch_scripts(str(self.cal_obs.obs)) + ')"\n'
+            script += f'calfile="${{caldir}}/{self.cal_obs.obs}_local_gleam_model_solutions_initial_ref.bin\n'
+            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${calfile}" "${debug}"\n'
         else:
             script += 'singularity run "${container{" "${script}" "${obs_id}" "${datadir}"\n'
 
@@ -595,7 +601,6 @@ class ArrayJob(models.Model):
 
     start_time = models.IntegerField(blank=True, null=True)
     end_time = models.IntegerField(blank=True, null=True)
-    cal_obs = models.ForeignKey(Observation, models.DO_NOTHING, blank=True, null=True, related_name='cal_array_jobs')
     status = models.TextField(blank=True, null=True)
 
     @property

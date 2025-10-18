@@ -758,6 +758,7 @@ def create_processing_job(request):
         hpc_user=hpc_user,
         pipeline_step=pipeline_step,
         commit=settings.GITVERSION,
+        cal_obs=obs.cal_obs if task.name == 'apply_cal' else None,
     )
 
     try:
@@ -770,7 +771,6 @@ def create_processing_job(request):
             processing=processing,
             array_idx=i+1,
             obs=obs,
-            cal_obs=obs.cal_obs if task.name == 'apply_cal' else None,
             status='queued', # Do this by default, even though it'll be misleading if the job doesn't actually get submitted for some reason
         )
         array_job.save()
