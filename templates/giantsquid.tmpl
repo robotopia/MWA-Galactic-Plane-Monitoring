@@ -12,7 +12,7 @@ mkdir -p "${datadir}" && cd "${datadir}"
 if [[ -d "${obsnum}.ms" || -f ${obsnum}_*_ms.tar ]]
 then
     echo "${obsnum}.ms or ${obsnum}_*_ms.tar already exists; please remove before trying to (re)download."
-    exit 1
+    exit 0
 fi
 
 # Check the state of the obs preprocessing on ASVO

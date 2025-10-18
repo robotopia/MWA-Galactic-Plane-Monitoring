@@ -97,8 +97,7 @@ curl -s -S -G -X GET \
   --data-urlencode "task=${task}" \
   "${GPMURL}/processing/api/get_template" > ${script}
 
-sub="sbatch ${depend} --export=ALL ${sbatch_script}"
-# Apparently, the --export=ALL in the script header doesn't work the same as the --export=ALL on the cmd line
+sub="sbatch ${depend} --export=SCRIPT_PATH=$(realpath "${sbatch_script}") ${sbatch_script}"
 
 if [[ ! -z ${tst} ]]
 then

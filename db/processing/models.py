@@ -474,15 +474,6 @@ class Processing(models.Model):
      "https://{os.getenv('GPM_URL')}{reverse('get_antennaflags')}"
 """
 
-    def get_template_curl_command_for_sbatch_scripts(self):
-        return f"""curl -s -S -G \\
-     -X GET \\
-     -H "Authorization: Token $GPMDBTOKEN" \\
-     -H "Accept: application/json" \\
-     --data-urlencode "task={self.pipeline_step.task.name}" \\
-     "https://{os.getenv('GPM_URL')}{reverse('get_template')}" > "${{script}}"
-"""
-
     def update_jobid_curl_command_for_sbatch_scripts(self):
         return f"""curl -s -S -G \\
      -X POST \\
@@ -530,6 +521,8 @@ class Processing(models.Model):
                 script += f'%{hus.max_array_jobs}'
             script += '\n'
 
+        script += '\nset -x\n'
+
         if nobs > 1:
             script += '\n# Select the appropriate obs_id for this array job\n'
             obs_ids = ' '.join([str(aj.obs.obs) for aj in self.array_jobs.all().order_by('array_idx')])
@@ -557,7 +550,7 @@ class Processing(models.Model):
         script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
 
         script += f'\n# Download the {self.pipeline_step.task.script_name} script\n'
-        script += 'this_sbatch_file="$(realpath "$0")"\n'
+        script += 'this_sbatch_file="${SCRIPT_PATH}"\n' # caller of this slurm script has to export this variable!
         script += 'this_batch_file="${this_sbatch_file%.sbatch}.sh"\n\n'
         script += 'script="${this_batch_file}"\n'
         script += f'container="{self.hpc_user.hpc_user_settings.container}"\n'
