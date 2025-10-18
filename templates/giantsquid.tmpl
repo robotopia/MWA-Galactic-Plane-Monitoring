@@ -1,0 +1,36 @@
+#! /bin/bash -l
+
+set -x
+
+# Consume the first argument as the obsid
+obsnum="$1"
+datadir="$2"
+
+# Ensure that the target download directory exists and cd into it
+mkdir -p "${datadir}" && cd "${datadir}"
+
+# Make sure that the measurement set hasn't already been downloaded (in full or in part)
+if [[ -d "${obsnum}.ms" || -f ${obsnum}_*_ms.tar ]]
+then
+    echo "${obsnum}.ms or ${obsnum}_*_ms.tar already exists; please remove before trying to (re)download."
+    exit 1
+fi
+
+# Check the state of the obs preprocessing on ASVO
+state="$(giant-squid list "${obsid}" --json | jq -r ".[]| select( .obsid == ${obsid} ).jobState")"
+state="${state,,}" # convert to lower case
+
+if [[ $state == "ready" ]]; then
+    giant-squid download --keep-zip ${obsnum}
+    tar -xf ${obsnum}_*_ms.tar
+    grep -v birli_manifest.sha1sum birli_manifest.sha1sum | sha1sum -c
+
+    # Check if the download was successful
+    if [[ $? -ne 0 ]]; then
+        exit 1
+    fi
+fi
+
+# The tar file has been successfully extracted, so remove it
+rm ${obsnum}_*_ms.tar
+
