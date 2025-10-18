@@ -524,8 +524,6 @@ class Processing(models.Model):
         script += '\n# Load singularity dynamically\n'
         script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
 
-        script += '\nset -x\n'
-
         if nobs > 1:
             script += '\n# Select the appropriate obs_id for this array job\n'
             obs_ids = ' '.join([str(aj.obs.obs) for aj in self.array_jobs.all().order_by('array_idx')])
