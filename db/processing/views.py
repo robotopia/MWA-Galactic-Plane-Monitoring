@@ -718,13 +718,15 @@ def create_processing_job(request):
     Required parameters = obs_ids, pipeline, task, hpc_user, hpc
     Optional parameters = sbatch(=1), debug_mode(=1)
     '''
-    all_obs_ids = request.GET.get('obs_ids').split(',')
-    if all_obs_ids is None:
+    if request.GET.get('obs_ids') is None:
         output_text = f"ERROR: obs_ids is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
+    all_obs_ids_and_epochs = request.GET.get('obs_ids').split(',')
 
-    # Keep only obs_ids that are already in the database
-    obss = models.Observation.objects.filter(obs__in=all_obs_ids).order_by('obs')
+    # Keep only obs_ids and epochs that are already in the database
+    obss = models.Observation.objects.filter(
+        Q(obs__in=all_obs_ids_and_epochs) | Q(epoch__epoch__in=all_obs_ids_and_epochs),
+    ).order_by('obs')
     obs_ids = [str(obs.obs) for obs in obss]
     #invalid_obs_ids = list(set(all_obs_ids) - set(obs_ids))
 
@@ -736,7 +738,7 @@ def create_processing_job(request):
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     if hpc_user.hpc_user_settings is None:
-        output_text = f"ERROR: No settins exist for {hpc_user}\n"
+        output_text = f"ERROR: No settings exist for {hpc_user}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     hpc_user_settings = hpc_user.hpc_user_settings

@@ -2,14 +2,17 @@
 
 usage()
 {
-echo "run_pipeline_task.sh [-d dep] [-t] pipeline task obs_ids
+echo "run_pipeline_task.sh [-d dep] [-t] pipeline task [obs_id [obs_id [...]]]
   -d dep     : job number for dependency (afterok)
   -t         : test. Don't submit job, just make the batch file
                and then return the submission command
   -z         : Debug mode, so adjusts the CORRECTED_DATA column
   pipeline   : the name of the pipeline to run
   task       : the name of the pipeline task to run
-  obs_ids     : the obsid to process, or a text file of obsids (newline separated). 
+  obs_id     : can be:
+                 1. actual obs_ids (e.g. 1234567890),
+                 2. epochs (e.g. Epoch1000), in which case it represents all observations from that epoch,
+                 3. a single text file containing obs_ids (newline separated).
                A job-array task will be submitted to process the collection of obsids. " 1>&2;
 exit 1;
 }

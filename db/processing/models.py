@@ -589,9 +589,10 @@ class Processing(models.Model):
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${debug}"\n'
 
         script += '\n# Handle script errors\n'
-        script += """if [ $? -eq 0 ]; then
+        script += f'exit_code=$?\n'
+        script += """if [ $exit_code -eq 0 ]; then
     status=finished
-elif [ $? -eq 2 ]; then
+elif [ $exit_code -eq 2 ]; then
     status=preprocessing
 else
     status=failed
