@@ -92,5 +92,10 @@ fi
 
 # submit job
 jobid=($(${sub}))
+if [[ $? -ne 0 ]]; then
+    echo "Submission of ${sbatch_script} FAILED"
+    exit 1
+fi
+
 jobid=${jobid[3]}
 echo "Submitted ${sbatch_script} as ${jobid}"
