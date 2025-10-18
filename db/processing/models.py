@@ -521,6 +521,9 @@ class Processing(models.Model):
                 script += f'%{hus.max_array_jobs}'
             script += '\n'
 
+        script += '\n# Load singularity dynamically\n'
+        script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
+
         script += '\nset -x\n'
 
         if nobs > 1:
@@ -545,9 +548,6 @@ class Processing(models.Model):
         script += '\n# Variables that depend on which observation is being processed\n'
         script += 'datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
         script += 'debug=' + ('1' if self.debug_mode else '0')
-
-        script += '\n# Load singularity dynamically\n'
-        script += 'module load $(module -t --default -r avail "^singularity$" 2>&1 | grep -v ":" | head -1)\n'
 
         script += f'\n# Download the {self.pipeline_step.task.script_name} script\n'
         script += 'this_sbatch_file="${SCRIPT_PATH}"\n' # caller of this slurm script has to export this variable!

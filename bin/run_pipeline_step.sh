@@ -90,7 +90,7 @@ curl -s -S -G -X GET \
   "${GPMURL}/processing/api/create_processing_job" > ${sbatch_script}
 
 # Create a batch script that the sbatch script will call
-script=run_GPM_$(date +'%s').sh
+script=${sbatch_script%.sbatch}.sh
 curl -s -S -G -X GET \
   -H "Authorization: Token ${GPMDBTOKEN}" \
   -H "Accept: application/json" \
