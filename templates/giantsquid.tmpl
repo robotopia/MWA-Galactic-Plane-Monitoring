@@ -2,7 +2,6 @@
 
 set -x
 
-# Consume the first argument as the obsid
 obsnum="$1"
 datadir="$2"
 
@@ -17,7 +16,7 @@ then
 fi
 
 # Check the state of the obs preprocessing on ASVO
-state="$(giant-squid list "${obsid}" --json | jq -r ".[]| select( .obsid == ${obsid} ).jobState")"
+state="$(giant-squid list "${obsnum}" --json | jq -r ".[]| select( .obsid == ${obsnum} ).jobState")"
 state="${state,,}" # convert to lower case
 
 if [[ $state == "ready" ]]; then
