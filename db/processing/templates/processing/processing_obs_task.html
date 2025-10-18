@@ -16,7 +16,7 @@
   <b>Data directory:</b> <code>{{ array_jobs.0.datadir }}</code>
 </div>
 
-{% for array_job in array_jobs reversed %}
+{% for array_job in array_jobs %}
 <div class="proc-obs-task">
   <b>Processing code version:</b> {{ array_job.processing.commit|default:"[Not recorded]" }}
   <br>

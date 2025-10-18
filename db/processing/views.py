@@ -183,7 +183,7 @@ def ProcessingObsTaskView(request, obs_id, task_id):
         processing__hpc_user=request.user.session_settings.selected_hpc_user,
         obs=obs,
         processing__pipeline_step__task=task,
-    ).order_by('processing__job_id')
+    ).order_by('-id')
 
     context = {
         'obs': obs,
