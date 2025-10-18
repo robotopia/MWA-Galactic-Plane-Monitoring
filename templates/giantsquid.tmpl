@@ -33,4 +33,6 @@ elif [[ "$state" == "ready" ]]; then
 
     # The tar file has been successfully extracted, so remove it
     rm ${obsnum}_*_ms.tar
+else
+    echo "State on ASVO: ${state}. Neither downloading this obs (${obsnum}) nor requesting preprocessing"
 fi
