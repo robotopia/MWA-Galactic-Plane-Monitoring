@@ -96,6 +96,7 @@ curl -s -S -G -X GET \
   -H "Accept: application/json" \
   --data-urlencode "task=${task}" \
   "${GPMURL}/processing/api/get_template" > ${script}
+chmod +x ${script}
 
 sub="sbatch ${depend} --export=SCRIPT_PATH=$(realpath "${sbatch_script}") ${sbatch_script}"
 
