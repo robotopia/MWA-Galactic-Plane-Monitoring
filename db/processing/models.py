@@ -14,6 +14,8 @@ import base64
 import os
 import paramiko
 
+from astropy.time import Time
+
 # This is to get and use the absolute URL for this running server instance
 # (see GPM_URL)
 from dotenv import load_dotenv
@@ -257,14 +259,6 @@ class HpcUserSetting(models.Model):
     @property
     def singularity_bindpath(self):
         return f"{self.scratchdir}:${{HOME}},{self.scriptdir},{self.logdir},{self.scratchdir},{self.mwalookupdir}:/pb_lookup,{os.path.dirname(self.mwapb)},{os.path.dirname(self.sky_model)}"
-
-    def write_exports(self):
-        output_text = ""
-        output_text += f'export GPMBASE="{self.basedir.path}"\n'
-        output_text += f'export GPMSCRATCH="{self.scratchdir.path}"\n'
-        output_text += f'export GPMSCRIPT="{self.scriptdir.path}"\n'
-        output_text += f'export GPMCONTAINER="{self.container}"\n'
-        return output_text
 
     class Meta:
         managed = False
@@ -586,6 +580,7 @@ function update_status () {
             script += 'calfile="$(' + self.get_calfile_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${calfile}" "${debug}"\n'
         elif self.pipeline_step.task.name in ['image', 'transient']:
+            script += 'echo "export OPENBLAS_NUM_THREADS=1"\n'
             script += f'cores="{self.cluster.ncpus}"\n'
             script += f'absmem="{self.cluster.abs_memory_minus_ten}"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${cores}" "${absmem}" "${debug}"\n'
@@ -841,6 +836,7 @@ class SlurmSettings(models.Model):
     mem   = models.CharField(max_length=15, null=True, blank=True)
     time  = models.CharField(max_length=31, null=True, blank=True)
     ntasks_per_node = models.CharField(max_length=31, null=True, blank=True)
+    cpus_per_task = models.CharField(max_length=31, null=True, blank=True)
     partition = models.CharField(
         max_length=1,
         choices=[
@@ -875,22 +871,10 @@ class SlurmSettings(models.Model):
         header += f"#SBATCH --mem={self.mem or self.cluster.abs_memory}\n"
         header += f"#SBATCH --time={self.time}\n" if self.time else ""
         header += f"#SBATCH --ntasks-per-node={self.ntasks_per_node}\n" if self.ntasks_per_node else ""
+        header += f"#SBATCH --cpus-per-task={self.cpus_per_task}\n" if self.cpus_per_task else ""
         header += f"#SBATCH --partition={self.partition_name}\n" if self.partition_name else ""
         header += f"#SBATCH --account={self.account}\n" if self.account else ""
         return header
-
-    def write_exports(self):
-        exports = ""
-        exports += f"export GPMCLUSTER={self.cluster.name}\n" if self.cluster else ""
-        exports += f"export GPMBEGIN={self.begin}\n" if self.begin else ""
-        exports += f"export GPMABSMEMORY={self.mem}\n" if self.mem else ""
-        exports += f"export GPMTIME={self.time}\n" if self.time else ""
-        exports += f"export GPMNTASKSPERNODE={self.ntasks_per_node}\n" if self.ntasks_per_node else ""
-        exports += f"export GPMSTANDARDQ={self.partition_name}\n" if self.partition_name else ""
-        exports += f"export GPMCOPYQ={self.partition_name}\n" if self.partition_name else ""
-        exports += f"export GPMACCOUNT={self.account}\n" if self.account else ""
-
-        return exports
 
     class Meta:
         managed = False
