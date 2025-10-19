@@ -9,7 +9,7 @@ debug=$4 # Any non-"0" value will mean that debug mode is on
 cd "${datadir}" || exit
 
 # If in debugging mode, apply to the CORRECTED_DATA column
-if [[ "$debug" != "0"]]
+if [[ "$debug" != "0" ]]
 then
     applysolutions \
                 ${obsnum}.ms \

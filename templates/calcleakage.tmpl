@@ -2,40 +2,10 @@
 
 set -x
 
-obsnum=OBSNUM
-
-# If obsnum is a file, then we are in an array job
-if [[ -f "${obsnum}" ]]
-then
-    taskid="${SLURM_ARRAY_TASK_ID}"
-    jobid="${SLURM_ARRAY_JOB_ID}"
-
-    echo "obsfile ${obsnum}"
-    obsnum=$(sed -n -e "${SLURM_ARRAY_TASK_ID}"p "${obsnum}")
-    echo "image obsid ${obsnum}"
-else
-    taskid=1
-    jobid="${SLURM_JOB_ID}"
-fi
-
-echo "jobid: ${jobid}"
-echo "taskid: ${taskid}"
-
-function test_fail {
-if [[ $1 != 0 ]]
-then
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-    exit "$1"
-fi
-}
-
-epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
-datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+obsnum="$1"
+datadir="$2"
 
 cd "${datadir}" || exit 1
-
-# Update database
-$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
 
 # The default output name of calc_leakage (below) appends _fixed to the stem
 # of the fixed V image:
@@ -75,7 +45,7 @@ do
         fi
     fi
 
-    $GPMBASE/gpm/bin/calc_leakage.py \
+    calc_leakage.py \
         --Inonpb ${obsnum}_deep-${subchan}-I-image.fits \
         --subchan ${subchan} \
         --Ipb ${obsnum}_deep-${subchan}-I-image-pb.fits \
@@ -83,8 +53,4 @@ do
         --Vout ${obsnum}_deep-${subchan}-V-image-pb.fits \
         --plots
 done
-
-test_fail $?
-$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-$GPMBASE/gpm/bin/track_task.py obs_status --obs_id="${obsnum}" --status='leakage fixed'
 

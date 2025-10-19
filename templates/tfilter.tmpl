@@ -2,45 +2,15 @@
 
 set -x
 
-obsnum=OBSNUM
-runname=RUNNAME # This sets the "project" name in the candidate webapp uploads.
-
-# If obsnum is a file, then we are in an array job
-if [[ -f "${obsnum}" ]]
-then
-    taskid="${SLURM_ARRAY_TASK_ID}"
-    jobid="${SLURM_ARRAY_JOB_ID}"
-
-    echo "obsfile ${obsnum}"
-    obsnum=$(sed -n -e "${SLURM_ARRAY_TASK_ID}"p "${obsnum}")
-    echo "image obsid ${obsnum}"
-else
-    taskid=1
-    jobid="${SLURM_JOB_ID}"
-fi
-
-echo "jobid: ${jobid}"
-echo "taskid: ${taskid}"
-
-function test_fail {
-if [[ $1 != 0 ]]
-then
-    $GPMBASE/gpm/bin/track_task.py fail --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-    exit "$1"
-fi
-}
-
-epoch="$(${GPMBASE}/gpm_track.py obs_epoch --obs_id ${obsnum})"
-datadir="${GPMSCRATCH}/${epoch}/${obsnum}"
+obsnum="$1"
+datadir="$2"
+runname="$3" # This sets the "project" name in the candidate webapp uploads.
 
 cd "${datadir}" || exit 1
 
-# Update database
-$GPMBASE/gpm/bin/track_task.py start --jobid="${jobid}" --taskid="${taskid}" --start_time="$(date +%s)"
-
 # Run the filters!
-$GPMBASE/gpm/bin/run_tfilter.py --project ${runname} --run_name ${runname} $PWD/${obsnum}_transient.hdf5 ${obsnum}
-test_fail $?
+run_tfilter.py --project ${runname} --run_name ${runname} $PWD/${obsnum}_transient.hdf5 ${obsnum}
+if [ $? -ne 0 ]; then exit 1; fi
 
 # Create a subfolder to put all these files in.
 mkdir -p tfilter_results
@@ -49,8 +19,5 @@ mv ${obsnum}_${runname}*png \
    ${obsnum}_${runname}_islands_selected_meta.fits tfilter_results/.
 
 # Upload to the webapp!
-$GPMBASE/gpm/bin/upload_cand.py --data_directory tfilter_results
-test_fail $?
-
-$GPMBASE/gpm/bin/track_task.py finish --jobid="${jobid}" --taskid="${taskid}" --finish_time="$(date +%s)"
-#$GPMBASE/gpm/bin/track_task.py obs_status --obs_id="${obsnum}" --status='tfiltered'
+upload_cand.py --data_directory tfilter_results
+if [ $? -ne 0 ]; then exit 1; fi
