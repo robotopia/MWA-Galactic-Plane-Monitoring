@@ -625,7 +625,7 @@ def update_processing_job_status(request):
         output_text += f"\nERROR: {e}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
-    output_text += f"\nSet status of {processing.pipeline_step.name} for Observation {array_job.obs.obs} to '{status}'\n"
+    output_text += f"\nSet status of {processing.pipeline_step.task.name} for Observation {array_job.obs.obs} to '{status}'\n"
     return HttpResponse(output_text, content_type="text/plain", status=200)
 
 

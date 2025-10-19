@@ -166,6 +166,6 @@ class UserSessionSettingAdmin(admin.ModelAdmin):
 
 @admin.register(SlurmSettings)
 class SlurmSettingAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'pipeline_step', 'cluster']
-    list_filter = ['pipeline_step', 'cluster']
+    list_display = ['pk', 'pipeline_step__task', 'pipeline_step__pipeline', 'cluster', 'begin', 'mem', 'time', 'ntasks_per_node', 'partition', 'account']
+    list_filter = ['pipeline_step__task', 'pipeline_step__pipeline', 'cluster']
 

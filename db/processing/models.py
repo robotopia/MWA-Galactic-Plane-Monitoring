@@ -887,3 +887,4 @@ class SlurmSettings(models.Model):
             models.UniqueConstraint(fields=['cluster', 'pipeline_step'], name='slurm_settings_unique'),
         ]
         verbose_name = 'SLURM settings'
+        verbose_name_plural = 'SLURM settings'
