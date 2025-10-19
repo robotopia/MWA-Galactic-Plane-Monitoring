@@ -246,6 +246,10 @@ class HpcUserSetting(models.Model):
     def singularity_bindpath(self):
         return f"{self.scratchdir}:${{HOME}},{self.scriptdir},{self.logdir},{self.scratchdir},{self.mwalookupdir}:/pb_lookup,{os.path.dirname(self.mwapb)},{os.path.dirname(self.sky_model)}"
 
+    @property
+    def pythonpath(self):
+        return f"PYTHONPATH:{self.basedir}:{self.basedir}/gpm/bin:/local/usr/bin:{self.basedir}/externals/tfilter"
+
     class Meta:
         managed = False
         db_table = 'hpc_user_setting'
@@ -538,7 +542,9 @@ function update_status () {
         script += 'this_batch_file="${this_sbatch_file%.sbatch}.sh"\n\n'
         script += 'script="${this_batch_file}"\n'
         script += f'container="{self.hpc_user.hpc_user_settings.container}"\n'
-        script += f'\nexport SINGULARITY_BINDPATH="{hus.singularity_bindpath}"\n\n'
+
+        script += f'\nexport SINGULARITY_BINDPATH="{hus.singularity_bindpath}"\n'
+        script += f'\nexport PYTHONPATH="{hus.pythonpath}"\n'
 
         script += '\n# Copy this file and the script file to the script directory for safekeeping\n'
         if nobs > 1:
@@ -553,6 +559,7 @@ function update_status () {
 
         # Compile the script-running line, with arguments appropriate for each script
         script += f'\n# Run the {self.pipeline_step.task.script_name} script\n'
+        script += 'export OPENBLAS_NUM_THREADS=1\n'
         if self.pipeline_step.task.name == 'flag':
             script += 'flags="$(' + self.get_antennaflags_curl_command_for_sbatch_scripts() + ')"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${flags}"\n'
@@ -566,9 +573,8 @@ function update_status () {
             script += 'calfile="$(' + self.get_calfile_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${calfile}" "${debug}"\n'
         elif self.pipeline_step.task.name in ['image', 'transient']:
-            script += 'echo "export OPENBLAS_NUM_THREADS=1"\n'
             script += f'cores="{self.cluster.ncpus}"\n'
-            script += f'absmem="{self.cluster.abs_memory_minus_ten}"\n'
+            script += f'absmem="{self.cluster.abs_memory_minus_ten[:-1]}"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${cores}" "${absmem}" "${debug}"\n'
         else:
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${debug}"\n'

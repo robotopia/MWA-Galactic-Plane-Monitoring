@@ -70,7 +70,7 @@ then
     test_fail $?
 
     echo "Removing outlier files"
-    rm *outlier*fits
+    rm -f *outlier*fits
 else
     echo "No wsclean script ${submodel} found, so nothing to do. Exiting."
 fi

@@ -39,6 +39,7 @@ def EpochOverviewView(request, epoch):
     # Before anything else, check if there are any lingering array jobs which have expired
     # and update their statuses accordingly
     models.ArrayJob.objects.filter(status='started', end_time__lt=int(Time.now().unix)).update(status='expired')
+    models.ArrayJob.objects.filter(status='expired').update(end_time=F('start_time'))
 
     hpc_user = request.user.session_settings.selected_hpc_user
     semester_plans = request.user.session_settings.selected_semester.semester_plans.filter(obs__epoch__epoch=epoch)
@@ -805,7 +806,7 @@ def create_processing_job(request):
     except Exception as e:
         return HttpResponse(f'ERROR: {e}', content_type="text/plain", status=400)
 
-    end_time = slurm_settings.end_time_from_now_as_unix_time # Just an estimate for now, so that epoch overview page picks up the "latest" job. Will be updated when job actually starts
+    end_time = int(Time.now().unix) # Just a dummy value for now, so that epoch overview page picks it up as the "latest" job. Will be updated when job actually starts
 
     for i, obs in enumerate(obss):
         array_job = models.ArrayJob(
