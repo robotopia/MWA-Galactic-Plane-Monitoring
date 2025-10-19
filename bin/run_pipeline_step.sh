@@ -119,23 +119,22 @@ for task in "${tasks[@]}"; do
   # If user requested "test" mode, then only display this line and exit
   if [[ ! -z ${tst} ]]
   then
-      echo "submit via:"
-      echo "${sub}"
-      exit 0
+    echo "Submit ${task} job via:"
+    echo "  ${sub}"
+  else
+    # Submit job!
+    job_id=($(${sub}))
+    if [[ $? -ne 0 ]]; then
+        echo "Submission of ${sbatch_script} FAILED"
+        exit 1
+    fi
+
+    # Hacky parsing of the SLURM JobID from the stdout of the sbatch call
+    job_id=${job_id[3]}
+    echo "Submitted ${sbatch_script} as ${job_id}"
+
+    # Set this JobID as dependency of next task
+    dep="$job_id"
   fi
-
-  # Submit job!
-  job_id=($(${sub}))
-  if [[ $? -ne 0 ]]; then
-      echo "Submission of ${sbatch_script} FAILED"
-      exit 1
-  fi
-
-  # Hacky parsing of the SLURM JobID from the stdout of the sbatch call
-  job_id=${job_id[3]}
-  echo "Submitted ${sbatch_script} as ${job_id}"
-
-  # Set this JobID as dependency of next task
-  dep="$job_id"
 
 done
