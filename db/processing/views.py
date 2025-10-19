@@ -586,9 +586,9 @@ def update_processing_job_status(request):
     output_text = ""
 
     # Parse all required parameters
-    job_id = request.GET.get('job_id')
-    if job_id is None:
-        output_text += f"\nERROR: job_id is a required parameter\n"
+    processing_id = request.GET.get('processing_id')
+    if processing_id is None:
+        output_text += f"\nERROR: processing_id is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     obs_id = request.GET.get('obs_id')
@@ -602,9 +602,9 @@ def update_processing_job_status(request):
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     # Get the relevant Processing and ArrayJob objects and make sure they exist
-    processing = models.Processing.objects.filter(job_id=job_id, hpc_user__auth_users=request.user).first()
+    processing = models.Processing.objects.filter(id=processing_id, hpc_user__auth_users=request.user).first()
     if processing is None:
-        output_text += f"\nERROR: Could not find processing job with job_id = {job_id}\n"
+        output_text += f"\nERROR: Could not find processing job with id = {processing_id}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     array_job = processing.array_jobs.filter(obs__obs=obs_id).first()
@@ -625,7 +625,7 @@ def update_processing_job_status(request):
         output_text += f"\nERROR: {e}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
-    output_text += f"\nSet status of JobID {processing.job_id}, Observation {array_job.obs.obs} to '{status}'\n"
+    output_text += f"\nSet status of {processing.pipeline_step.name} for Observation {array_job.obs.obs} to '{status}'\n"
     return HttpResponse(output_text, content_type="text/plain", status=200)
 
 
@@ -635,9 +635,9 @@ def update_processing_job_status(request):
 def get_datadir(request):
 
     # Parse all required parameters
-    job_id = request.GET.get('job_id')
-    if job_id is None:
-        output_text = f"\n# ERROR: job_id is a required parameter\n"
+    processing_id = request.GET.get('processing_id')
+    if processing_id is None:
+        output_text = f"\n# ERROR: processing_id is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     obs_id = request.GET.get('obs_id')
@@ -646,9 +646,9 @@ def get_datadir(request):
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     # Get the relevant Processing and ArrayJob objects and make sure they exist
-    processing = models.Processing.objects.filter(job_id=job_id, hpc_user__auth_users=request.user).first()
+    processing = models.Processing.objects.filter(id=processing_id, hpc_user__auth_users=request.user).first()
     if processing is None:
-        output_text = f"\n# ERROR: Could not find processing job with job_id = {job_id}\n"
+        output_text = f"\n# ERROR: Could not find processing job with id = {processing_id}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     array_job = processing.array_jobs.filter(obs__obs=obs_id).first()
@@ -665,9 +665,9 @@ def get_datadir(request):
 def get_calfile(request):
 
     # Parse all required parameters
-    job_id = request.GET.get('job_id')
-    if job_id is None:
-        output_text = f"\n# ERROR: job_id is a required parameter\n"
+    processing_id = request.GET.get('processing_id')
+    if processing_id is None:
+        output_text = f"\n# ERROR: processing_id is a required parameter\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     obs_id = request.GET.get('obs_id')
@@ -676,9 +676,9 @@ def get_calfile(request):
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     # Get the relevant Processing and ArrayJob objects and make sure they exist
-    processing = models.Processing.objects.filter(job_id=job_id, hpc_user__auth_users=request.user).first()
+    processing = models.Processing.objects.filter(id=processing_id, hpc_user__auth_users=request.user).first()
     if processing is None:
-        output_text = f"\n# ERROR: Could not find processing job with job_id = {job_id}\n"
+        output_text = f"\n# ERROR: Could not find processing job with id = {processing_id}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     array_job = processing.array_jobs.filter(obs__obs=obs_id).first()
@@ -829,27 +829,33 @@ def get_template(request):
     return HttpResponse(contents, content_type='text/plain', status=200)
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def update_jobid(request):
+def update_job_id(request):
 
+    # Parse all required parameters
     processing_id = request.GET.get('processing_id')
     if processing_id is None:
-        return HttpResponse("ERROR: processing_id is a required parameter\n", content_type="text/plain", status=400)
+        output_text = f"\n# ERROR: processing_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
 
-    processing = models.Processing.objects.get(pk=processing_id)
+    processing = models.Processing.objects.filter(id=processing_id, hpc_user__auth_users=request.user).first()
     if processing is None:
-        return HttpResponse(f"ERROR: processing ID {processing_id} not found\n", content_type="text/plain", status=400)
+        output_text = f"\n# ERROR: Could not find processing job with id = {processing_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
 
     job_id = request.GET.get('job_id')
+    if job_id is None:
+        return HttpResponse("ERROR: job_id is a required parameter\n", content_type="text/plain", status=400)
+
     try:
         processing.job_id = job_id
         processing.save()
     except Exception as e:
         return HttpResponse(f"ERROR: {e}\n", content_type='text/plain', status=400)
 
-    return HttpResponse(f"job_id={job_id} set for processing ID {processing_id}", content_type='text/plain', status=200)
+    return HttpResponse("Updated processing id {processing_id} with SLURM JobID {job_id}", content_type='text/plain', status=200)
 
 
 @login_required

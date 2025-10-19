@@ -24,6 +24,6 @@ urlpatterns = [
     re_path(f'^api/get_datadir$', views.get_datadir, name="get_datadir"),
     re_path(f'^api/get_antennaflags$', views.get_antennaflags, name="get_antennaflags"),
     re_path(f'^api/get_template$', views.get_template, name="get_template"),
-    re_path(f'^api/update_jobid$', views.update_jobid, name="update_jobid"),
+    re_path(f'^api/update_job_id$', views.update_job_id, name="update_job_id"),
     path('', include('django.contrib.auth.urls')),
 ]

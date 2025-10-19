@@ -392,8 +392,7 @@ class PipelineStep(models.Model):
 
 
 class Processing(models.Model):
-    job_id = models.CharField(max_length=127, null=True, blank=True,
-                              help_text="SLURM job ID. If null, then job has not been submitted to the queue.")
+    job_id = models.CharField(max_length=127, null=True, blank=True)
     cluster = models.ForeignKey("Cluster", on_delete=models.DO_NOTHING, related_name="array_jobs")
     pipeline_step = models.ForeignKey("PipelineStep", on_delete=models.DO_NOTHING, related_name="array_jobs")
     hpc_user = models.ForeignKey("HpcUser", on_delete=models.DO_NOTHING, related_name="array_jobs")
@@ -422,24 +421,12 @@ class Processing(models.Model):
     def stderr_abs_path(self):
         return f'{self.stderr_path.path}/{self.stderr}'
 
-    def create_processing_job_curl_command_for_sbatch_scripts(self):
-        return f"""curl -s -S -G \\
-     -X POST \\
-     -H "Authorization: Token $GPMDBTOKEN" \\
-     -H "Accept: application/json" \\
-     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
-     --data-urlencode "obs_id=${{obs_id}}" \\
-     --data-urlencode "pipeline={self.pipeline_step.pipeline.name}" \\
-     --data-urlencode "task={self.pipeline_step.task.name}" \\
-     "https://{os.getenv('GPM_URL')}{reverse('create_processing_job')}"
-"""
-
     def set_status_curl_command_for_sbatch_scripts(self, status):
         return f"""curl -s -S -G \\
      -X POST \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
-     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
+     --data-urlencode "processing_id={self.id}" \\
      --data-urlencode "obs_id=${{obs_id}}" \\
      --data-urlencode "status={status}" \\
      "https://{os.getenv('GPM_URL')}{reverse('update_processing_job_status')}"
@@ -450,7 +437,7 @@ class Processing(models.Model):
      -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
-     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
+     --data-urlencode "processing_id={self.id}" \\
      --data-urlencode "obs_id={obs_id}" \\
      "https://{os.getenv('GPM_URL')}{reverse('get_datadir')}"
 """
@@ -460,7 +447,7 @@ class Processing(models.Model):
      -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
-     --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
+     --data-urlencode "processing_id={self.id}" \\
      --data-urlencode "obs_id={obs_id}" \\
      "https://{os.getenv('GPM_URL')}{reverse('get_calfile')}"
 """
@@ -474,15 +461,24 @@ class Processing(models.Model):
      "https://{os.getenv('GPM_URL')}{reverse('get_antennaflags')}"
 """
 
-    def update_jobid_curl_command_for_sbatch_scripts(self):
-        return f"""curl -s -S -G \\
-     -X POST \\
+    def update_job_id_curl_command_for_sbatch_scripts(self, only_once=True):
+
+        if only_once:
+            command = "if [[ $SLURM_ARRAY_TASK_ID -eq 1 ]]; then\n  "
+
+        command += f"""curl -s -S -G \\
+     -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
      --data-urlencode "processing_id={self.id}" \\
      --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
-     "https://{os.getenv('GPM_URL')}{reverse('update_jobid')}"
+     "https://{os.getenv('GPM_URL')}{reverse('get_antennaflags')}"
 """
+
+        if only_once:
+            command += 'fi\n'
+
+        return command
 
     @property
     def sbatch(self):
@@ -533,12 +529,8 @@ class Processing(models.Model):
         else:
             script += f'\nobs_id="{self.array_jobs.first().obs.obs}"\n'
 
-        script += "\n# Update database with this SLURM JobID\n"
-        if nobs > 1:
-            script += f"if [[ $SLURM_ARRAY_TASK_ID -eq 1 ]]; then\n"
-        script += self.update_jobid_curl_command_for_sbatch_scripts()
-        if nobs > 1:
-            script += "fi\n"
+        script += '\n# Update database with this SLURM JobID\n'
+        script += self.update_job_id_curl_command_for_sbatch_scripts(only_once=(nobs > 1))
 
         script += '\n# Update entry in array job table with status="started"\n'
         script += self.set_status_curl_command_for_sbatch_scripts("started")
@@ -603,7 +595,7 @@ fi\n\n"""
     class Meta:
         managed = False
         db_table = 'processing'
-        ordering = ['job_id']
+        ordering = ['processing_id']
         verbose_name_plural = "Processing"
 
 

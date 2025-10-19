@@ -87,16 +87,39 @@ curl -s -S -G -X GET \
   --data-urlencode "obs_ids=${obs_ids}" \
   --data-urlencode "sbatch=1" \
   --data-urlencode "debug_mode=${debug}" \
-  "${GPMURL}/processing/api/create_processing_job" > ${sbatch_script}
+  -o "${sbatch_script}" \
+  "${GPMURL}/processing/api/create_processing_job"
+
+if [ $? -eq 22 ]; then
+  echo "Could not retrieve sbatch script from ${GPMURL}/processing/api/create_processing_job using:"
+  echo "\tpipeline=${pipeline}"
+  echo "\ttask=${task}"
+  echo "\thpc=${GPMHPC}"
+  echo "\thpc_user=${whoami}"
+  echo "\tobs_ids=${obs_ids}"
+  echo "\tsbatch=1"
+  echo "\tdebug_mode=${debug}"
+  echo "\tGPMDBTOKEN=\${GPMDBTOKEN}"
+  exit 1
+fi
 
 # Create a batch script that the sbatch script will call
 script=${sbatch_script%.sbatch}.sh
-curl -s -S -G -X GET \
+curl -f -s -S -G -X GET \
   -H "Authorization: Token ${GPMDBTOKEN}" \
   -H "Accept: application/json" \
   --data-urlencode "task=${task}" \
-  "${GPMURL}/processing/api/get_template" > ${script}
-chmod +x ${script}
+  -o "${script}" \
+  "${GPMURL}/processing/api/get_template"
+
+if [ $? -eq 22 ]; then
+  echo "Could not retrieve template from ${GPMURL}/processing/api/get_template using:"
+  echo "\ttask=${task}"
+  echo "\tGPMDBTOKEN=\${GPMDBTOKEN}"
+  exit 1
+fi
+
+chmod +x "${script}"
 
 sub="sbatch ${depend} --export=SCRIPT_PATH=$(realpath "${sbatch_script}") ${sbatch_script}"
 
@@ -108,11 +131,12 @@ then
 fi
 
 # submit job
-jobid=($(${sub}))
+job_id=($(${sub}))
 if [[ $? -ne 0 ]]; then
     echo "Submission of ${sbatch_script} FAILED"
     exit 1
 fi
 
-jobid=${jobid[3]}
-echo "Submitted ${sbatch_script} as ${jobid}"
+job_id=${job_id[3]}
+echo "Submitted ${sbatch_script} as ${job_id}"
+
