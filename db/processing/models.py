@@ -115,20 +115,6 @@ class Epoch(models.Model):
         db_table = 'epoch'
 
 
-class EpochCompletion(models.Model):
-    # This model corresponds to a database view, so it cannot be altered
-
-    epoch = models.CharField(max_length=9, primary_key=True)
-    completed = models.IntegerField()
-    hpc_username = models.TextField()
-    pipeline = models.TextField()
-    total = models.IntegerField()
-
-    class Meta:
-        managed = False
-        db_table = 'epoch_completion'
-
-
 class EpochOverview(models.Model):
     # This model points to a database VIEW
     job_id = models.CharField(max_length=127)
