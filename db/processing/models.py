@@ -525,7 +525,7 @@ class Processing(models.Model):
             obs_ids = ' '.join([str(aj.obs.obs) for aj in self.array_jobs.all().order_by('array_idx')])
             script += f'obs_ids="{obs_ids}"\n'
             script += 'obs_ids_arr=($obs_ids)\n'
-            script += 'obs_id=${obs_ids_arr[$SLURM_ARRAY_TASK_ID]}\n'
+            script += 'obs_id=${obs_ids_arr[$((SLURM_ARRAY_TASK_ID-1))]}\n'
         else:
             script += f'\nobs_id="{self.array_jobs.first().obs.obs}"\n'
 
@@ -595,7 +595,6 @@ fi\n\n"""
     class Meta:
         managed = False
         db_table = 'processing'
-        ordering = ['processing_id']
         verbose_name_plural = "Processing"
 
 

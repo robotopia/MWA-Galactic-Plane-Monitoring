@@ -167,7 +167,7 @@ do
     if [[ "$?" != 0 ]]
     then
         echo "Command \"${cmd}\" failed. Stopping..."
-	exit 1
+        exit 1
     fi
     depend="-d ${dep[3]}"
 done

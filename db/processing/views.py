@@ -646,7 +646,7 @@ def get_datadir(request):
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     # Get the relevant Processing and ArrayJob objects and make sure they exist
-    processing = models.Processing.objects.filter(id=processing_id, hpc_user__auth_users=request.user).first()
+    processing = models.Processing.objects.filter(pk=processing_id, hpc_user__auth_users=request.user).first()
     if processing is None:
         output_text = f"\n# ERROR: Could not find processing job with id = {processing_id}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
