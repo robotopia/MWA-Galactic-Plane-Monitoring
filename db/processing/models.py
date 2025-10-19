@@ -852,6 +852,15 @@ class SlurmSettings(models.Model):
     account = models.CharField(max_length=127, null=True, blank=True)
 
     @property
+    def end_time_from_now_as_unix_time(self):
+        now = int(Time.now().unix)
+        if self.time is not None:
+            h, m, s = map(int, self.time.split(':'))
+            return now + (h*3600 + m*60 + s)
+        else:
+            return now + 2*86400 # = 2 days (arbitrary, but most hpc partitions don't allow times longer than this)
+
+    @property
     def partition_name(self):
         if self.partition == 'c':
             return self.cluster.copy_queue

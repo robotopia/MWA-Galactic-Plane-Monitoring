@@ -36,6 +36,10 @@ def dmdelay(dm, f_MHz):
 @login_required
 def EpochOverviewView(request, epoch):
 
+    # Before anything else, check if there are any lingering array jobs which have expired
+    # and update their statuses accordingly
+    models.ArrayJob.objects.filter(status='started', end_time__lt=int(Time.now().unix)).update(status='expired')
+
     hpc_user = request.user.session_settings.selected_hpc_user
     semester_plans = request.user.session_settings.selected_semester.semester_plans.filter(obs__epoch__epoch=epoch)
     semester_plan_processing_details = models.SemesterPlanProcessingDetail.objects.filter(
@@ -624,13 +628,7 @@ def update_processing_job_status(request):
     if status == 'started':
         array_job.start_time = int(Time.now().unix)
         slurm_settings = processing.pipeline_step.slurm_settings.first()
-        if slurm_settings is not None:
-            time = slurm_settings.time
-            if time:
-                h, m, s = map(int, time.split(':'))
-                array_job.end_time = array_job.start_time + (h*3600 + m*60 + s)
-            else:
-                array_job.end_time = array_job.start_time + 2*86400 # = 2 days (arbitrary, but most hpc partitions don't allow times longer than this)
+        array_job.end_time = slurm_settings.end_time_from_now_as_unix_time
     elif status in ['failed', 'finished']:
         array_job.end_time = int(Time.now().unix)
 
@@ -807,6 +805,8 @@ def create_processing_job(request):
     except Exception as e:
         return HttpResponse(f'ERROR: {e}', content_type="text/plain", status=400)
 
+    end_time = slurm_settings.end_time_from_now_as_unix_time # Just an estimate for now, so that epoch overview page picks up the "latest" job. Will be updated when job actually starts
+
     for i, obs in enumerate(obss):
         array_job = models.ArrayJob(
             processing=processing,
@@ -814,6 +814,7 @@ def create_processing_job(request):
             obs=obs,
             status='queued', # Do this by default, even though it'll be misleading if the job doesn't actually get submitted for some reason
             cal_obs=obs.cal_obs if task.name == 'apply_cal' else None,
+            end_time=end_time,
         )
         array_job.save()
 

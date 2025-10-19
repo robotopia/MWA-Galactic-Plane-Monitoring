@@ -23,10 +23,11 @@
   <span class="queued legend">Queued</span>
   <span class="preprocessing legend">Preprocessing</span>
   <span class="started legend">Started</span>
+  <span class="expired legend">Expired</span>
   <span class="finished legend">Finished</span>
   <span class="failed legend">Failed</span>
   <span class="calibration legend">Calibration</span>
-  <span class="finished legend out-of-date">Finished, out-of-date</span>
+  <!--<span class="finished legend out-of-date">Finished, out-of-date</span>-->
 </div>
 <form method="post" action="{% url 'set_epoch_cal' epoch=epoch %}">
   {% csrf_token %}

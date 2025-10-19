@@ -15,6 +15,11 @@
   background-color: #880;
   color: #000;
 }
+.expired {
+  background-color: #880;
+  color: #000;
+  opacity: 0.5;
+}
 .finished {
   background-color: #080;
   color: #000;
@@ -31,6 +36,9 @@
   color:#000;
 }
 .started a {
+  color: #000;
+}
+.expired a {
   color: #000;
 }
 .finished a {
