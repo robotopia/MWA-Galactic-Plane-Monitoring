@@ -248,7 +248,7 @@ class HpcUserSetting(models.Model):
 
     @property
     def pythonpath(self):
-        return f"PYTHONPATH:{self.basedir}:{self.basedir}/gpm/bin:/local/usr/bin:{self.basedir}/externals/tfilter"
+        return f"{self.basedir}:{self.basedir}/gpm/bin:/local/usr/bin:{self.basedir}/externals/tfilter"
 
     class Meta:
         managed = False

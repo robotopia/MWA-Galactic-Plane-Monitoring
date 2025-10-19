@@ -469,6 +469,7 @@ def HpcUserSettingsView(request, hpc_user_id):
     context = {
         'hpc_user': hpc_user,
         'hpc_paths': hpc_paths,
+        'pythonpaths': hpc_user_settings.pythonpath.split(':'),
     }
 
     return render(request, 'processing/hpc_user_settings.html', context)

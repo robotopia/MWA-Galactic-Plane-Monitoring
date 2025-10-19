@@ -23,17 +23,17 @@
 
     <tr>
       <td><label for="container">Path to <b>container</b>:</label></td>
-      <td><input id="container" name="container" value="{{ hpc_user.hpc_user_settings.container|default:'' }}" required/></td>
+      <td><input id="container" name="container" value="{{ hpc_user.hpc_user_settings.container|default:'' }}" required style="width: 800px;"/></td>
     </tr>
 
     <tr>
       <td><label for="mwapb">Path to <b>MWA primary beam embedded element file</b>:</label></td>
-      <td><input id="mwapb" name="mwapb" value="{{ hpc_user.hpc_user_settings.mwapb|default:'' }}" required/></td>
+      <td><input id="mwapb" name="mwapb" value="{{ hpc_user.hpc_user_settings.mwapb|default:'' }}" required style="width: 800px;"/></td>
     </tr>
 
     <tr>
       <td><label for="sky_model">Path to <b>sky model file</b>:</label></td>
-      <td><input id="sky_model" name="sky_model" value="{{ hpc_user.hpc_user_settings.sky_model|default:'' }}" required/></td>
+      <td><input id="sky_model" name="sky_model" value="{{ hpc_user.hpc_user_settings.sky_model|default:'' }}" required style="width: 800px;"/></td>
     </tr>
 
     <tr>
@@ -98,6 +98,25 @@
 
   <input type="submit" class="btn btn-primary" name="action" value="Save"/>
 </form>
+
+<h3>Notes</h3>
+
+<h4>MWA beam file</h4>
+
+<p>The <code>image</code> task will use the <b>MWA primary beam file</b> to calculate the beam. However, as far as I can tell, it always looks for the hard-coded filename <code>mwapy/data/mwa_full_embedded_element_pattern.h5</code> within the paths specified in <code>PYTHONPATH</code>. Currently, <code>PYTHONPATH</code> is defined as consisting of</p>
+<pre>
+   {basedir}
+   {basedir}/gpm/bin
+   /local/usr/bin
+   {basedir}/externals/tfilter
+</pre>
+<p>where <code>basedir</code> is the "(Pipeline software) base directory". Thus, the important thing may be to put the beam file in a <code>mwapb/data</code> subdirectory of one of the paths listed above.</p>
+<p>For the record, <i>your</i> <code>PYTHONPATH</code> is currently defined as</p>
+<pre>
+{% for pythonpath in pythonpaths %}  {{ pythonpath }}
+{% endfor %}
+</pre>
+
 
 <script>
   const clusters_dropdown = document.getElementById('clusters');
