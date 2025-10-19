@@ -41,6 +41,13 @@ def EpochOverviewView(request, epoch):
     semester_plan_processing_details = models.SemesterPlanProcessingDetail.objects.filter(
         Q(hpc_user=hpc_user) | Q(hpc_user__isnull=True),
         semester_plan__in=semester_plans,
+    ).select_related(
+        'semester_plan',
+        'semester_plan__obs',
+        'semester_plan__obs__epoch',
+        'pipeline_step',
+        'pipeline_step__pipeline',
+        'pipeline_step__task',
     ).order_by('semester_plan__obs__obs', 'pipeline_step')
 
     details_by_obs = defaultdict(list)
