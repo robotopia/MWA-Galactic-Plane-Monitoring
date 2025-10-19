@@ -422,7 +422,7 @@ class Processing(models.Model):
         return f'{self.stderr_path.path}/{self.stderr}'
 
     def set_status_curl_command_for_sbatch_scripts(self, status):
-        return f"""curl -s -S -G \\
+        return f"""curl -f -s -S -G \\
      -X POST \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
@@ -433,7 +433,7 @@ class Processing(models.Model):
 """
 
     def get_datadir_curl_command_for_sbatch_scripts(self, obs_id):
-        return f"""curl -s -S -G \\
+        return f"""curl -f -s -S -G \\
      -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
@@ -443,7 +443,7 @@ class Processing(models.Model):
 """
 
     def get_calfile_curl_command_for_sbatch_scripts(self, obs_id):
-        return f"""curl -s -S -G \\
+        return f"""curl -f -s -S -G \\
      -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
@@ -453,7 +453,7 @@ class Processing(models.Model):
 """
 
     def get_antennaflags_curl_command_for_sbatch_scripts(self):
-        return f"""curl -s -S -G \\
+        return f"""curl -f -s -S -G \\
      -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
@@ -466,7 +466,7 @@ class Processing(models.Model):
         if only_once:
             command = "if [[ $SLURM_ARRAY_TASK_ID -eq 1 ]]; then\n  "
 
-        command += f"""curl -s -S -G \\
+        command += f"""curl -f -s -S -G \\
      -X GET \\
      -H "Authorization: Token $GPMDBTOKEN" \\
      -H "Accept: application/json" \\
@@ -529,6 +529,16 @@ class Processing(models.Model):
         else:
             script += f'\nobs_id="{self.array_jobs.first().obs.obs}"\n'
 
+        script += """\n# Handle script errors
+function update_status () {
+  case "$1" in
+    0) status=finished;;
+    2) status=preprocessing;;
+    *) status=failed;;
+  esac
+
+  """ + self.set_status_curl_command_for_sbatch_scripts("${status}") + '}\n'
+
         script += '\n# Update database with this SLURM JobID\n'
         script += self.update_job_id_curl_command_for_sbatch_scripts(only_once=(nobs > 1))
 
@@ -537,6 +547,11 @@ class Processing(models.Model):
 
         script += '\n# Variables that depend on which observation is being processed\n'
         script += 'datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
+
+        script += '\n# Check that the above curl command didn\'t produce an error\n'
+        script += 'if [ $? -eq 22 ]; then\n  echo "ERROR retrieving datadir ($datadir)"\n  update_status 1\nfi\n'
+
+        script += '\n# Set the debug mode\n'
         script += 'debug=' + ('1' if self.debug_mode else '0')
 
         script += f'\n# Download the {self.pipeline_step.task.script_name} script\n'
@@ -578,17 +593,7 @@ class Processing(models.Model):
         else:
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${debug}"\n'
 
-        script += '\n# Handle script errors\n'
-        script += f'exit_code=$?\n'
-        script += """if [ $exit_code -eq 0 ]; then
-    status=finished
-elif [ $exit_code -eq 2 ]; then
-    status=preprocessing
-else
-    status=failed
-fi\n\n"""
-        script += self.set_status_curl_command_for_sbatch_scripts("${status}")
-
+        script += '\n# Update final status of the just-run job\nupdate_status "$?"\n'
 
         return script
 

@@ -11,8 +11,22 @@ mkdir -p "${datadir}" && cd "${datadir}"
 # Make sure that the measurement set hasn't already been downloaded (in full or in part)
 if [[ -d "${obsnum}.ms" || -f ${obsnum}_*_ms.tar ]]
 then
-    echo "${obsnum}.ms or ${obsnum}_*_ms.tar already exists; please remove before trying to (re)download."
-    exit 0
+  # See whether what's meant to be there is indeed there
+  grep -v birli_manifest.sha1sum birli_manifest.sha1sum | sha1sum -c
+
+  # If it isn't, then we infer that it is partially downloaded.
+  # We still don't know whether it is being *currently* downloaded (by another job),
+  # in which case we *should* return a "preprocessing" error code (=2),
+  # or if the download was interrupted, in which case we should return
+  # a "fail" error code (e.g. 1). We return a "fail" code, because this
+  # won't affect the success of the other process, if it exists.
+  if [[ $? -ne 0 ]]; then
+    echo "${obsnum}.ms or ${obsnum}_*_ms.tar already exists, but checksum failed incomplete. Perhaps another process is downloading it currently?"
+    exit 1
+  fi
+
+  echo "${obsnum}.ms or ${obsnum}_*_ms.tar already exists; please remove before trying to (re)download."
+  exit 0
 fi
 
 # Check the state of the obs preprocessing on ASVO
