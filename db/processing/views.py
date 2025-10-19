@@ -623,6 +623,14 @@ def update_processing_job_status(request):
     array_job.status = status
     if status == 'started':
         array_job.start_time = int(Time.now().unix)
+        slurm_settings = processing.pipeline_step.slurm_settings.first()
+        if slurm_settings is not None:
+            time = slurm_settings.time
+            if time:
+                h, m, s = map(int, time.split(':'))
+                array_job.end_time = array_job.start_time + (h*3600 + m*60 + s)
+            else:
+                array_job.end_time = array_job.start_time + 2*86400 # = 2 days (arbitrary, but most hpc partitions don't allow times longer than this)
     elif status in ['failed', 'finished']:
         array_job.end_time = int(Time.now().unix)
 

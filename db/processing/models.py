@@ -463,8 +463,7 @@ class Processing(models.Model):
 
     def update_job_id_curl_command_for_sbatch_scripts(self, only_once=True):
 
-        if only_once:
-            command = "if [[ $SLURM_ARRAY_TASK_ID -eq 1 ]]; then\n  "
+        command = "if [[ $SLURM_ARRAY_TASK_ID -eq 1 ]]; then\n  " if only_once else ''
 
         command += f"""curl -f -s -S -G \\
      -X GET \\
@@ -472,7 +471,7 @@ class Processing(models.Model):
      -H "Accept: application/json" \\
      --data-urlencode "processing_id={self.id}" \\
      --data-urlencode "job_id=${{SLURM_JOB_ID}}" \\
-     "https://{os.getenv('GPM_URL')}{reverse('get_antennaflags')}"
+     "https://{os.getenv('GPM_URL')}{reverse('update_job_id')}"
 """
 
         if only_once:
