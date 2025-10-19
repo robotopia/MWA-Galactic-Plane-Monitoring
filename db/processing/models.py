@@ -549,7 +549,7 @@ function update_status () {
         script += 'datadir="$(' + self.get_datadir_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
 
         script += '\n# Check that the above curl command didn\'t produce an error\n'
-        script += 'if [ $? -eq 22 ]; then\n  echo "ERROR retrieving datadir ($datadir)"\n  update_status 1\nfi\n'
+        script += 'if [ $? -eq 22 ]; then\n  echo "ERROR retrieving datadir ($datadir)"\n  update_status 1\n  exit 1\nfi\n'
 
         script += '\n# Set the debug mode\n'
         script += 'debug=' + ('1' if self.debug_mode else '0')
@@ -593,7 +593,7 @@ function update_status () {
         else:
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${debug}"\n'
 
-        script += '\n# Update final status of the just-run job\nupdate_status "$?"\n'
+        script += '\n# Update final status of the just-run job\nexit_code="$?"\nupdate_status "$exit_code"\nexit "$exit_code"\n'
 
         return script
 
