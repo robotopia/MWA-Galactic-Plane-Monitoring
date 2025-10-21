@@ -44,7 +44,6 @@ def EpochOverviewView(request, epoch):
     hpc_user = request.user.session_settings.selected_hpc_user
     semester_plans = request.user.session_settings.selected_semester.semester_plans.filter(obs__epoch__epoch=epoch)
     semester_plan_processing_details = models.SemesterPlanProcessingDetail.objects.filter(
-        Q(hpc_user=hpc_user) | Q(hpc_user__isnull=True),
         semester_plan__in=semester_plans,
     ).select_related(
         'semester_plan',
@@ -57,7 +56,15 @@ def EpochOverviewView(request, epoch):
 
     details_by_obs = defaultdict(list)
     for semester_plan_processing_detail in semester_plan_processing_details:
-        details_by_obs[semester_plan_processing_detail.semester_plan.obs].append(semester_plan_processing_detail)
+        # This is a rather complicated bit of logic. The way that the
+        # SemesterPlanProcessingDetail (database) view works, it returns a row
+        # for every semester plan/pipeline step combination for each HPC user
+        # that has processed it, OR a row containing nulls for the array job
+        # and hpc_user if no one has processed it. This means that the query
+        # above returns results for all HPC users, but we need strictly only
+        # one row per pipeline step (either the current hpc_user, or null).
+        if semester_plan_processing_detail.hpc_user_id == hpc_user.id or semester_plan_processing_detail.hpc_user_id is None:
+            details_by_obs[semester_plan_processing_detail.semester_plan.obs].append(semester_plan_processing_detail)
     details_by_obs = dict(details_by_obs)
 
     context = {
@@ -873,7 +880,7 @@ def update_job_id(request):
     except Exception as e:
         return HttpResponse(f"ERROR: {e}\n", content_type='text/plain', status=400)
 
-    return HttpResponse("Updated processing id {processing_id} with SLURM JobID {job_id}", content_type='text/plain', status=200)
+    return HttpResponse(f"Updated processing id {processing_id} with SLURM JobID {job_id}", content_type='text/plain', status=200)
 
 
 @login_required

@@ -16,7 +16,7 @@ then
 
   # If it isn't, then we infer that it is partially downloaded.
   # We still don't know whether it is being *currently* downloaded (by another job),
-  # in which case we *should* return a "preprocessing" error code (=2),
+  # in which case we *should* return a "preprocessing" error code (=99),
   # or if the download was interrupted, in which case we should return
   # a "fail" error code (e.g. 1). We return a "fail" code, because this
   # won't affect the success of the other process, if it exists.
@@ -35,7 +35,7 @@ state="${state,,}" # convert to lower case
 
 if [[ -z $state ]]; then
     giant-squid submit-conv -p avg_time_res=4,avg_freq_res=40,flag_edge_width=80,output=ms "${obsnum}"
-    exit 2
+    exit 99
 elif [[ "$state" == "ready" ]]; then
     giant-squid download --keep-zip ${obsnum}
     tar -xf ${obsnum}_*_ms.tar
@@ -50,5 +50,5 @@ elif [[ "$state" == "ready" ]]; then
     rm ${obsnum}_*_ms.tar
 else
     echo "State on ASVO: ${state}. Neither downloading this obs (${obsnum}) nor requesting preprocessing"
-    exit 2
+    exit 99
 fi

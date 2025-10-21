@@ -516,7 +516,7 @@ class Processing(models.Model):
 function update_status () {
   case "$1" in
     0) status=finished;;
-    2) status=preprocessing;;
+    99) status=preprocessing;;
     *) status=failed;;
   esac
 
