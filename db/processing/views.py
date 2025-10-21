@@ -984,13 +984,13 @@ def get_acacia_path(request):
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     obs = models.Observation.objects.filter(pk=obs_id).first()
-    if obs in None:
+    if obs is None:
         output_text = f"\n#ERROR: Could not find observation with id = {obs_id}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
     # Construct the Acacia path
     profile = processing.hpc_user.hpc_user_settings.acacia_profile
-    bucket = processing.hpc_user.hpc_user_settings.selected_semester.name
+    bucket = request.user.session_settings.selected_semester.name.lower()
     epoch = obs.epoch.epoch
     backup_type = processing.pipeline_step.task.backup_type
 
@@ -1042,14 +1042,6 @@ def save_acacia_path(request):
         output_text += f"\nERROR: {e}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
-    # Construct the Acacia path
-    profile = processing.hpc_user.hpc_user_settings.acacia_profile
-    bucket = processing.hpc_user.hpc_user_settings.selected_semester.name
-    epoch = obs.epoch.epoch
-    backup_type = processing.pipeline_step.task.name[7:] # 'acacia_target' --> 'target'
-
-    acacia_path = f"{profile}:{bucket}/{epoch}/{obs}_{backup_type}.tar.gz"
-
-    return HttpResponse(acacia_path, content_type="text/plain", status=200)
+    return HttpResponse(f"Acacia path {acacia_path} added to database", content_type="text/plain", status=200)
 
 

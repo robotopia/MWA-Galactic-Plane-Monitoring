@@ -64,7 +64,7 @@ if [ $exitcode -ne 0 ]; then
    fi
 fi
 echo "Checking if a test file can be trasferred into the desired full path in Acacia"
-testFile=test_file_${jobid}-${taskid}.txt
+testFile=test_file.txt
 echo "File for test" > "${testFile}"
 rclone copy "${testFile}" "${acacia_dir}/"; exitcode=$?
 if [ $exitcode -ne 0 ]; then

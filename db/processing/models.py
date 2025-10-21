@@ -598,10 +598,16 @@ function update_status () {
             script += f'absmem="{self.cluster.abs_memory_minus_ten[:-1]}"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${cores}" "${absmem}" "${debug}"\n'
         elif self.pipeline_step.task.name.startswith('acacia'):
+            # Load rclone
+            script += 'module load $(module -t --default -r avail "^rclone$" 2>&1 | grep -v ":" | head -1)\n'
             # Get Acacia path
-            script += 'acacia_path="$(' + self.get_acacia_path_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
-            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${acacia_path}"\n'
+            script += 'acacia_path="$(' + self.get_acacia_path_curl_command_for_sbatch_scripts() + ')"\n'
+            # Run it *without* the container
+            script += '"${script}" "${obs_id}" "${datadir}" "${acacia_path}"\n'
+            # Record the result
+            script += 'if [[ $? -eq 0 ]]; then\n  '
             script += self.save_acacia_path_curl_command_for_sbatch_scripts()
+            script += 'else\n  false\nfi\n' # This is so that the update status line below correctly reflects the result of running the acacia script (if it fails). Otherwise, the line below will be updating the status with the result of the curl command instead.
         else:
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${debug}"\n'
 
