@@ -1005,10 +1005,10 @@ def get_acacia_path(request):
 def save_acacia_path(request):
 
     # Parse all parameters
-    acacia_path = request.GET.get('processing_id')
+    acacia_path = request.GET.get('acacia_path')
     obs_id = request.GET.get('obs_id')
     obstype = request.GET.get('obstype')
-    tar_contains_folder = request.GET.get('tar_contains_folder')
+    tar_contains_folder = request.GET.get('tar_contains_folder') == '1'
 
     # Check for required parameters
     if acacia_path is None:
@@ -1025,7 +1025,7 @@ def save_acacia_path(request):
 
     # Check that the provided obs exists
     obs = models.Observation.objects.filter(pk=obs_id).first()
-    if obs in None:
+    if obs is None:
         output_text = f"\n#ERROR: Could not find observation with id = {obs_id}\n"
         return HttpResponse(output_text, content_type="text/plain", status=400)
 
