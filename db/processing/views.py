@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from processing.hpc_login import hpc_login_required
 from django.db.models import Q, F
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from . import models
 import json
 from collections import defaultdict
@@ -448,9 +449,10 @@ def HpcUserSettingsView(request, hpc_user_id):
     if hpc_user not in request.user.hpc_users.all():
         return HttpResponse(status=404)
 
-    hpc_user_settings = hpc_user.hpc_user_settings
-    if hpc_user_settings is None:
-        hpc_user_settings = models.HpcUserSettings(hpc_user=hpc_user)
+    try:
+        hpc_user_settings = hpc_user.hpc_user_settings
+    except ObjectDoesNotExist:
+        hpc_user_settings = models.HpcUserSetting(hpc_user=hpc_user)
         hpc_user_settings.save()
 
     if request.method == 'POST':
