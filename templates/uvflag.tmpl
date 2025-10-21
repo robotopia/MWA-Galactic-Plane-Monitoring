@@ -9,8 +9,8 @@ cd "${datadir}" || exit 1
 
 if [[ "$debug" != "0" ]]
 then
-    ms_flag_by_uvdist.py "${obsnum}.ms" DATA -a
-else
     ms_flag_by_uvdist.py "${obsnum}.ms" CORRECTED_DATA -a 
+else
+    ms_flag_by_uvdist.py "${obsnum}.ms" DATA -a
 fi
 

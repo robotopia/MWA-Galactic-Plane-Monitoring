@@ -610,8 +610,6 @@ def load_job_environment(request):
 
     output_text += slurm_settings.write_exports()
 
-    output_text += f"export GPMOBSSCRIPT={pipeline_step.obs_script}\n"
-
     return HttpResponse(output_text, content_type="text/plain", status=200)
 
 
@@ -961,3 +959,97 @@ def add_observations_to_semester_plan(request):
             return redirect(request.POST.get('next'))
 
     return render(request, 'processing/add_observations_to_semester_plan.html', context)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_acacia_path(request):
+
+    # Parse all required parameters
+    processing_id = request.GET.get('processing_id')
+    if processing_id is None:
+        output_text = f"\n# ERROR: processing_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    obs_id = request.GET.get('obs_id')
+    if obs_id is None:
+        output_text = f"\n# ERROR: obs_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Get the relevant Processing and Observation objects and make sure they exist
+    processing = models.Processing.objects.filter(pk=processing_id, hpc_user__auth_users=request.user).first()
+    if processing is None:
+        output_text = f"\n# ERROR: Could not find processing job with id = {processing_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    obs = models.Observation.objects.filter(pk=obs_id).first()
+    if obs in None:
+        output_text = f"\n#ERROR: Could not find observation with id = {obs_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Construct the Acacia path
+    profile = processing.hpc_user.hpc_user_settings.acacia_profile
+    bucket = processing.hpc_user.hpc_user_settings.selected_semester.name
+    epoch = obs.epoch.epoch
+    backup_type = processing.pipeline_step.task.backup_type
+
+    acacia_path = f"{profile}:{bucket}/{epoch}/{obs}_{backup_type}.tar.gz"
+
+    return HttpResponse(acacia_path, content_type="text/plain", status=200)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def save_acacia_path(request):
+
+    # Parse all parameters
+    acacia_path = request.GET.get('processing_id')
+    obs_id = request.GET.get('obs_id')
+    obstype = request.GET.get('obstype')
+    tar_contains_folder = request.GET.get('tar_contains_folder')
+
+    # Check for required parameters
+    if acacia_path is None:
+        output_text = f"\n# ERROR: acacia_path is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    if obs_id is None:
+        output_text = f"\n# ERROR: obs_id is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    if obstype is None:
+        output_text = f"\n# ERROR: obstype is a required parameter\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Check that the provided obs exists
+    obs = models.Observation.objects.filter(pk=obs_id).first()
+    if obs in None:
+        output_text = f"\n#ERROR: Could not find observation with id = {obs_id}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Create an row in the Acacia table
+    try:
+        acacia = models.Acacia(
+            obs=obs,
+            tar_contains_folder=tar_contains_folder,
+            acacia=acacia_path,
+            obstype=obstype,
+        )
+        acacia.save()
+    except Exception as e:
+        output_text += f"\nERROR: {e}\n"
+        return HttpResponse(output_text, content_type="text/plain", status=400)
+
+    # Construct the Acacia path
+    profile = processing.hpc_user.hpc_user_settings.acacia_profile
+    bucket = processing.hpc_user.hpc_user_settings.selected_semester.name
+    epoch = obs.epoch.epoch
+    backup_type = processing.pipeline_step.task.name[7:] # 'acacia_target' --> 'target'
+
+    acacia_path = f"{profile}:{bucket}/{epoch}/{obs}_{backup_type}.tar.gz"
+
+    return HttpResponse(acacia_path, content_type="text/plain", status=200)
+
+

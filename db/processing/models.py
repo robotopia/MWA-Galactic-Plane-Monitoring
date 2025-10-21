@@ -54,7 +54,7 @@ class ApplyCal(models.Model):
 
 class Acacia(models.Model):
     obs = models.ForeignKey('Observation', models.DO_NOTHING)
-    acacia = models.CharField(max_length=127)
+    acacia = models.CharField(max_length=127, help_text="Full path in Acacia (e.g. mwasci:gpm2024/EpochXXXX/some_obs_calibration.tar.gz)")
     tar_contains_folder = models.BooleanField()
     obstype = models.CharField(max_length=31)
 
@@ -362,12 +362,6 @@ class PipelineStep(models.Model):
     pipeline = models.ForeignKey("Pipeline", models.DO_NOTHING, related_name="steps")
     step_order = models.IntegerField()
     task = models.ForeignKey("Task", models.DO_NOTHING, related_name="pipeline_steps")
-    options = models.CharField(max_length=127, null=True, blank=True)
-    obs_script = models.CharField(max_length=255, null=True, blank=True)
-
-    @property
-    def command(self):
-        return f'obs_{self.obs_script}.sh {self.options or ""}'
 
     def __str__(self) -> str:
         return f"{self.task} ({self.pipeline})"
@@ -449,6 +443,27 @@ class Processing(models.Model):
      -H "Accept: application/json" \\
      --data-urlencode "obs_id=${{obs_id}}" \\
      "https://{os.getenv('GPM_URL')}{reverse('get_antennaflags')}"
+"""
+
+    def get_acacia_path_curl_command_for_sbatch_scripts(self):
+        return f"""curl -f -s -S -G \\
+     -X GET \\
+     -H "Authorization: Token $GPMDBTOKEN" \\
+     -H "Accept: application/json" \\
+     --data-urlencode "processing_id={self.id}" \\
+     --data-urlencode "obs_id=${{obs_id}}" \\
+     "https://{os.getenv('GPM_URL')}{reverse('get_acacia_path')}"
+"""
+
+    def save_acacia_path_curl_command_for_sbatch_scripts(self):
+        return f"""curl -f -s -S -G \\
+     -X GET \\
+     -H "Authorization: Token $GPMDBTOKEN" \\
+     -H "Accept: application/json" \\
+     --data-urlencode "acacia_path=${{acacia_path}}" \\
+     --data-urlencode "obs_id=${{obs_id}}" \\
+     --data-urlencode "obstype={self.pipeline_step.task.backup_type}" \\
+     "https://{os.getenv('GPM_URL')}{reverse('save_acacia_path')}"
 """
 
     def update_job_id_curl_command_for_sbatch_scripts(self, only_once=True):
@@ -582,6 +597,11 @@ function update_status () {
             script += f'cores="{self.cluster.ncpus}"\n'
             script += f'absmem="{self.cluster.abs_memory_minus_ten[:-1]}"\n'
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${cores}" "${absmem}" "${debug}"\n'
+        elif self.pipeline_step.task.name.startswith('acacia'):
+            # Get Acacia path
+            script += 'acacia_path="$(' + self.get_acacia_path_curl_command_for_sbatch_scripts('${obs_id}') + ')"\n'
+            script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${acacia_path}"\n'
+            script += self.save_acacia_path_curl_command_for_sbatch_scripts()
         else:
             script += 'singularity run "${container}" "${script}" "${obs_id}" "${datadir}" "${debug}"\n'
 
@@ -629,15 +649,6 @@ class ArrayJob(models.Model):
     @property
     def stderr_abs_path(self):
         return self.processing.stderr_abs_path.replace("%A", self.processing.job_id).replace("%a", self.array_idx)
-
-    @property
-    def acacia_path(self):
-        profile = self.processing.hpc_user.hpc_user_settings.acacia_profile
-        bucket = self.processing.hpc_user.hpc_user_settings.selected_semester.name
-        epoch = self.obs.epoch.epoch
-        obs = self.obs.obs
-        obstype = self.processing.pipeline_step.options
-        return f"{profile}:{bucket}/{epoch}/{obs}_{obs_type}.tar.gz"
 
     class Meta:
         managed = False
@@ -713,6 +724,13 @@ class Task(models.Model):
         with open(filename, "r", encoding="utf-8") as f:
             contents = f.read()
         return contents
+
+    @property
+    def backup_type(self):
+        if self.name.startswith('acacia') and len(self.name) > 7:
+            return self.name[7:] # e.g. 'acacia_target' --> 'target'
+        else:
+            return None
 
     class Meta:
         managed = False
