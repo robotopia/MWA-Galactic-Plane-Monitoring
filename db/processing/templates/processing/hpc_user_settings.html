@@ -37,6 +37,11 @@
     </tr>
 
     <tr>
+      <td><label for="acacia_profile">The <b>Acacia profile</b> to use for backups (e.g. "mwasci")</label></td>
+      <td><input id="acacia_profile" name="acacia_profile" value="{{ hpc_user.hpc_user_settings.acacia_profile|default:'' }}" required style="width: 800px;"/></td>
+    </tr>
+
+    <tr>
       <td><label for="basedir">(Pipeline software) base directory:</label></td>
       <td><select id="basedir" name="basedir" required>
           <option value=''>--- Select ---</option>

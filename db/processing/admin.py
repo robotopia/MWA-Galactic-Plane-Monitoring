@@ -128,7 +128,7 @@ class PipelineAdmin(admin.ModelAdmin):
 
 @admin.register(PipelineStep)
 class PipelineStepAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'pipeline', 'step_order', 'task']
+    list_display = ['pk', 'pipeline', 'step_order', 'task', 'options']
 
 @admin.register(TaskClusterSetting)
 class TaskClusterSettingAdmin(admin.ModelAdmin):

@@ -7,8 +7,7 @@ set -x
 obsnum="$1"
 datadir="$2"
 obstype="$3" # "target", "calibration", or "warp"
-
-container="singularity exec ${GPMCONTAINER}"
+acacia_path="$4"
 
 function test_fail {
 if [[ $1 != 0 ]]
@@ -35,22 +34,13 @@ else
   echo "Unrecognised observation type \"$obstype\""
   exit 1
 fi
-#----------------
-
-#-----------------
-#Defining variables that will hold the names related to your access, buckets and objects to be stored in Acacia
-profileName=mwasci
-bucketName=gpm2024
-prefixPath=${epoch}
-fullPathInAcacia="${profileName}:${bucketName}/${prefixPath}" #Note the colon(:) when using rclone
-
-#Local storage variables
-workingDir="$(pwd)"
-echo "workingDir=${workingDir}"
 
 #-----------------
 #Check if Acacia definitions make sense, and if you can transfer objects into the desired bucket
 echo "Checking that the profile exists"
+profileName="$(echo $acacia_path | sed 's_:.*__')"
+# ^^^ i.e. remove all characters from first colon onwards,
+# e.g. "mwasci:gpm2024/blah/blah" --> "mwasci"
 rclone config show | grep "${profileName}" > /dev/null; exitcode=$?
 if [ $exitcode -ne 0 ]; then
    echo "The given profileName=$profileName seems not to exist in the user configuration of rclone"
@@ -58,14 +48,17 @@ if [ $exitcode -ne 0 ]; then
    test_fail 1
 fi
 echo "Checking the bucket exists and that you have writing access"
-rclone lsd "${profileName}:${bucketName}" > /dev/null; exitcode=$? #Note the colon(:) when using rclone
+bucketName="$(echo $acacia_path | sed 's_/.*__')"
+# ^^^ i.e. remove all characters from first forward slash onwards,
+# e.g. "mwasci:gpm2024/blah/blah" --> "mwasci:gpm2024"
+rclone lsd "${bucketName}" > /dev/null; exitcode=$? #Note the colon(:) when using rclone
 if [ $exitcode -ne 0 ]; then
-   echo "The bucket intended to receive the data does not exist: ${profileName}:${bucketName}"
+   echo "The bucket intended to receive the data does not exist: ${bucketName}"
    echo "Trying to create it"
-   rclone mkdir "${profileName}:${bucketName}"; exitcode=$?
+   rclone mkdir "${bucketName}"; exitcode=$?
    if [ $exitcode -ne 0 ]; then
       echo "Creation of bucket failed"
-      echo "The bucket name or the profile name may be wrong: ${profileName}:${bucketName}"
+      echo "The bucket name or the profile name may be wrong: ${bucketName}"
       echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
       test_fail 1
    fi
@@ -73,40 +66,30 @@ fi
 echo "Checking if a test file can be trasferred into the desired full path in Acacia"
 testFile=test_file_${jobid}-${taskid}.txt
 echo "File for test" > "${testFile}"
-rclone copy "${testFile}" "${fullPathInAcacia}/"; exitcode=$?
+rclone copy "${testFile}" "${acacia_dir}/"; exitcode=$?
 if [ $exitcode -ne 0 ]; then
-   echo "The test file $testFile cannot be transferred into ${fullPathInAcacia}"
+   echo "The test file $testFile cannot be transferred into ${acacia_dir}"
    echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
    test_fail 1
 fi
 echo "Checking if the test file can be listed in Acacia"
-listResult=$(rclone lsl "${fullPathInAcacia}/${testFile}")
+listResult=$(rclone lsl "${acacia_dir}/${testFile}")
 if [ -z "$listResult" ]; then
-   echo "Problems occurred during the listing of the test file ${testFile} in ${fullPathInAcacia}"
+   echo "Problems occurred during the listing of the test file ${testFile} in ${acacia_dir}"
    echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
    test_fail 1
 fi
 echo "Removing test file from Acacia"
-rclone delete "${fullPathInAcacia}/${testFile}"; exitcode=$?
+rclone delete "${acacia_dir}/${testFile}"; exitcode=$?
 if [ $exitcode -ne 0 ]; then
-   echo "The test file $testFile cannot be removed from ${fullPathInAcacia}"
+   echo "The test file $testFile cannot be removed from ${acacia_dir}"
    echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
    test_fail 1
 fi
 rm $testFile
 
-#----------------
-#Defining the working dir and cd into it
-echo "Checking that the working directory exists"
-if ! [ -d $workingDir ]; then
-   echo "The working directory $workingDir does not exist"
-   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
-   test_fail 1
-else
-   cd $workingDir
-fi
-
-tarFileName=${obsnum}_${obstype}.tar.gz
+tarFileName="$(basename "${acacia_path})"
+acacia_dir="$(dirname "${acacia_path})"
 auxiliaryDirForTars="$MYSCRATCH/tars"
 echo "Checking that the auxiliary directory exists"
 if ! [ -d $auxiliaryDirForTars ]; then
@@ -133,23 +116,19 @@ fi
 #-----------------
 #Perform the transfer of the tar file into the working directory and check for the transfer
 echo "Performing the transfer ... "
-echo "rclone copy --s3-chunk-size 600M ${auxiliaryDirForTars}/${tarFileName} ${fullPathInAcacia}/"
-srun rclone copy --s3-chunk-size 600M "${auxiliaryDirForTars}/${tarFileName}" "${fullPathInAcacia}/"; exitcode=$?
+echo "rclone copy --s3-chunk-size 600M ${auxiliaryDirForTars}/${tarFileName} ${acacia_dir}/"
+srun rclone copy --s3-chunk-size 600M "${auxiliaryDirForTars}/${tarFileName}" "${acacia_dir}/"; exitcode=$?
 if [ $exitcode -ne 0 ]; then
    echo "Problems occurred during the transfer of file ${tarFileName}"
-   echo "Check that the file exists in ${workingDir}"
-   echo "And that nothing is wrong with the fullPathInAcacia: ${fullPathInAcacia}/"
+   echo "Check that the file exists in ${datadir}"
+   echo "And that nothing is wrong with the acacia_dir: ${acacia_dir}/"
    echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
    test_fail 1
 else
    #echo "Removing the tar file from scratch as it was successfully transferred into Acacia"
-   echo "Final place in Acacia: ${fullPathInAcacia}/${tarFileName}"
+   echo "Final place in Acacia: ${acacia_path}"
    rm "${auxiliaryDirForTars}/${tarFileName}" #Comment this line when debugging workflow
 fi
-
-#---------------
-# Recording this entry into the database
-${container} $GPMBASE/gpm_track.py set_acacia_path --obs_id ${obsnum} --obstype ${obstype} --acacia_path "${fullPathInAcacia}/${tarFileName}"
 
 #---------------
 #Successfully finished

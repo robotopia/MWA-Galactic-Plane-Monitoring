@@ -482,6 +482,7 @@ def HpcUserSettingsView(request, hpc_user_id):
         hpc_user_settings.container      = request.POST.get('container')
         hpc_user_settings.mwapb          = request.POST.get('mwapb')
         hpc_user_settings.sky_model      = request.POST.get('sky_model')
+        hpc_user_settings.acacia_profile = request.POST.get('acacia_profile')
         hpc_user_settings.save()
 
         if request.GET.get('next') is not None:

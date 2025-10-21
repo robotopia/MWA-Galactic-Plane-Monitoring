@@ -237,6 +237,9 @@ class HpcUserSetting(models.Model):
                                      help_text="The path where the MWA lookup files live",
                                      related_name="hpc_user_settings_as_mwalookup")
 
+    acacia_profile = models.CharField(max_length=127, null=True, blank=True,
+                                      help_text="The name of the Acacia profile to use for backups")
+
     #start_time_offset_minutes = models.IntegerField(null=True, blank=True, help_text="When a SLURM job is submitted, start the job no sooner from this many minutes from that time.")
 
     def __str__(self) -> str:
@@ -358,12 +361,12 @@ class PipelineStep(models.Model):
     pipeline = models.ForeignKey("Pipeline", models.DO_NOTHING, related_name="steps")
     step_order = models.IntegerField()
     task = models.ForeignKey("Task", models.DO_NOTHING, related_name="pipeline_steps")
-    cmd_line_options = models.CharField(max_length=127)
+    options = models.CharField(max_length=127)
     obs_script = models.CharField(max_length=255)
 
     @property
     def command(self):
-        return f'obs_{self.obs_script}.sh {self.cmd_line_options or ""}'
+        return f'obs_{self.obs_script}.sh {self.options or ""}'
 
     def __str__(self) -> str:
         return f"{self.task} ({self.pipeline})"
@@ -623,6 +626,15 @@ class ArrayJob(models.Model):
     @property
     def stderr_abs_path(self):
         return self.processing.stderr_abs_path.replace("%A", self.processing.job_id).replace("%a", self.array_idx)
+
+    @property
+    def acacia_path(self):
+        profile = self.processing.hpc_user.hpc_user_settings.acacia_profile
+        bucket = self.processing.hpc_user.hpc_user_settings.selected_semester.name
+        epoch = self.obs.epoch.epoch
+        obs = self.obs.obs
+        obstype = self.processing.pipeline_step.options
+        return f"{profile}:{bucket}/{epoch}/{obs}_{obs_type}.tar.gz"
 
     class Meta:
         managed = False
