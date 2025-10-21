@@ -388,24 +388,22 @@ def UserSessionSettings(request):
         session_settings.save()
 
     if request.method == 'POST':
-        try:
-            selected_hpc_user = models.HpcUser.objects.get(pk=request.POST.get('selected_hpc_user'))
-            if selected_hpc_user != request.user.session_settings.selected_hpc_user:
-                # Selected HPC user has been switched, so disconnect the old one
-                request.user.session_settings.hpc_disconnect()
-                request.user.session_settings.selected_hpc_user = selected_hpc_user
-        except:
-            pass
-        try:
-            selected_semester = models.Semester.objects.get(pk=request.POST.get('selected_semester'))
-            request.user.session_settings.selected_semester = selected_semester
-        except:
-            pass
-        try:
-            selected_cluster = models.Cluster.objects.get(pk=request.POST.get('selected_cluster'))
-            request.user.session_settings.selected_cluster = selected_cluster
-        except:
-            pass
+        hpc_user_id = request.POST.get('selected_hpc_user')
+        selected_hpc_user = models.HpcUser.objects.get(pk=hpc_user_id) if hpc_user_id else None
+        if selected_hpc_user != request.user.session_settings.selected_hpc_user:
+            # Selected HPC user has been switched, so disconnect the old one
+            request.user.session_settings.hpc_disconnect()
+        request.user.session_settings.selected_hpc_user = selected_hpc_user
+
+        # Parse the selected semester
+        semester_id = request.POST.get('selected_semester')
+        selected_semester = models.Semester.objects.get(pk=semester_id) if semester_id else None
+        request.user.session_settings.selected_semester = selected_semester
+
+        # Parse the selected cluster
+        cluster_id = request.POST.get('selected_cluster')
+        selected_cluster = models.Cluster.objects.get(pk=cluster_id) if cluster_id else None
+        request.user.session_settings.selected_cluster = selected_cluster
 
         request.user.session_settings.site_theme = request.POST.get('site_theme')
         request.user.session_settings.save()

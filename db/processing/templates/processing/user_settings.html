@@ -24,6 +24,7 @@
   <div style="padding: 10px;">
     <label for="semesters">Selected semester:</label>
     <select id="semesters" name="selected_semester">
+      <option value=''>--- Select ---</option>
       {% for semester in semesters %}
       <option value='{{ semester.pk }}' {% if request.user.session_settings.selected_semester == semester %}selected{% endif %}>{{ semester }}</option>
       {% endfor %}
@@ -34,21 +35,18 @@
 
   <div style="padding: 10px;">
     <label for="hpc_users">HPC user:</label>
-    <select id="hpc_users" name="selected_hpc_user">
+    <select id="hpc_users" name="selected_hpc_user" onchange="update_clusters();">
+      <option value=''>--- Select ---</option>
       {% for hpc_user in request.user.hpc_users.all %}
       <option value='{{ hpc_user.pk }}' {% if request.user.session_settings.selected_hpc_user == hpc_user %}selected{% endif %}>{{ hpc_user }}</option>
       {% endfor %}
     </select>
-    <a href="{% url 'hpc_user_settings' hpc_user_id=request.user.session_settings.selected_hpc_user.id %}?next={% url 'user_session_settings' %}">Change processing settings for {{ request.user.session_settings.selected_hpc_user }}</a>
+    {% if request.user.session_settings.selected_hpc_user %}<a href="{% url 'hpc_user_settings' hpc_user_id=request.user.session_settings.selected_hpc_user.id %}?next={% url 'user_session_settings' %}">Change processing settings for {{ request.user.session_settings.selected_hpc_user }}</a>{% endif %}
   </div>
 
   <div style="padding: 10px;">
     <label for="clusters">Cluster:</label>
-    <select id="clusters" name="selected_cluster">
-      {% for cluster in clusters %}
-      <option value='{{ cluster.pk }}' {% if request.user.session_settings.selected_cluster == cluster %}selected{% endif %}>{{ cluster.name }}</option>
-      {% endfor %}
-    </select>
+    <select id="clusters" name="selected_cluster"></select>
   </div>
 
   <div style="padding: 10px;">
@@ -69,6 +67,14 @@
   // Update clusters dropdown depending on selected HPC user
   function update_clusters () {
     clusters_dropdown.innerHTML = '';
+
+    const option = document.createElement('option');
+    option.value = '';
+    option.text = '--- Select ---';
+    clusters_dropdown.appendChild(option);
+
+    if (hpc_users_dropdown.value == '') return;
+
     for (const cluster of clusters_by_hpc_user[hpc_users_dropdown.value]) {
       const option = document.createElement('option');
       option.value = cluster.pk;
@@ -78,7 +84,9 @@
     clusters_dropdown.value = "{{ request.user.session_settings.selected_cluster.pk }}";
   }
 
-  update_clusters();
+  document.addEventListener('DOMContentLoaded', function() {
+    update_clusters();
+  });
 </script>
 
 {% endblock %}
