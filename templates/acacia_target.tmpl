@@ -18,6 +18,9 @@ fi
 
 cd "${datadir}" || exit 1
 
+tarFileName="$(basename "${acacia_path})"
+acacia_dir="$(dirname "${acacia_path})"
+
 #----------------
 #Defining what to tar and the name and place of the tarfile
 if [ "$obstype" = "calibration" ]
@@ -88,8 +91,6 @@ if [ $exitcode -ne 0 ]; then
 fi
 rm $testFile
 
-tarFileName="$(basename "${acacia_path})"
-acacia_dir="$(dirname "${acacia_path})"
 auxiliaryDirForTars="$MYSCRATCH/tars"
 echo "Checking that the auxiliary directory exists"
 if ! [ -d $auxiliaryDirForTars ]; then
