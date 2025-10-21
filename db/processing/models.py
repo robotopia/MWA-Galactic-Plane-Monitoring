@@ -52,17 +52,18 @@ class ApplyCal(models.Model):
         ordering = ['obs', 'cal_obs']
 
 
-class Backup(models.Model):
+class Acacia(models.Model):
     obs = models.ForeignKey('Observation', models.DO_NOTHING)
-    epoch = models.CharField(max_length=9)
     acacia = models.CharField(max_length=127)
     tar_contains_folder = models.BooleanField()
     obstype = models.CharField(max_length=31)
 
     class Meta:
         managed = False
-        db_table = 'backup'
+        db_table = 'acacia'
         ordering = ['obs', 'obstype']
+        verbose_name = 'Acacia backup'
+        verbose_name_plural = 'Acacia backups'
 
 
 class BackupTable(models.Model):
@@ -361,8 +362,8 @@ class PipelineStep(models.Model):
     pipeline = models.ForeignKey("Pipeline", models.DO_NOTHING, related_name="steps")
     step_order = models.IntegerField()
     task = models.ForeignKey("Task", models.DO_NOTHING, related_name="pipeline_steps")
-    options = models.CharField(max_length=127)
-    obs_script = models.CharField(max_length=255)
+    options = models.CharField(max_length=127, null=True, blank=True)
+    obs_script = models.CharField(max_length=255, null=True, blank=True)
 
     @property
     def command(self):
@@ -374,8 +375,10 @@ class PipelineStep(models.Model):
     class Meta:
         managed = False
         db_table = 'pipeline_step'
-        unique_together = (('pipeline', 'step_order'),)
         ordering = ['pipeline', 'step_order']
+        constraints = [
+            models.UniqueConstraint(fields=['pipeline', 'step_order'], name='pipeline_step_unique'),
+        ]
 
 
 class Processing(models.Model):

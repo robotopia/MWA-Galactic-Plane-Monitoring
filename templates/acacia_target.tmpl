@@ -6,8 +6,8 @@ set -x
 
 obsnum="$1"
 datadir="$2"
-obstype="$3" # "target", "calibration", or "warp"
-acacia_path="$4"
+acacia_path="$3"
+obstype="target"
 
 function test_fail {
 if [[ $1 != 0 ]]

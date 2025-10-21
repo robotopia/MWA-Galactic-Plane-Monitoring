@@ -1,0 +1,136 @@
+#! /bin/bash -l
+
+# A template script to transfer (tar'ed) files to Acacia for warm storage.
+
+set -x
+
+obsnum="$1"
+datadir="$2"
+acacia_path="$3"
+obstype="warp"
+
+function test_fail {
+if [[ $1 != 0 ]]
+then
+    exit "$1"
+fi
+}
+
+cd "${datadir}" || exit 1
+
+#----------------
+#Defining what to tar and the name and place of the tarfile
+if [ "$obstype" = "calibration" ]
+then
+    touch ${obsnum}_ionodiff.csv # Sometimes this file doesn't get made??
+    whatToTar=( ${obsnum}_*.png ${obsnum}_local_gleam_model_solutions*.bin ${obsnum}_ionodiff.csv )
+elif [ "$obstype" = "target" ]
+then
+    whatToTar=( ${obsnum}_deep-*-[IV]-image*fits ${obsnum}_deep-*-[IV]-model*fits ${obsnum}_transient* ${obsnum}.metafits )
+elif [ "$obstype" = "warp" ]
+then
+    whatToTar=( ${obsnum}_*warp*fits )
+else
+  echo "Unrecognised observation type \"$obstype\""
+  exit 1
+fi
+
+#-----------------
+#Check if Acacia definitions make sense, and if you can transfer objects into the desired bucket
+echo "Checking that the profile exists"
+profileName="$(echo $acacia_path | sed 's_:.*__')"
+# ^^^ i.e. remove all characters from first colon onwards,
+# e.g. "mwasci:gpm2024/blah/blah" --> "mwasci"
+rclone config show | grep "${profileName}" > /dev/null; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "The given profileName=$profileName seems not to exist in the user configuration of rclone"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+echo "Checking the bucket exists and that you have writing access"
+bucketName="$(echo $acacia_path | sed 's_/.*__')"
+# ^^^ i.e. remove all characters from first forward slash onwards,
+# e.g. "mwasci:gpm2024/blah/blah" --> "mwasci:gpm2024"
+rclone lsd "${bucketName}" > /dev/null; exitcode=$? #Note the colon(:) when using rclone
+if [ $exitcode -ne 0 ]; then
+   echo "The bucket intended to receive the data does not exist: ${bucketName}"
+   echo "Trying to create it"
+   rclone mkdir "${bucketName}"; exitcode=$?
+   if [ $exitcode -ne 0 ]; then
+      echo "Creation of bucket failed"
+      echo "The bucket name or the profile name may be wrong: ${bucketName}"
+      echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+      test_fail 1
+   fi
+fi
+echo "Checking if a test file can be trasferred into the desired full path in Acacia"
+testFile=test_file_${jobid}-${taskid}.txt
+echo "File for test" > "${testFile}"
+rclone copy "${testFile}" "${acacia_dir}/"; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "The test file $testFile cannot be transferred into ${acacia_dir}"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+echo "Checking if the test file can be listed in Acacia"
+listResult=$(rclone lsl "${acacia_dir}/${testFile}")
+if [ -z "$listResult" ]; then
+   echo "Problems occurred during the listing of the test file ${testFile} in ${acacia_dir}"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+echo "Removing test file from Acacia"
+rclone delete "${acacia_dir}/${testFile}"; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "The test file $testFile cannot be removed from ${acacia_dir}"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+rm $testFile
+
+tarFileName="$(basename "${acacia_path})"
+acacia_dir="$(dirname "${acacia_path})"
+auxiliaryDirForTars="$MYSCRATCH/tars"
+echo "Checking that the auxiliary directory exists"
+if ! [ -d $auxiliaryDirForTars ]; then
+   echo "Trying to create the auxiliary directory as it does not exist"
+   mkdir -p $auxiliaryDirForTars; exitcode=$?
+   if [ $exitcode -ne 0 ]; then
+      echo "The auxiliary directory $auxiliaryDirForTars does not exist and can't be created"
+      echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+      test_fail 1
+   fi
+fi
+
+#----------------
+#Taring the indicated files and directories
+srun tar -cvzf "${auxiliaryDirForTars}/${tarFileName}" "${whatToTar[@]}"; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "Something went wrong when taring:"
+   echo "tarFileName=${tarFileName}"
+   echo "whatToTar=( ${whatToTar[@]} )"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+fi
+
+#-----------------
+#Perform the transfer of the tar file into the working directory and check for the transfer
+echo "Performing the transfer ... "
+echo "rclone copy --s3-chunk-size 600M ${auxiliaryDirForTars}/${tarFileName} ${acacia_dir}/"
+srun rclone copy --s3-chunk-size 600M "${auxiliaryDirForTars}/${tarFileName}" "${acacia_dir}/"; exitcode=$?
+if [ $exitcode -ne 0 ]; then
+   echo "Problems occurred during the transfer of file ${tarFileName}"
+   echo "Check that the file exists in ${datadir}"
+   echo "And that nothing is wrong with the acacia_dir: ${acacia_dir}/"
+   echo "Exiting the script with non-zero code in order to inform job dependencies not to continue."
+   test_fail 1
+else
+   #echo "Removing the tar file from scratch as it was successfully transferred into Acacia"
+   echo "Final place in Acacia: ${acacia_path}"
+   rm "${auxiliaryDirForTars}/${tarFileName}" #Comment this line when debugging workflow
+fi
+
+#---------------
+#Successfully finished
+echo "Done"
+

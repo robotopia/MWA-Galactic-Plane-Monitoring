@@ -65,11 +65,12 @@ class ApplyCalAdmin(admin.ModelAdmin):
     list_display = ['pk', 'obs', 'cal_obs', 'usable']
     autocomplete_fields = ['obs', 'cal_obs']
 
-@admin.register(Backup)
-class BackupAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'obs', 'obstype', 'epoch', 'acacia', 'tar_contains_folder']
-    list_filter = ['epoch', 'obstype']
+@admin.register(Acacia)
+class AcaciaAdmin(admin.ModelAdmin):
+    list_display = ['pk', 'obs', 'obstype', 'obs__epoch', 'acacia', 'tar_contains_folder']
+    list_filter = ['obstype']
     autocomplete_fields = ['obs']
+    search_fields = ['obs__obs', 'obs__epoch__epoch']
 
 @admin.register(Cluster)
 class ClusterAdmin(admin.ModelAdmin):
@@ -129,6 +130,7 @@ class PipelineAdmin(admin.ModelAdmin):
 @admin.register(PipelineStep)
 class PipelineStepAdmin(admin.ModelAdmin):
     list_display = ['pk', 'pipeline', 'step_order', 'task', 'options']
+    list_editable = ['step_order']
 
 @admin.register(TaskClusterSetting)
 class TaskClusterSettingAdmin(admin.ModelAdmin):
@@ -157,7 +159,7 @@ class SourceAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ['pk', 'name', 'script_name']
+    list_display = ['pk', 'name', 'script_name', 'description']
 
 @admin.register(UserSessionSetting)
 class UserSessionSettingAdmin(admin.ModelAdmin):
